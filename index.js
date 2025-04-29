@@ -12,6 +12,7 @@ const { Client, Collection, GatewayIntentBits, REST, Routes } = require('discord
 require('dotenv').config();
 
 const client = new Client({ intents: [GatewayIntentBits.Guilds] });
+client.sprintState = sprintState; // <--- Add this line!
 
 client.commands = new Collection();
 

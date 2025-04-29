@@ -1,9 +1,5 @@
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 
-// Remove the sprintState declaration here if it's in index.js.
-// If you want to share sprintState between files, you can use module.exports/imports.
-// For now, let's assume all logic is in index.js, or you can move this object to sprint.js for testing.
-
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('sprint')
@@ -27,26 +23,21 @@ module.exports = {
         )
     )
     .addSubcommand(sub =>
+      sub.setName('finish')
+        .setDescription('Submit your ending page for the sprint')
+        .addIntegerOption(opt =>
+          opt.setName('ending_pages')
+            .setDescription('Your ending page number')
+            .setRequired(true)
+        )
+    )
+    .addSubcommand(sub =>
       sub.setName('timeleft')
         .setDescription('See how much time is left in the sprint')
     ),
 
   async execute(interaction) {
-    // Make sure sprintState is accessible here.
-    // If sprintState is in index.js, you might need to import it.
-    // For now, let's assume you put it at the top of this file for simplicity:
-    // (If you want to share between files, let me know and I'll show you how!)
-
-    if (!global.sprintState) {
-      global.sprintState = {
-        active: false,
-        endTime: null,
-        participants: {},
-        duration: 0,
-        timeout: null,
-      };
-    }
-    const sprintState = global.sprintState;
+    const sprintState = interaction.client.sprintState;
 
     // /sprint start
     if (interaction.options.getSubcommand() === 'start') {
@@ -62,8 +53,10 @@ module.exports = {
         });
       }
 
-      const durationInput = interaction.options.getString('duration');
+      const durationInput = interaction.options.getString('duration').trim().toLowerCase();
       let durationMinutes = 0;
+
+      // Parse duration
       if (/^\d+\s*m(in)?$/.test(durationInput)) {
         durationMinutes = parseInt(durationInput);
       } else if (/^\d+\s*h(ours?)?$/.test(durationInput)) {
@@ -99,14 +92,81 @@ module.exports = {
       sprintState.endTime = Date.now() + durationMinutes * 60 * 1000;
       sprintState.participants = {};
 
+      // Clear any previous timeouts
+      if (sprintState.timeout) {
+        clearTimeout(sprintState.timeout);
+        sprintState.timeout = null;
+      }
+      if (sprintState.warningTimeout) {
+        clearTimeout(sprintState.warningTimeout);
+        sprintState.warningTimeout = null;
+      }
+
       await interaction.reply({
         embeds: [
           new EmbedBuilder()
             .setTitle('Sprint Started! 🏁')
-            .setDescription(`A reading sprint has started for **${durationMinutes}** minutes!\nUse \`/sprint join\` to join in!`)
+            .setDescription(`A reading sprint has started for **${durationMinutes}** minutes!\nUse \`/sprint join\` to participate!`)
             .setColor('Green')
         ]
       });
+
+      // Schedule 5-minute warning if sprint is longer than 5 minutes
+      if (durationMinutes > 5) {
+        sprintState.warningTimeout = setTimeout(async () => {
+          try {
+            await interaction.channel.send({
+              embeds: [
+                new EmbedBuilder()
+                  .setTitle('⏰ 5 Minutes Left!')
+                  .setDescription('Only 5 minutes left in the sprint! Finish strong! 💪')
+                  .setColor('Orange')
+              ]
+            });
+          } catch (err) {
+            // Ignore errors (e.g. channel deleted)
+          }
+        }, (durationMinutes - 5) * 60 * 1000);
+      }
+
+      // Schedule end-of-sprint message with results
+      sprintState.timeout = setTimeout(async () => {
+        sprintState.active = false;
+        sprintState.endTime = null;
+        sprintState.duration = 0;
+        sprintState.timeout = null;
+        sprintState.warningTimeout = null;
+
+        // Build results message
+        let results = '';
+        if (Object.keys(sprintState.participants).length === 0) {
+          results = 'No one joined this sprint!';
+        } else {
+          results = Object.values(sprintState.participants).map(p => {
+            if (p.endingPages !== null && p.endingPages !== undefined) {
+              const pagesRead = p.endingPages - p.startingPages;
+              return `**${p.username}**: ${p.startingPages} → ${p.endingPages} (**${pagesRead} pages**)`;
+            } else {
+              return `**${p.username}**: started at ${p.startingPages}, did not submit ending page.`;
+            }
+          }).join('\n');
+        }
+
+        try {
+          await interaction.channel.send({
+            embeds: [
+              new EmbedBuilder()
+                .setTitle('Sprint Finished! 🎉')
+                .setDescription(`The reading sprint has ended!\n\n__**Results:**__\n${results}\n\nUse \`/sprint start\` to begin another.`)
+                .setColor('Purple')
+            ]
+          });
+        } catch (err) {
+          // Ignore errors (e.g. channel deleted)
+        }
+        sprintState.participants = {};
+      }, durationMinutes * 60 * 1000);
+
       return;
     }
 
@@ -150,6 +210,47 @@ module.exports = {
             .setTitle('Joined Sprint! 📚')
             .setDescription(`You joined the sprint at page **${startingPages}**!`)
             .setColor('Blue')
+        ],
+        ephemeral: true,
+      });
+    }
+
+    // /sprint finish
+    if (interaction.options.getSubcommand() === 'finish') {
+      if (!sprintState.active) {
+        return interaction.reply({
+          embeds: [
+            new EmbedBuilder()
+              .setTitle('No Active Sprint')
+              .setDescription('There is no active sprint running.')
+              .setColor('Red')
+          ],
+          ephemeral: true,
+        });
+      }
+      const userId = interaction.user.id;
+      const endingPages = interaction.options.getInteger('ending_pages');
+
+      if (!sprintState.participants[userId]) {
+        return interaction.reply({
+          embeds: [
+            new EmbedBuilder()
+              .setTitle('Not Joined')
+              .setDescription('You have not joined this sprint yet. Use `/sprint join` first!')
+              .setColor('Red')
+          ],
+          ephemeral: true,
+        });
+      }
+
+      sprintState.participants[userId].endingPages = endingPages;
+
+      return interaction.reply({
+        embeds: [
+          new EmbedBuilder()
+            .setTitle('Sprint Finished! 🎉')
+            .setDescription(`You finished the sprint at page **${endingPages}**!`)
+            .setColor('Green')
         ],
         ephemeral: true,
       });
