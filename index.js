@@ -1,3 +1,11 @@
+const sprintState = {
+	active: false,
+	endTime: null,
+	participants: {},
+	duration: 0,
+	timeout: null,
+  };  
+
 const fs = require('node:fs');
 const path = require('node:path');
 const { Client, Collection, GatewayIntentBits, REST, Routes } = require('discord.js');
