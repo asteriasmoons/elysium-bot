@@ -24,7 +24,7 @@ module.exports = {
 
         const embed = new EmbedBuilder()
             .setTitle(`${interaction.user.username}'s Book Profile`)
-            .setColor('#572194')
+            .setColor('#4ac4d7')
             .addFields(
                 { name: 'Bio', value: profile.bio },
                 { name: 'Current Read', value: profile.currentRead },

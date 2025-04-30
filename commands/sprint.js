@@ -36,6 +36,11 @@ module.exports = {
     .addSubcommand(sub =>
       sub.setName('timeleft')
         .setDescription('See how much time is left in the sprint')
+    )
+    // --- NEW: Add end subcommand here ---
+    .addSubcommand(sub =>
+      sub.setName('end')
+        .setDescription('Manually end the current sprint and show results')
     ),
 
   async execute(interaction) {
@@ -104,7 +109,7 @@ module.exports = {
         sprintState.warningTimeout = null;
       }
       
-	  await interaction.reply({
+      await interaction.reply({
         embeds: [
           new EmbedBuilder()
             .setTitle('Sprint Started! <a:noyes1:1339800615622152237>')
@@ -303,6 +308,86 @@ module.exports = {
             .setColor('#4ac4d7')
         ],
       });
+    }
+
+    // /sprint end
+	if (interaction.options.getSubcommand() === 'end') {
+	// Permission check: only allow users with Manage Guild
+	if (!interaction.member.permissions.has('Administrator')) {
+	  return interaction.reply({
+		embeds: [
+		  new EmbedBuilder()
+			.setTitle('No Permission')
+			.setDescription('Only server admins can end the sprint early.')
+			.setColor('#4ac4d7')
+		],
+	  });
+	}
+
+      if (!sprintState.active) {
+        return interaction.reply({
+          embeds: [
+            new EmbedBuilder()
+              .setTitle('No Active Sprint')
+              .setDescription('There is no active sprint to end.')
+              .setColor('#4ac4d7')
+          ],
+        });
+      }
+
+      // Clear any running timeouts
+      if (sprintState.timeout) {
+        clearTimeout(sprintState.timeout);
+        sprintState.timeout = null;
+      }
+      if (sprintState.warningTimeout) {
+        clearTimeout(sprintState.warningTimeout);
+        sprintState.warningTimeout = null;
+      }
+
+      // --- Update leaderboard ---
+      let leaderboard = {};
+      if (fs.existsSync(leaderboardPath)) {
+        leaderboard = JSON.parse(fs.readFileSync(leaderboardPath, 'utf8'));
+      }
+      for (const [userId, p] of Object.entries(sprintState.participants)) {
+        if (p.endingPages !== null && p.endingPages !== undefined) {
+          const pagesRead = p.endingPages - p.startingPages;
+          if (!leaderboard[userId]) leaderboard[userId] = 0;
+          leaderboard[userId] += pagesRead;
+        }
+      }
+      fs.writeFileSync(leaderboardPath, JSON.stringify(leaderboard, null, 2));
+
+      // --- Build results message ---
+      let results = '';
+      if (Object.keys(sprintState.participants).length === 0) {
+        results = 'No one joined this sprint!';
+      } else {
+        results = Object.entries(sprintState.participants).map(([userId, p]) => {
+          if (p.endingPages !== null && p.endingPages !== undefined) {
+            const pagesRead = p.endingPages - p.startingPages;
+            return `<@${userId}>: ${p.startingPages} → ${p.endingPages} (**${pagesRead} pages**)`;
+          } else {
+            return `<@${userId}>: started at ${p.startingPages}, did not submit ending page.`;
+          }
+        }).join('\n');
+      }
+
+      sprintState.active = false;
+      sprintState.endTime = null;
+      sprintState.duration = 0;
+      sprintState.participants = {};
+
+      await interaction.reply({
+        embeds: [
+          new EmbedBuilder()
+            .setTitle('Sprint Ended Early! <a:zpopz:1366768293368827964>')
+            .setDescription(`The reading sprint was ended manually!\n\n__**Results:**__\n${results}\n\nUse \`/sprint start\` to begin another.`)
+            .setColor('#4ac4d7')
+        ],
+      });
+      return;
     }
   },
 };
