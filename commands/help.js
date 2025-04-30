@@ -13,11 +13,23 @@ module.exports = {
       .addFields(
         { name: '/setprofile', value: 'Set up your reading profile! You can add a bio, your current read, number of books read this year, and your favorite genre.' },
         { name: '/profile', value: 'View your profile and see your reading stats.' },
+		{ name: '/editprofile', value: 'Edit your profile details' },
         { name: '/sprint start [duration]', value: 'Start a new reading sprint. Example: `/sprint start 30m` or `/sprint start 1h`.' },
         { name: '/sprint join [starting_pages]', value: 'Join the current sprint and set your starting page number.' },
         { name: '/sprint finish [ending_pages]', value: 'Submit your ending page number for the sprint.' },
         { name: '/sprint timeleft', value: 'See how much time is left in the current sprint.' },
-        { name: '/leaderboard', value: 'See the top readers and their total pages read.' }
+		{ name: '/sprint end', value: 'Forces the sprint to end' },
+        { name: '/leaderboard', value: 'See the top readers and their total pages read.' },
+		{ name: '/buddyread start [book] [user]', value: 'Start a buddy read with a friend or other server member' },
+		{ name: '/buddyread finish [book] [user]', value: 'Finish your buddy read on a book with a user' },
+		{ name: '/buddyread list', value: 'A list of your buddy reads or buddy reads in the server' },
+		{ name: '/reviewadd [book] [author] [rating] [review]', value: 'Add a book review to the bot' },
+		{ name: '/review author [author]', value: 'View a book review by author' },
+		{ name: '/review book [book]', value: 'Find a specific book review by the book title' },
+		{ name: '/review delete [book] [author]', value: 'Delete a book review you have written' },
+		{ name: '/review edit [book] [author] [rating] [review]', value: 'Edit one of your book reviews' },
+		{ name: '/review list', value: 'List of all book reviews stored in the bot' },
+		{ name: '/review view [book]', value: 'Find a review based on the book title' }
       )
       .setFooter({ text: 'Click "Next" for more info on how sprints work!' });
 

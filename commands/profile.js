@@ -42,11 +42,11 @@ module.exports = {
             .setThumbnail(user.displayAvatarURL())
             .addFields(
                 { name: 'Bio', value: profile.bio || 'Not set', inline: false },
-                { name: 'Current Read', value: profile.currentRead || 'Not set', inline: true },
-                { name: 'Reading Goal', value: profile.readingGoal ? profile.readingGoal.toString() : 'Not set', inline: true },
-                { name: 'Favorite Genre', value: profile.favoriteGenre || 'Not set', inline: true },
-                { name: 'Preferred Format', value: profile.preferredFormat || 'Not set', inline: true },
-                { name: 'Favorite Author', value: profile.favoriteAuthor || 'Not set', inline: true },
+                { name: 'Current Read', value: profile.currentRead || 'Not set', inline: false },
+                { name: 'Reading Goal', value: profile.readingGoal ? profile.readingGoal.toString() : 'Not set', inline: false },
+                { name: 'Favorite Genre', value: profile.favoriteGenre || 'Not set', inline: false },
+                { name: 'Preferred Format', value: profile.preferredFormat || 'Not set', inline: false },
+                { name: 'Favorite Author', value: profile.favoriteAuthor || 'Not set', inline: false },
                 { name: 'Member Since', value: profile.memberSince ? formatDate(profile.memberSince) : 'Unknown', inline: false }
             );
 
