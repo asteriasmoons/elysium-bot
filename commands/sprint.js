@@ -103,8 +103,8 @@ module.exports = {
         clearTimeout(sprintState.warningTimeout);
         sprintState.warningTimeout = null;
       }
-
-      await interaction.reply({
+      
+	  await interaction.reply({
         embeds: [
           new EmbedBuilder()
             .setTitle('Sprint Started! <a:noyes1:1339800615622152237>')
@@ -196,7 +196,6 @@ module.exports = {
               .setDescription('There is no active sprint to join. Start one with `/sprint start`!')
               .setColor('#4ac4d7')
           ],
-          ephemeral: true,
         });
       }
       const userId = interaction.user.id;
@@ -210,7 +209,6 @@ module.exports = {
               .setDescription('You have already joined this sprint!')
               .setColor('#4ac4d7')
           ],
-          ephemeral: true,
         });
       }
 
@@ -227,7 +225,6 @@ module.exports = {
             .setDescription(`You joined the sprint at page **${startingPages}**!`)
             .setColor('#4ac4d7')
         ],
-        ephemeral: true,
       });
     }
 
@@ -241,7 +238,6 @@ module.exports = {
               .setDescription('There is no active sprint running.')
               .setColor('#4ac4d7')
           ],
-          ephemeral: true,
         });
       }
       const userId = interaction.user.id;
@@ -255,7 +251,6 @@ module.exports = {
               .setDescription('You have not joined this sprint yet. Use `/sprint join` first!')
               .setColor('#4ac4d7')
           ],
-          ephemeral: true,
         });
       }
 
@@ -268,7 +263,6 @@ module.exports = {
             .setDescription(`You finished the sprint at page **${endingPages}**!`)
             .setColor('#4ac4d7')
         ],
-        ephemeral: true,
       });
     }
 
@@ -282,7 +276,6 @@ module.exports = {
               .setDescription('There is no active sprint running.')
               .setColor('#4ac4d7')
           ],
-          ephemeral: true,
         });
       }
 
@@ -295,7 +288,6 @@ module.exports = {
               .setDescription('The sprint has just ended!')
               .setColor('#4ac4d7')
           ],
-          ephemeral: true,
         });
       }
 
@@ -310,7 +302,6 @@ module.exports = {
             .setDescription(`⏳ **${minutes}** minutes **${seconds}** seconds left!`)
             .setColor('#4ac4d7')
         ],
-        ephemeral: true,
       });
     }
   },
