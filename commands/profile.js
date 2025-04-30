@@ -9,6 +9,11 @@ function loadProfile(userId) {
     return profiles[userId];
 }
 
+function formatDate(isoString) {
+    const date = new Date(isoString);
+    return date.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
+}
+
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('profile')
@@ -21,13 +26,12 @@ module.exports = {
     async execute(interaction) {
         // Get the user option, or fallback to the command user
         const user = interaction.options.getUser('user') || interaction.user;
-        const member = interaction.guild.members.cache.get(user.id);
 
         const profile = loadProfile(user.id);
 
         if (!profile) {
             await interaction.reply({
-                content: `${user.id === interaction.user.id ? 'You have' : `${user.username} has`} not set a profile yet.${user.id === interaction.user.id ? ' Use `/setprofile` to create one!' : ''}`,
+                content: `${user.id === interaction.user.id ? 'You have' : `${user.username} has`} not set a profile yet.${user.id === interaction.user.id ? ' Use \`/setprofile\` to create one!' : ''}`,
             });
             return;
         }
@@ -35,13 +39,16 @@ module.exports = {
         const embed = new EmbedBuilder()
             .setTitle(`${user.username}'s Book Profile`)
             .setColor('#4ac4d7')
+            .setThumbnail(user.displayAvatarURL())
             .addFields(
-                { name: 'Bio', value: profile.bio },
-                { name: 'Current Read', value: profile.currentRead },
-                { name: '# Books Read This Year', value: profile.booksRead.toString() },
-                { name: 'Favorite Genre', value: profile.favoriteGenre }
-            )
-            .setThumbnail(user.displayAvatarURL());
+                { name: 'Bio', value: profile.bio || 'Not set', inline: false },
+                { name: 'Current Read', value: profile.currentRead || 'Not set', inline: true },
+                { name: 'Reading Goal', value: profile.readingGoal ? profile.readingGoal.toString() : 'Not set', inline: true },
+                { name: 'Favorite Genre', value: profile.favoriteGenre || 'Not set', inline: true },
+                { name: 'Preferred Format', value: profile.preferredFormat || 'Not set', inline: true },
+                { name: 'Favorite Author', value: profile.favoriteAuthor || 'Not set', inline: true },
+                { name: 'Member Since', value: profile.memberSince ? formatDate(profile.memberSince) : 'Unknown', inline: false }
+            );
 
         await interaction.reply({ embeds: [embed] });
     },
