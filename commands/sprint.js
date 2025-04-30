@@ -1,4 +1,6 @@
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const fs = require('fs');
+const leaderboardPath = './leaderboard.json';
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -47,7 +49,7 @@ module.exports = {
             new EmbedBuilder()
               .setTitle('Sprint Already Running')
               .setDescription('A sprint is already active! Use `/sprint join` to participate.')
-              .setColor('Red')
+              .setColor('#4ac4d7')
           ],
           ephemeral: true,
         });
@@ -69,7 +71,7 @@ module.exports = {
             new EmbedBuilder()
               .setTitle('Invalid Duration')
               .setDescription('Please provide a valid duration (e.g., `30m` or `1h`).')
-              .setColor('Red')
+              .setColor('#4ac4d7')
           ],
           ephemeral: true,
         });
@@ -81,7 +83,7 @@ module.exports = {
             new EmbedBuilder()
               .setTitle('Invalid Duration')
               .setDescription('Sprint duration must be between 5 and 120 minutes.')
-              .setColor('Red')
+              .setColor('#4ac4d7')
           ],
           ephemeral: true,
         });
@@ -105,9 +107,9 @@ module.exports = {
       await interaction.reply({
         embeds: [
           new EmbedBuilder()
-            .setTitle('Sprint Started! 🏁')
+            .setTitle('Sprint Started! <a:noyes1:1339800615622152237>')
             .setDescription(`A reading sprint has started for **${durationMinutes}** minutes!\nUse \`/sprint join\` to participate!`)
-            .setColor('Green')
+            .setColor('#4ac4d7')
         ]
       });
 
@@ -120,7 +122,7 @@ module.exports = {
                 new EmbedBuilder()
                   .setTitle('⏰ 5 Minutes Left!')
                   .setDescription('Only 5 minutes left in the sprint! Finish strong! 💪')
-                  .setColor('Orange')
+                  .setColor('#4ac4d7')
               ]
             });
           } catch (err) {
@@ -129,7 +131,7 @@ module.exports = {
         }, (durationMinutes - 5) * 60 * 1000);
       }
 
-      // Schedule end-of-sprint message with results
+      // Schedule end-of-sprint message with results and leaderboard update
       sprintState.timeout = setTimeout(async () => {
         sprintState.active = false;
         sprintState.endTime = null;
@@ -137,17 +139,31 @@ module.exports = {
         sprintState.timeout = null;
         sprintState.warningTimeout = null;
 
-        // Build results message
+        // --- Update leaderboard ---
+        let leaderboard = {};
+        if (fs.existsSync(leaderboardPath)) {
+          leaderboard = JSON.parse(fs.readFileSync(leaderboardPath, 'utf8'));
+        }
+        for (const [userId, p] of Object.entries(sprintState.participants)) {
+          if (p.endingPages !== null && p.endingPages !== undefined) {
+            const pagesRead = p.endingPages - p.startingPages;
+            if (!leaderboard[userId]) leaderboard[userId] = 0;
+            leaderboard[userId] += pagesRead;
+          }
+        }
+        fs.writeFileSync(leaderboardPath, JSON.stringify(leaderboard, null, 2));
+
+        // --- Build results message ---
         let results = '';
         if (Object.keys(sprintState.participants).length === 0) {
           results = 'No one joined this sprint!';
         } else {
-          results = Object.values(sprintState.participants).map(p => {
+          results = Object.entries(sprintState.participants).map(([userId, p]) => {
             if (p.endingPages !== null && p.endingPages !== undefined) {
               const pagesRead = p.endingPages - p.startingPages;
-              return `**${p.username}**: ${p.startingPages} → ${p.endingPages} (**${pagesRead} pages**)`;
+              return `<@${userId}>: ${p.startingPages} → ${p.endingPages} (**${pagesRead} pages**)`;
             } else {
-              return `**${p.username}**: started at ${p.startingPages}, did not submit ending page.`;
+              return `<@${userId}>: started at ${p.startingPages}, did not submit ending page.`;
             }
           }).join('\n');
         }
@@ -156,9 +172,9 @@ module.exports = {
           await interaction.channel.send({
             embeds: [
               new EmbedBuilder()
-                .setTitle('Sprint Finished! 🎉')
+                .setTitle('Sprint Finished! <a:zpopz:1366768293368827964>')
                 .setDescription(`The reading sprint has ended!\n\n__**Results:**__\n${results}\n\nUse \`/sprint start\` to begin another.`)
-                .setColor('Purple')
+                .setColor('#4ac4d7')
             ]
           });
         } catch (err) {
@@ -178,7 +194,7 @@ module.exports = {
             new EmbedBuilder()
               .setTitle('No Active Sprint')
               .setDescription('There is no active sprint to join. Start one with `/sprint start`!')
-              .setColor('Red')
+              .setColor('#4ac4d7')
           ],
           ephemeral: true,
         });
@@ -192,7 +208,7 @@ module.exports = {
             new EmbedBuilder()
               .setTitle('Already Joined')
               .setDescription('You have already joined this sprint!')
-              .setColor('Yellow')
+              .setColor('#4ac4d7')
           ],
           ephemeral: true,
         });
@@ -207,9 +223,9 @@ module.exports = {
       return interaction.reply({
         embeds: [
           new EmbedBuilder()
-            .setTitle('Joined Sprint! 📚')
+            .setTitle('Joined Sprint! <:boox5:1291879709873016842>')
             .setDescription(`You joined the sprint at page **${startingPages}**!`)
-            .setColor('Blue')
+            .setColor('#4ac4d7')
         ],
         ephemeral: true,
       });
@@ -223,7 +239,7 @@ module.exports = {
             new EmbedBuilder()
               .setTitle('No Active Sprint')
               .setDescription('There is no active sprint running.')
-              .setColor('Red')
+              .setColor('#4ac4d7')
           ],
           ephemeral: true,
         });
@@ -237,7 +253,7 @@ module.exports = {
             new EmbedBuilder()
               .setTitle('Not Joined')
               .setDescription('You have not joined this sprint yet. Use `/sprint join` first!')
-              .setColor('Red')
+              .setColor('#4ac4d7')
           ],
           ephemeral: true,
         });
@@ -248,9 +264,9 @@ module.exports = {
       return interaction.reply({
         embeds: [
           new EmbedBuilder()
-            .setTitle('Sprint Finished! 🎉')
+            .setTitle('Sprint Finished! <a:zpopz:1366768293368827964>')
             .setDescription(`You finished the sprint at page **${endingPages}**!`)
-            .setColor('Green')
+            .setColor('#4ac4d7')
         ],
         ephemeral: true,
       });
@@ -264,7 +280,7 @@ module.exports = {
             new EmbedBuilder()
               .setTitle('No Active Sprint')
               .setDescription('There is no active sprint running.')
-              .setColor('Red')
+              .setColor('#4ac4d7')
           ],
           ephemeral: true,
         });
@@ -277,7 +293,7 @@ module.exports = {
             new EmbedBuilder()
               .setTitle('Sprint Ended')
               .setDescription('The sprint has just ended!')
-              .setColor('Red')
+              .setColor('#4ac4d7')
           ],
           ephemeral: true,
         });
@@ -292,7 +308,7 @@ module.exports = {
           new EmbedBuilder()
             .setTitle('Sprint Time Left')
             .setDescription(`⏳ **${minutes}** minutes **${seconds}** seconds left!`)
-            .setColor('Blue')
+            .setColor('#4ac4d7')
         ],
         ephemeral: true,
       });
