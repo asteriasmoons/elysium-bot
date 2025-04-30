@@ -1,18 +1,28 @@
 const sprintState = {
-	active: false,
-	endTime: null,
-	participants: {},
-	duration: 0,
-	timeout: null,
-  };  
+    active: false,
+    endTime: null,
+    participants: {},
+    duration: 0,
+    timeout: null,
+};
 
 const fs = require('node:fs');
 const path = require('node:path');
 const { Client, Collection, GatewayIntentBits, REST, Routes } = require('discord.js');
 require('dotenv').config();
 
-const client = new Client({ intents: [GatewayIntentBits.Guilds] });
-client.sprintState = sprintState; // <--- Add this line!
+// Add message and thread intents!
+const client = new Client({
+    intents: [
+        GatewayIntentBits.Guilds,
+        GatewayIntentBits.GuildMessages,
+        GatewayIntentBits.MessageContent,
+        GatewayIntentBits.GuildMessageReactions,
+        GatewayIntentBits.GuildMessageTyping,
+        GatewayIntentBits.GuildMembers
+    ]
+});
+client.sprintState = sprintState;
 
 client.commands = new Collection();
 
@@ -41,6 +51,20 @@ client.once('ready', async () => {
         console.error(error);
     }
 });
+
+// --------- LOAD EVENTS FROM /events FOLDER (add this!) ----------
+const eventsPath = path.join(__dirname, 'events');
+if (fs.existsSync(eventsPath)) {
+    const eventFiles = fs.readdirSync(eventsPath).filter(file => file.endsWith('.js'));
+    for (const file of eventFiles) {
+        const event = require(path.join(eventsPath, file));
+        if (event.name && typeof event.execute === 'function') {
+            client.on(event.name, (...args) => event.execute(...args));
+            console.log(`Loaded event: ${event.name}`);
+        }
+    }
+}
+// ---------------------------------------------------------------
 
 client.on('interactionCreate', async interaction => {
     if (!interaction.isChatInputCommand()) return;

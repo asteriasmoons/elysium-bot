@@ -5,8 +5,8 @@ const path = require('path');
 
 // List of allowed channel IDs (edit these!)
 const ALLOWED_CHANNELS = [
-  '1345768724099235910', // <--- Replace with your channel IDs
-  '1308081246831771730'
+  '1337159554248609833', // <--- Replace with your channel IDs
+  '1358072745664970875'
 ];
 
 // Path to the embed config file (edit path if needed)
