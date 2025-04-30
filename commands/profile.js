@@ -12,18 +12,28 @@ function loadProfile(userId) {
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('profile')
-        .setDescription('View your book profile'),
+        .setDescription('View your book profile')
+        .addUserOption(option => 
+            option.setName('user')
+                .setDescription('The user to view (optional)')
+                .setRequired(false)
+        ),
     async execute(interaction) {
-        const userId = interaction.user.id;
-        const profile = loadProfile(userId);
+        // Get the user option, or fallback to the command user
+        const user = interaction.options.getUser('user') || interaction.user;
+        const member = interaction.guild.members.cache.get(user.id);
+
+        const profile = loadProfile(user.id);
 
         if (!profile) {
-            await interaction.reply('You have not set a profile yet. Use `/setprofile` to create one!');
+            await interaction.reply({
+                content: `${user.id === interaction.user.id ? 'You have' : `${user.username} has`} not set a profile yet.${user.id === interaction.user.id ? ' Use `/setprofile` to create one!' : ''}`,
+            });
             return;
         }
 
         const embed = new EmbedBuilder()
-            .setTitle(`${interaction.user.username}'s Book Profile`)
+            .setTitle(`${user.username}'s Book Profile`)
             .setColor('#4ac4d7')
             .addFields(
                 { name: 'Bio', value: profile.bio },
@@ -31,7 +41,7 @@ module.exports = {
                 { name: '# Books Read This Year', value: profile.booksRead.toString() },
                 { name: 'Favorite Genre', value: profile.favoriteGenre }
             )
-            .setThumbnail(interaction.user.displayAvatarURL());
+            .setThumbnail(user.displayAvatarURL());
 
         await interaction.reply({ embeds: [embed] });
     },
