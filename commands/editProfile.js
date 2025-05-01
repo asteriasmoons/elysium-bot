@@ -22,7 +22,7 @@ module.exports = {
             option.setName('bio').setDescription('Edit your bio').setRequired(false))
         .addStringOption(option =>
             option.setName('current_read').setDescription('Edit your current read').setRequired(false))
-        .addIntegerOption(option =>
+        .addStringOption(option =>
             option.setName('reading_goal').setDescription('Edit your reading goal for this year').setRequired(false))
         .addStringOption(option =>
             option.setName('favorite_genre').setDescription('Edit your favorite genre').setRequired(false))
@@ -42,7 +42,7 @@ module.exports = {
         // Only update fields that are provided
         const bio = interaction.options.getString('bio');
         const currentRead = interaction.options.getString('current_read');
-        const readingGoal = interaction.options.getInteger('reading_goal');
+        const readingGoal = interaction.options.getString('reading_goal');
         const favoriteGenre = interaction.options.getString('favorite_genre');
         const preferredFormat = interaction.options.getString('preferred_format');
         const favoriteAuthor = interaction.options.getString('favorite_author');

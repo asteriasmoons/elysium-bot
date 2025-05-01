@@ -1,6 +1,21 @@
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const fs = require('fs');
 const leaderboardPath = './leaderboard.json';
+const configPath = './sprint-config.json';
+
+// --- Helper function for designated sprint channel ---
+function getSprintChannel(interaction) {
+  if (!interaction.guild) return interaction.channel;
+  let config = {};
+  if (fs.existsSync(configPath)) {
+    config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+  }
+  const channelId = config[interaction.guild.id];
+  if (channelId) {
+    return interaction.guild.channels.cache.get(channelId) || interaction.channel;
+  }
+  return interaction.channel;
+}
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -37,7 +52,6 @@ module.exports = {
       sub.setName('timeleft')
         .setDescription('See how much time is left in the sprint')
     )
-    // --- NEW: Add end subcommand here ---
     .addSubcommand(sub =>
       sub.setName('end')
         .setDescription('Manually end the current sprint and show results')
@@ -56,7 +70,6 @@ module.exports = {
               .setDescription('A sprint is already active! Use `/sprint join` to participate.')
               .setColor('#4ac4d7')
           ],
-          ephemeral: true,
         });
       }
 
@@ -78,7 +91,6 @@ module.exports = {
               .setDescription('Please provide a valid duration (e.g., `30m` or `1h`).')
               .setColor('#4ac4d7')
           ],
-          ephemeral: true,
         });
       }
 
@@ -90,7 +102,6 @@ module.exports = {
               .setDescription('Sprint duration must be between 5 and 120 minutes.')
               .setColor('#4ac4d7')
           ],
-          ephemeral: true,
         });
       }
 
@@ -122,7 +133,8 @@ module.exports = {
       if (durationMinutes > 5) {
         sprintState.warningTimeout = setTimeout(async () => {
           try {
-            await interaction.channel.send({
+            const sprintChannel = getSprintChannel(interaction); // <-- NEW
+            await sprintChannel.send({
               embeds: [
                 new EmbedBuilder()
                   .setTitle('⏰ 5 Minutes Left!')
@@ -174,7 +186,8 @@ module.exports = {
         }
 
         try {
-          await interaction.channel.send({
+          const sprintChannel = getSprintChannel(interaction); // <-- NEW
+          await sprintChannel.send({
             embeds: [
               new EmbedBuilder()
                 .setTitle('Sprint Finished! <a:zpopz:1366768293368827964>')
@@ -311,18 +324,18 @@ module.exports = {
     }
 
     // /sprint end
-	if (interaction.options.getSubcommand() === 'end') {
-	// Permission check: only allow users with Manage Guild
-	if (!interaction.member.permissions.has('Administrator')) {
-	  return interaction.reply({
-		embeds: [
-		  new EmbedBuilder()
-			.setTitle('No Permission')
-			.setDescription('Only server admins can end the sprint early.')
-			.setColor('#4ac4d7')
-		],
-	  });
-	}
+    if (interaction.options.getSubcommand() === 'end') {
+      // Permission check: only allow users with Manage Guild
+      if (!interaction.member.permissions.has('Administrator')) {
+        return interaction.reply({
+          embeds: [
+            new EmbedBuilder()
+              .setTitle('No Permission')
+              .setDescription('Only server admins can end the sprint early.')
+              .setColor('#4ac4d7')
+          ],
+        });
+      }
 
       if (!sprintState.active) {
         return interaction.reply({
@@ -379,13 +392,18 @@ module.exports = {
       sprintState.duration = 0;
       sprintState.participants = {};
 
-      await interaction.reply({
+      // Post results in designated channel
+      const sprintChannel = getSprintChannel(interaction); // <-- NEW
+      await sprintChannel.send({
         embeds: [
           new EmbedBuilder()
             .setTitle('Sprint Ended Early! <a:zpopz:1366768293368827964>')
             .setDescription(`The reading sprint was ended manually!\n\n__**Results:**__\n${results}\n\nUse \`/sprint start\` to begin another.`)
             .setColor('#4ac4d7')
-        ],
+        ]
+      });
+      await interaction.reply({
+        content: 'Sprint results posted in the designated sprint channel!',
       });
       return;
     }
