@@ -2,7 +2,6 @@ const { SlashCommandBuilder } = require('discord.js');
 const fs = require('fs');
 const path = require('path');
 
-// Path to your JSON file for books
 const booksPath = path.join(__dirname, '../books.json');
 
 function loadBooks() {
@@ -18,22 +17,35 @@ module.exports = {
         .setName('addbook')
         .setDescription('Add a book to the bot\'s book list!')
         .addStringOption(option =>
-            option.setName('name')
-                .setDescription('The name of the book')
+            option.setName('title')
+                .setDescription('The title of the book')
                 .setRequired(true)
+        )
+        .addStringOption(option =>
+            option.setName('author')
+                .setDescription('The author of the book')
+                .setRequired(true)
+        )
+        .addStringOption(option =>
+            option.setName('goodreads')
+                .setDescription('A Goodreads link for the book')
+                .setRequired(false)
         ),
     async execute(interaction) {
-        const bookName = interaction.options.getString('name').trim();
+        const title = interaction.options.getString('title').trim();
+        const author = interaction.options.getString('author').trim();
+        const goodreads = interaction.options.getString('goodreads')?.trim() || '';
+
         let books = loadBooks();
 
-        if (books.includes(bookName)) {
+        if (books.some(b => b.title.toLowerCase() === title.toLowerCase() && b.author.toLowerCase() === author.toLowerCase())) {
             await interaction.reply({ content: `That book is already in the list!`, ephemeral: true });
             return;
         }
 
-        books.push(bookName);
+        books.push({ title, author, goodreads });
         saveBooks(books);
 
-        await interaction.reply({ content: `Book **${bookName}** added to the list!`, ephemeral: false });
+        await interaction.reply({ content: `Book **${title}** by **${author}** added to the list!`, ephemeral: false });
     }
 };

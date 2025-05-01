@@ -24,7 +24,12 @@ module.exports = {
         const embed = new EmbedBuilder()
             .setTitle('Books in the Bot')
             .setColor('#572194')
-            .setDescription(books.map((b, i) => `${i + 1}. ${b}`).join('\n'));
+            .setDescription(
+                books.map((b, i) =>
+                    `${i + 1}. **${b.title}** by *${b.author}*` +
+                    (b.goodreads ? ` [Goodreads](${b.goodreads})` : '')
+                ).join('\n')
+            );
 
         await interaction.reply({ embeds: [embed] });
     }

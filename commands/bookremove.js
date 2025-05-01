@@ -17,15 +17,24 @@ module.exports = {
         .setName('bookremove')
         .setDescription('Remove a book from the bot\'s book list!')
         .addStringOption(option =>
-            option.setName('name')
-                .setDescription('The name of the book to remove')
+            option.setName('title')
+                .setDescription('The title of the book to remove')
+                .setRequired(true)
+        )
+        .addStringOption(option =>
+            option.setName('author')
+                .setDescription('The author of the book to remove')
                 .setRequired(true)
         ),
     async execute(interaction) {
-        const bookName = interaction.options.getString('name').trim();
+        const title = interaction.options.getString('title').trim();
+        const author = interaction.options.getString('author').trim();
+
         let books = loadBooks();
 
-        const index = books.findIndex(b => b.toLowerCase() === bookName.toLowerCase());
+        const index = books.findIndex(
+            b => b.title.toLowerCase() === title.toLowerCase() && b.author.toLowerCase() === author.toLowerCase()
+        );
         if (index === -1) {
             await interaction.reply({ content: `That book was not found in the list.`, ephemeral: true });
             return;
@@ -34,6 +43,6 @@ module.exports = {
         books.splice(index, 1);
         saveBooks(books);
 
-        await interaction.reply({ content: `Book **${bookName}** has been removed from the list.`, ephemeral: false });
+        await interaction.reply({ content: `Book **${title}** by **${author}** has been removed from the list.`, ephemeral: false });
     }
 };
