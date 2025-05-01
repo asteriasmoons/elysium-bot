@@ -14,6 +14,8 @@ function formatDate(isoString) {
     return date.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
 }
 
+const divider = '☽☾   ┈┈    ꒰    𖤐    ꒱   ┈┈  ☽☾  ';
+
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('profile')
@@ -24,9 +26,7 @@ module.exports = {
                 .setRequired(false)
         ),
     async execute(interaction) {
-        // Get the user option, or fallback to the command user
         const user = interaction.options.getUser('user') || interaction.user;
-
         const profile = loadProfile(user.id);
 
         if (!profile) {
@@ -36,19 +36,21 @@ module.exports = {
             return;
         }
 
+        // Divider above, field name bolded
+        const profileText = 
+            `${divider}\n**Bio**\n${profile.bio || 'Not set'}\n\n` +
+            `${divider}\n**Current Read**\n${profile.currentRead || 'Not set'}\n\n` +
+            `${divider}\n**Reading Goal**\n${profile.readingGoal ? profile.readingGoal.toString() : 'Not set'}\n\n` +
+            `${divider}\n**Favorite Genre**\n${profile.favoriteGenre || 'Not set'}\n\n` +
+            `${divider}\n**Preferred Format**\n${profile.preferredFormat || 'Not set'}\n\n` +
+            `${divider}\n**Favorite Author**\n${profile.favoriteAuthor || 'Not set'}\n\n` +
+            `${divider}\n**Member Since**\n${profile.memberSince ? formatDate(profile.memberSince) : 'Unknown'}`;
+
         const embed = new EmbedBuilder()
             .setTitle(`${user.username}'s Book Profile`)
             .setColor('#4ac4d7')
             .setThumbnail(user.displayAvatarURL())
-            .addFields(
-                { name: 'Bio', value: profile.bio || 'Not set', inline: false },
-                { name: 'Current Read', value: profile.currentRead || 'Not set', inline: false },
-                { name: 'Reading Goal', value: profile.readingGoal ? profile.readingGoal.toString() : 'Not set', inline: false },
-                { name: 'Favorite Genre', value: profile.favoriteGenre || 'Not set', inline: false },
-                { name: 'Preferred Format', value: profile.preferredFormat || 'Not set', inline: false },
-                { name: 'Favorite Author', value: profile.favoriteAuthor || 'Not set', inline: false },
-                { name: 'Member Since', value: profile.memberSince ? formatDate(profile.memberSince) : 'Unknown', inline: false }
-            );
+            .addFields({ name: '\u200B', value: profileText, inline: false });
 
         await interaction.reply({ embeds: [embed] });
     },

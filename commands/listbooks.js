@@ -9,7 +9,7 @@ const fs = require('fs');
 const path = require('path');
 
 const booksPath = path.join(__dirname, '../books.json');
-const BOOKS_PER_PAGE = 5;
+const BOOKS_PER_PAGE = 3;
 
 function loadBooks() {
     if (!fs.existsSync(booksPath)) return [];
