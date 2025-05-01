@@ -1,4 +1,3 @@
-// review.js
 const {
 	SlashCommandBuilder,
 	EmbedBuilder,
@@ -21,6 +20,12 @@ const {
   }
   const norm = str => str.trim().toLowerCase();
   
+  function truncateWords(text, wordLimit = 4) {
+	const words = text.trim().split(/\s+/);
+	if (words.length <= wordLimit) return text;
+	return words.slice(0, wordLimit).join(' ') + '...';
+  }
+  
   function createListEmbed(reviews, page, perPage) {
 	const totalPages = Math.ceil(reviews.length / perPage);
 	const start = (page - 1) * perPage;
@@ -30,9 +35,26 @@ const {
 	return new EmbedBuilder()
 	  .setTitle(`All Book Reviews (Page ${page}/${totalPages})`)
 	  .setDescription(pageReviews.map((r, i) =>
-		`**${start + i + 1}.** ⭐ **${r.rating}** — "${r.book}" by ${r.author}\nby **${r.username}**\n${r.review}`
+		`**${start + i + 1}.** ⭐ **${r.rating}** — "${r.book}" by ${r.author}\nby **${r.username}**\n${truncateWords(r.review, 4)}`
 	  ).join('\n\n') || '*No reviews on this page.*')
 	  .setFooter({ text: `Showing ${start + 1}-${Math.min(end, reviews.length)} of ${reviews.length} reviews.` });
+  }
+  
+  function createFullReviewRow(reviews, page, perPage) {
+	const start = (page - 1) * perPage;
+	const end = start + perPage;
+	const pageReviews = reviews.slice(start, end);
+  
+	const row = new ActionRowBuilder();
+	pageReviews.forEach((r, i) => {
+	  row.addComponents(
+		new ButtonBuilder()
+		  .setCustomId(`full_list_${start + i}`)
+		  .setLabel('Show Full Review')
+		  .setStyle(ButtonStyle.Secondary) // Grey button
+	  );
+	});
+	return row;
   }
   
   function createPaginationRow(page, totalPages) {
@@ -48,6 +70,14 @@ const {
 		.setStyle(ButtonStyle.Primary)
 		.setDisabled(page === totalPages)
 	);
+  }
+  
+  function createReviewEmbedSingle(r, idx) {
+	return new EmbedBuilder()
+	  .setTitle(`Full Review #${idx + 1}`)
+	  .setDescription(
+		`⭐ **${r.rating}** — "${r.book}" by ${r.author}\nby **${r.username}**\n${r.review}`
+	  );
   }
   
   module.exports = {
@@ -136,11 +166,51 @@ const {
 		  return interaction.reply('No reviews found for that book.');
 		const embed = new EmbedBuilder()
 		  .setTitle(`Reviews for "${interaction.options.getString('book')}"`)
-		  .setDescription(bookReviews.slice(0, 3).map(r =>
-			`⭐ **${r.rating}** by **${r.username}**\n${r.review}\n*by ${r.author}*`
+		  .setDescription(bookReviews.slice(0, 3).map((r, idx) =>
+			`**${idx + 1}.** ⭐ **${r.rating}** by **${r.username}**\n${truncateWords(r.review, 4)}\n*by ${r.author}*`
 		  ).join('\n\n'))
 		  .setFooter({ text: `${bookReviews.length} review(s) found.` });
-		return interaction.reply({ embeds: [embed] });
+  
+		// Add a row of "Show Full Review" buttons
+		const row = new ActionRowBuilder();
+		bookReviews.slice(0, 3).forEach((r, idx) => {
+		  row.addComponents(
+			new ButtonBuilder()
+			  .setCustomId(`full_book_${reviews.indexOf(r)}`)
+			  .setLabel('Show Full Review')
+			  .setStyle(ButtonStyle.Secondary)
+		  );
+		});
+  
+		const reply = await interaction.reply({ embeds: [embed], components: [row] });
+  
+		const collector = reply.createMessageComponentCollector({
+		  componentType: ComponentType.Button,
+		  time: 60 * 1000,
+		  filter: i => !i.user.bot
+		});
+  
+		collector.on('collect', async i => {
+		  if (i.customId.startsWith('full_book_')) {
+			const idx = parseInt(i.customId.split('_')[2]);
+			const review = reviews[idx];
+			if (!review) return i.reply({ content: 'Review not found.', ephemeral: true });
+			return i.reply({ embeds: [createReviewEmbedSingle(review, idx)], allowedMentions: { repliedUser: false } });
+		  }
+		});
+  
+		collector.on('end', async () => {
+		  try {
+			await reply.edit({
+			  components: [
+				new ActionRowBuilder().addComponents(
+				  ...row.components.map(b => b.setDisabled(true))
+				)
+			  ]
+			});
+		  } catch (e) { }
+		});
+		return;
 	  }
   
 	  // AUTHOR
@@ -151,11 +221,51 @@ const {
 		  return interaction.reply('No reviews found for that author.');
 		const embed = new EmbedBuilder()
 		  .setTitle(`Reviews for books by "${interaction.options.getString('author')}"`)
-		  .setDescription(authorReviews.slice(0, 3).map(r =>
-			`⭐ **${r.rating}** for "${r.book}" by **${r.username}**\n${r.review}`
+		  .setDescription(authorReviews.slice(0, 3).map((r, idx) =>
+			`**${idx + 1}.** ⭐ **${r.rating}** for "${r.book}" by **${r.username}**\n${truncateWords(r.review, 4)}`
 		  ).join('\n\n'))
 		  .setFooter({ text: `${authorReviews.length} review(s) found.` });
-		return interaction.reply({ embeds: [embed] });
+  
+		// Add a row of "Show Full Review" buttons
+		const row = new ActionRowBuilder();
+		authorReviews.slice(0, 3).forEach((r, idx) => {
+		  row.addComponents(
+			new ButtonBuilder()
+			  .setCustomId(`full_author_${reviews.indexOf(r)}`)
+			  .setLabel('Show Full Review')
+			  .setStyle(ButtonStyle.Secondary)
+		  );
+		});
+  
+		const reply = await interaction.reply({ embeds: [embed], components: [row] });
+  
+		const collector = reply.createMessageComponentCollector({
+		  componentType: ComponentType.Button,
+		  time: 60 * 1000,
+		  filter: i => !i.user.bot
+		});
+  
+		collector.on('collect', async i => {
+		  if (i.customId.startsWith('full_author_')) {
+			const idx = parseInt(i.customId.split('_')[2]);
+			const review = reviews[idx];
+			if (!review) return i.reply({ content: 'Review not found.', ephemeral: true });
+			return i.reply({ embeds: [createReviewEmbedSingle(review, idx)], allowedMentions: { repliedUser: false } });
+		  }
+		});
+  
+		collector.on('end', async () => {
+		  try {
+			await reply.edit({
+			  components: [
+				new ActionRowBuilder().addComponents(
+				  ...row.components.map(b => b.setDisabled(true))
+				)
+			  ]
+			});
+		  } catch (e) { }
+		});
+		return;
 	  }
   
 	  // EDIT
@@ -207,29 +317,37 @@ const {
   
 		const embed = createListEmbed(reviews, page, perPage);
 		const row = createPaginationRow(page, totalPages);
+		const fullReviewRow = createFullReviewRow(reviews, page, perPage);
   
 		const reply = await interaction.reply({
 		  embeds: [embed],
-		  components: [row],
+		  components: [row, fullReviewRow],
 		  fetchReply: true,
 		  ephemeral: false
 		});
   
-		if (totalPages === 1) return; // No need for buttons
+		if (totalPages === 1) ; // No need for buttons
   
 		const collector = reply.createMessageComponentCollector({
 		  componentType: ComponentType.Button,
 		  time: 60 * 1000, // 1 minute
-		  filter: i => i.user.id === interaction.user.id
+		  filter: i => !i.user.bot
 		});
   
 		collector.on('collect', async i => {
 		  if (i.customId === 'prev' && page > 1) page--;
 		  else if (i.customId === 'next' && page < totalPages) page++;
+		  else if (i.customId.startsWith('full_list_')) {
+			const idx = parseInt(i.customId.split('_')[2]);
+			const review = reviews[idx];
+			if (!review) return i.reply({ content: 'Review not found.', ephemeral: true });
+			return i.reply({ embeds: [createReviewEmbedSingle(review, idx)], allowedMentions: { repliedUser: false } });
+		  }
   
+		  // Update both paginated list and buttons
 		  await i.update({
 			embeds: [createListEmbed(reviews, page, perPage)],
-			components: [createPaginationRow(page, totalPages)]
+			components: [createPaginationRow(page, totalPages), createFullReviewRow(reviews, page, perPage)]
 		  });
 		});
   
@@ -237,9 +355,14 @@ const {
 		  // Disable buttons after timeout
 		  try {
 			await reply.edit({
-			  components: [createPaginationRow(page, totalPages).setComponents(
-				...createPaginationRow(page, totalPages).components.map(b => b.setDisabled(true))
-			  )]
+			  components: [
+				createPaginationRow(page, totalPages).setComponents(
+				  ...createPaginationRow(page, totalPages).components.map(b => b.setDisabled(true))
+				),
+				createFullReviewRow(reviews, page, perPage).setComponents(
+				  ...createFullReviewRow(reviews, page, perPage).components.map(b => b.setDisabled(true))
+				)
+			  ]
 			});
 		  } catch (e) { /* message may have been deleted, ignore */ }
 		});
