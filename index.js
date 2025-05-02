@@ -11,6 +11,9 @@ const path = require('node:path');
 const { Client, Collection, GatewayIntentBits, REST, Routes } = require('discord.js');
 require('dotenv').config();
 
+// Add reminders module
+const reminders = require('./commands/reminders.js'); // <-- ADDED
+
 // Add message and thread intents!
 const client = new Client({
     intents: [
@@ -66,6 +69,9 @@ if (fs.existsSync(eventsPath)) {
 }
 // ---------------------------------------------------------------
 
+// ADD THIS LINE to setup reminders (after client is created, before login)
+reminders.init(client); // <-- ADDED
+
 client.on('interactionCreate', async interaction => {
     if (!interaction.isChatInputCommand()) return;
 
@@ -81,3 +87,4 @@ client.on('interactionCreate', async interaction => {
 });
 
 client.login(process.env.BOT_TOKEN);
+if (reminders.init) reminders.init(client);
