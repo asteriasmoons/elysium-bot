@@ -4,12 +4,15 @@ const path = require('path');
 
 const booksPath = path.join(__dirname, '../books.json');
 
-function loadBooks() {
-    if (!fs.existsSync(booksPath)) return [];
+// Load all books for all servers
+function loadAllBooks() {
+    if (!fs.existsSync(booksPath)) return {};
     return JSON.parse(fs.readFileSync(booksPath));
 }
-function saveBooks(books) {
-    fs.writeFileSync(booksPath, JSON.stringify(books, null, 2));
+
+// Save all books for all servers
+function saveAllBooks(allBooks) {
+    fs.writeFileSync(booksPath, JSON.stringify(allBooks, null, 2));
 }
 
 module.exports = {
@@ -27,21 +30,40 @@ module.exports = {
                 .setRequired(true)
         ),
     async execute(interaction) {
+        const guildId = interaction.guild.id;
         const title = interaction.options.getString('title').trim();
         const author = interaction.options.getString('author').trim();
 
-        let books = loadBooks();
+        // Load all books
+        let allBooks = loadAllBooks();
 
+        // Get this guild's book list
+        let books = allBooks[guildId] || [];
+
+        // Find the book by title and author
         const index = books.findIndex(
-            b => b.title.toLowerCase() === title.toLowerCase() && b.author.toLowerCase() === author.toLowerCase()
+            b => b.title.toLowerCase() === title.toLowerCase() &&
+                 b.author.toLowerCase() === author.toLowerCase()
         );
+
         if (index === -1) {
             await interaction.reply({ content: `That book was not found in the list.`, ephemeral: true });
             return;
         }
 
+        // Remove the book
         books.splice(index, 1);
-        saveBooks(books);
+
+        // Update the allBooks object
+        allBooks[guildId] = books;
+
+        // Optionally, remove the guild key if no books are left
+        if (books.length === 0) {
+            delete allBooks[guildId];
+        }
+
+        // Save the updated books file
+        saveAllBooks(allBooks);
 
         await interaction.reply({ content: `Book **${title}** by **${author}** has been removed from the list.`, ephemeral: false });
     }

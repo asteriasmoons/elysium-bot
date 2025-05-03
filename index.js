@@ -39,20 +39,8 @@ for (const file of commandFiles) {
     client.commands.set(command.data.name, command);
     commands.push(command.data.toJSON());
 }
-
-const rest = new REST({ version: '10' }).setToken(process.env.BOT_TOKEN);
-
-client.once('ready', async () => {
+client.once('ready', () => {
     console.log(`Logged in as ${client.user.tag}!`);
-    try {
-        await rest.put(
-            Routes.applicationGuildCommands(process.env.CLIENT_ID, process.env.GUILD_ID),
-            { body: commands },
-        );
-        console.log('Slash commands registered!');
-    } catch (error) {
-        console.error(error);
-    }
 });
 
 // --------- LOAD EVENTS FROM /events FOLDER (add this!) ----------
@@ -87,4 +75,3 @@ client.on('interactionCreate', async interaction => {
 });
 
 client.login(process.env.BOT_TOKEN);
-if (reminders.init) reminders.init(client);

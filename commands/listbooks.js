@@ -8,12 +8,19 @@ const {
 const fs = require('fs');
 const path = require('path');
 
-const booksPath = path.join(__dirname, '../books.json');
 const BOOKS_PER_PAGE = 3;
+const booksPath = path.join(__dirname, '../books.json');
 
-function loadBooks() {
-    if (!fs.existsSync(booksPath)) return [];
+// Load all books from the file
+function loadAllBooks() {
+    if (!fs.existsSync(booksPath)) return {};
     return JSON.parse(fs.readFileSync(booksPath));
+}
+
+// Load books for a specific guild
+function loadBooks(guildId) {
+    const allBooks = loadAllBooks();
+    return allBooks[guildId] || [];
 }
 
 function generateEmbed(books, page) {
@@ -32,7 +39,7 @@ function generateEmbed(books, page) {
             value: 
                 `**Title:** ${b.title}\n` +
                 `**Author:** ${b.author}\n` +
-                `**Good Reads Hyperlink:** ${b.goodreads ? `[Link](${b.goodreads})` : 'N/A'}`
+                `**Good Reads:** ${b.goodreads ? `[Link](${b.goodreads})` : 'N/A'}`
         });
     });
 
@@ -59,7 +66,8 @@ module.exports = {
         .setName('listbooks')
         .setDescription('List all books added to the bot!'),
     async execute(interaction) {
-        const books = loadBooks();
+        const guildId = interaction.guild.id;
+        const books = loadBooks(guildId);
 
         if (books.length === 0) {
             await interaction.reply('No books have been added yet!');
