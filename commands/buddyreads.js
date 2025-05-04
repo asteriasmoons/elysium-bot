@@ -523,11 +523,19 @@ const {
 		await session.save();
 		const buddy = session.participants.find(p => p.userId !== userId);
 		if (buddy) {
-		  try {
-			const buddyUser = await interaction.client.users.fetch(buddy.userId);
-			await buddyUser.send(`<:stahp:1291858085127913514> Your BuddyRead partner (${interaction.user.tag}) has **left** your session for **${session.book}**. The session is now unmatched.`);
-		  } catch (e) { }
-		}
+			try {
+				const buddyUser = await interaction.client.users.fetch(buddy.userId);
+			  
+				const leftEmbed = new EmbedBuilder()
+				  .setColor(0xb399ff)
+				  .setTitle('<:stahp:1291858085127913514> Buddy Read Update')
+				  .setDescription(`Your BuddyRead partner (${interaction.user.tag}) has **left** your session for **${session.book}**.\n\nThe session is now unmatched.`)
+				  .setFooter({ text: 'You can start a new session anytime.' })
+				  .setTimestamp();
+			  
+				await buddyUser.send({ embeds: [leftEmbed] });
+			  } catch (e) { }
+			}
 		await interaction.reply(buildEmbed({
 		  title: '<:stahp:1291858085127913514> You Left the Session',
 		  description: `You have left your BuddyRead session for **${session.book}**. Your buddy has been notified.`,
