@@ -126,7 +126,7 @@ const {
 	  function buildEmbed({ title, description, footer, ephemeral = false }) {
 		const embed = new EmbedBuilder()
 		  .setAuthor({ name: authorTag, iconURL: authorIcon })
-		  .setColor(0x6a5c91)
+		  .setColor(0xb399ff)
 		  .setTitle(title)
 		  .setDescription(description)
 		  .setFooter({ text: footer })
@@ -153,7 +153,7 @@ const {
 		const announcement = new BuddyReadAnnouncement({ userId, username, book, audience, note, serverId });
 		await announcement.save();
 		return interaction.reply(buildEmbed({
-		  title: '<:boox3:1367013296263270450> New BuddyRead Announcement!',
+		  title: '<:bk4:1368587956364771349> New BuddyRead Announcement!',
 		  description: `**${username}** is looking for a buddy to read **${book}**!\n**Audience:** ${audience}${note ? `\n**Note:** ${note}` : ''}`,
 		  footer: 'Find your next reading partner!',
 		  ephemeral: false
@@ -168,7 +168,7 @@ const {
 		title: 'Missing Announcement ID',
 		description: 'You must provide the announcement ID to delete.',
 		footer: 'BuddyRead Announcement',
-		color: 0xff0000,
+		color: 0xb399ff,
 		ephemeral: true
 	  }));
   
@@ -178,7 +178,7 @@ const {
 		title: 'Invalid ID',
 		description: 'Please provide a valid announcement ID (hex characters only).',
 		footer: 'BuddyRead Announcement',
-		color: 0xff0000,
+		color: 0xb399ff,
 		ephemeral: true
 	  }));
 	}
@@ -194,7 +194,7 @@ const {
 		title: 'Announcement Not Found',
 		description: 'No announcement found with that ID belonging to you.',
 		footer: 'BuddyRead Announcement',
-		color: 0xff0000,
+		color: 0xb399ff,
 		ephemeral: true
 	  }));
 	}
@@ -204,7 +204,7 @@ const {
 		title: 'Ambiguous ID',
 		description: 'More than one announcement matches that ID. Please use more characters.',
 		footer: 'BuddyRead Announcement',
-		color: 0xff0000,
+		color: 0xb399ff,
 		ephemeral: true
 	  }));
 	}
@@ -216,46 +216,40 @@ const {
 	  title: 'Announcement Deleted',
 	  description: `Your announcement for **${matches[0].book}** has been deleted.`,
 	  footer: 'BuddyRead Announcement',
-	  color: 0x4b9cd3,
+	  color: 0xb399ff,
 	  ephemeral: true
 	}));
   
 	  }	  
-	  
-    	 // ========== SEARCH ==========
-	  if (sub === 'search') {
-		const book = interaction.options.getString('book').trim();
-		const audience = interaction.options.getString('audience');
-		const query = { book: new RegExp(book, 'i') };
-		if (audience) query.audience = audience;
-		const results = await BuddyReadAnnouncement.find(query);
-		if (!results.length)
-		  return interaction.reply(buildEmbed({
-			title: '<a:noyes2:1339801001057849477> No Announcements Found',
-			description: `No buddy read announcements found for **${book}**${audience ? ` (${audience})` : ''}.`,
-			footer: 'Try another book or audience!'
-		  }));
+
+	  // ========== SEARCH ==========
+	if (sub === 'search') {
+	const book = interaction.options.getString('book').trim();
+	const audience = interaction.options.getString('audience');
+	const query = { book: new RegExp(book, 'i') };
+	if (audience) query.audience = audience;
   
-		const embed = new EmbedBuilder()
-		  .setAuthor({ name: authorTag, iconURL: authorIcon })
-		  .setTitle(`<:boox3:1367013296263270450> Buddy Read Announcements for "${book}"`)
-		  .setColor(0x4b9cd3)
-		  .setDescription(results.slice(0, 5).map((a, i) =>
-			`**${i + 1}. ${a.username}**\nAudience: ${a.audience}${a.note ? `\n_Note: ${a.note}_` : ''}\n`
-		  ).join('\n'))
-		  .setFooter({ text: 'Connect with a buddy using the buttons below!' })
-		  .setTimestamp();
+	const results = await BuddyReadAnnouncement.find(query);
   
-		const rows = results.slice(0, 5).map((a, i) =>
-		  new ActionRowBuilder().addComponents(
-			new ButtonBuilder()
-			  .setCustomId(`buddyread_connect_${a.userId}`)
-			  .setLabel(`Connect to ${a.username}`)
-			  .setStyle(ButtonStyle.Secondary)
-		  )
-		);
-		return interaction.reply({ embeds: [embed], components: rows, ephemeral: false });
-	  }
+	if (!results.length)
+	  return interaction.reply(buildEmbed({
+		title: '<a:noyes2:1339801001057849477> No Announcements Found',
+		description: `No buddy read announcements found for **${book}**${audience ? ` (${audience})` : ''}.`,
+		footer: 'Try another book or audience!'
+	  }));
+  
+	const embed = new EmbedBuilder()
+	  .setAuthor({ name: authorTag, iconURL: authorIcon })
+	  .setTitle(`<:bk4:1368587956364771349> Buddy Read Announcements for "${book}"`)
+	  .setColor(0xb399ff)
+	  .setDescription(results.slice(0, 5).map((a, i) =>
+		`**${i + 1}. ${a.username}**\nAudience: ${a.audience}${a.note ? `\n_Note: ${a.note}_` : ''}\n`
+	  ).join('\n'))
+	  .setFooter({ text: 'Use the `/buddyread pair` command to pair with a user!' })
+	  .setTimestamp();
+  
+	return interaction.reply({ embeds: [embed], ephemeral: false });
+  }  
   
 	  // ========== DM ==========
 	  if (sub === 'dm') {
@@ -275,7 +269,7 @@ const {
 		else {
 		  if (!bookTitle)
 			return interaction.reply(buildEmbed({
-			  title: '<:boox3:1367013296263270450> Multiple Sessions Found',
+			  title: '<:bk4:1368587956364771349> Multiple Sessions Found',
 			  description: `You are in multiple buddyread sessions. Please specify the book with the \`book\` option.\n\n${sessions.map(s => `• ${s.book}`).join('\n')}`,
 			  footer: 'Specify the book title!'
 			}));
@@ -308,7 +302,7 @@ const {
   
 		  // Create the embed
 		  const embed = new EmbedBuilder()
-			.setColor(0x6a5acd)
+			.setColor(0xb399ff)
 			.setTitle('<:zemail:1368337647554134067> BuddyRead Message')
 			.setDescription(`**Book:** ${session.book}`)
 			.addFields(
@@ -354,7 +348,7 @@ const {
 		else {
 		  if (!bookTitle)
 			return interaction.reply(buildEmbed({
-			  title: '<:boox3:1367013296263270450> Multiple Sessions Found',
+			  title: '<:bk4:1368587956364771349> Multiple Sessions Found',
 			  description: `You are in multiple buddyread sessions. Please specify the book with the \`book\` option.\n\n${sessions.map(s => `• ${s.book}`).join('\n')}`,
 			  footer: 'Specify the book title!'
 			}));
@@ -392,15 +386,15 @@ const {
   
 	if (!announcements.length)
 	  return interaction.reply(buildEmbed({
-		title: '<:boox3:1367013296263270450> No Announcements Found',
+		title: '<:bk4:1368587956364771349> No Announcements Found',
 		description: 'No BuddyRead announcements are currently posted!',
 		footer: 'Be the first to announce!'
 	  }));
   
 	const embed = new EmbedBuilder()
 	  .setAuthor({ name: authorTag, iconURL: authorIcon })
-	  .setTitle('<:boox3:1367013296263270450> Recent BuddyRead Announcements')
-	  .setColor(0x4b9cd3)
+	  .setTitle('<:bk4:1368587956364771349> Recent BuddyRead Announcements')
+	  .setColor(0xb399ff)
 	  .setDescription(
 		announcements.map((a, i) =>
 		  `**${i + 1}. [ID: \`${a._id.toString().slice(0, 6)}\`] ${a.book}**\n` +
@@ -428,15 +422,15 @@ const {
 		const sessions = await BuddyReadSession.find({ 'participants.userId': userId }).sort({ startedAt: -1 });
 		if (!sessions.length)
 		  return interaction.reply(buildEmbed({
-			title: '<:boox3:1367013296263270450> No Sessions Found',
+			title: '<:bk4:1368587956364771349> No Sessions Found',
 			description: 'You are not in any BuddyRead sessions yet!',
 			footer: 'Start a new session to begin!'
 		  }));
   
 		const embed = new EmbedBuilder()
 		  .setAuthor({ name: authorTag, iconURL: authorIcon })
-		  .setTitle('<:boox3:1367013296263270450> Your BuddyRead Sessions')
-		  .setColor(0x6a5c91)
+		  .setTitle('<:bk4:1368587956364771349> Your BuddyRead Sessions')
+		  .setColor(0xb399ff)
 		  .setDescription(
 			sessions.map((s, i) => {
 			  const buddy = s.participants.find(p => p.userId !== userId);
@@ -458,7 +452,7 @@ const {
 		const sessions = await BuddyReadSession.find(query);
 		if (!sessions.length)
 		  return interaction.reply(buildEmbed({
-			title: '<:boox3:1367013296263270450> No Active Sessions',
+			title: '<:bk4:1368587956364771349> No Active Sessions',
 			description: book ? `You have no active BuddyRead session for **${book}**.` : 'You have no active BuddyRead sessions.',
 			footer: 'Start a new session to get reading!'
 		  }));
@@ -467,8 +461,8 @@ const {
 		  const buddy = session.participants.find(p => p.userId !== userId);
 		  return new EmbedBuilder()
 			.setAuthor({ name: authorTag, iconURL: authorIcon })
-			.setTitle(`<:boox3:1367013296263270450> BuddyRead: ${session.book}`)
-			.setColor(0x6a5c91)
+			.setTitle(`<:bk4:1368587956364771349> BuddyRead: ${session.book}`)
+			.setColor(0xb399ff)
 			.addFields(
 			  { name: 'Buddy', value: buddy ? buddy.username : 'N/A', inline: false },
 			  { name: 'Audience', value: session.audience, inline: false },
@@ -489,7 +483,7 @@ const {
 		const session = await BuddyReadSession.findOne({ status: 'active', 'participants.userId': userId, book: new RegExp(`^${book}$`, 'i') });
 		if (!session)
 		  return interaction.reply(buildEmbed({
-			title: '<:boox3:1367013296263270450> Session Not Found',
+			title: '<:bk4:1368587956364771349> Session Not Found',
 			description: `No active BuddyRead session found for **${book}**.`,
 			footer: 'Check your active sessions!'
 		  }));
@@ -519,7 +513,7 @@ const {
 		const session = await BuddyReadSession.findOne({ status: 'active', 'participants.userId': userId, book: new RegExp(`^${book}$`, 'i') });
 		if (!session)
 		  return interaction.reply(buildEmbed({
-			title: '<:boox3:1367013296263270450> Session Not Found',
+			title: '<:bk4:1368587956364771349> Session Not Found',
 			description: `No active BuddyRead session found for **${book}**.`,
 			footer: 'Check your active sessions!'
 		  }));
@@ -541,89 +535,109 @@ const {
 		}));
 		return;
 	  }
-  
-	  // ========== PAIR ==========
-	  if (sub === 'pair') {
-		try {
-		  const inputId = interaction.options.getString('id').trim();
-  
-		  // Find the announcement by matching the first 6 chars of _id
-		  const announcements = await BuddyReadAnnouncement.find({});
-		  const announcement = announcements.find(a => a._id.toString().startsWith(inputId));
-  
-		  if (!announcement)
-			return interaction.reply({
-			  content: `No announcement found with ID \`${inputId}\`.`,
-			  ephemeral: true
-			});
-  
-		  if (announcement.userId === interaction.user.id)
-			return interaction.reply({
-			  content: "You can't pair with your own announcement.",
-			  ephemeral: true
-			});
-  
-		  // Check for existing session for this book and these users
-		  const existingSession = await BuddyReadSession.findOne({
-			book: new RegExp(`^${announcement.book}$`, 'i'),
-			'participants.userId': { $all: [announcement.userId, interaction.user.id] },
-			status: 'active'
-		  });
-  
-		  if (existingSession)
-			return interaction.reply({
-			  content: "You're already paired with this user for this book.",
-			  ephemeral: true
-			});
 
-			const session = new BuddyReadSession({
-				book: announcement.book,
-				book_normalized: normalizeBookTitle(announcement.book),
-				audience: announcement.audience,
-				participants: [
-				  { userId: announcement.userId, username: announcement.username },
-				  { userId: interaction.user.id, username: interaction.user.tag }
-				],
-				serverId: interaction.guildId, // <-- Always present in a server command!
-				status: 'active'
-			  });
-			  await session.save();			  
+	  // ========== PAIR ==========
+	if (sub === 'pair') {
+	try {
+	  const inputId = interaction.options.getString('id').trim();
+	  // Find the announcement by matching the first 6 chars of _id
+	  const announcements = await BuddyReadAnnouncement.find({});
+	  const announcement = announcements.find(a => a._id.toString().startsWith(inputId));
+	  if (!announcement)
+		return interaction.reply({
+		  content: `No announcement found with ID \`${inputId}\`.`,
+		  ephemeral: true
+		});
+	  if (announcement.userId === interaction.user.id)
+		return interaction.reply({
+		  content: "You can't pair with your own announcement.",
+		  ephemeral: true
+		});
+	  // Check for existing session for this book and these users
+	  const existingSession = await BuddyReadSession.findOne({
+		book: new RegExp(`^${announcement.book}$`, 'i'),
+		'participants.userId': { $all: [announcement.userId, interaction.user.id] },
+		status: 'active'
+	  });
+	  if (existingSession)
+		return interaction.reply({
+		  content: "You're already paired with this user for this book.",
+		  ephemeral: true
+		});
   
-		  // Remove the announcement (so it's not available to others)
-		  await BuddyReadAnnouncement.deleteOne({ _id: announcement._id });
-  
-		  // DM both users
-		  try {
-			const announcer = await interaction.client.users.fetch(announcement.userId);
-			await announcer.send(
-			  `<:boox3:1367013296263270450> You have been paired for a buddy read!\n\n**Book:** ${announcement.book}\n**With:** ${interaction.user.tag}\n**Audience:** ${announcement.audience}${announcement.note ? `\n**Note:** ${announcement.note}` : ''}`
-			);
-			await interaction.user.send(
-			  `<:boox3:1367013296263270450> You have been paired for a buddy read!\n\n**Book:** ${announcement.book}\n**With:** ${announcement.username}\n**Audience:** ${announcement.audience}${announcement.note ? `\n**Note:** ${announcement.note}` : ''}`
-			);
-		  } catch (e) {
-			// Ignore DM error
-		  }
-  
-		  // Confirm to the user
-		  return interaction.reply({
-			content: `You are now paired with **${announcement.username}** for **${announcement.book}**! Both of you have been notified.`,
-			ephemeral: true
-		  });
-		} catch (err) {
-		  console.error('Error in /buddyread pair:', err);
-		  return interaction.reply({
-			content: 'An error occurred while pairing. Please contact an admin.',
-			ephemeral: true
-		  });
-		}
+	  // Build session data, set serverId only if in a server
+	  const sessionData = {
+		book: announcement.book,
+		book_normalized: normalizeBookTitle(announcement.book),
+		audience: announcement.audience,
+		participants: [
+		  { userId: announcement.userId, username: announcement.username },
+		  { userId: interaction.user.id, username: interaction.user.tag }
+		],
+		status: 'active'
+	  };
+	  if (interaction.guildId) {
+		sessionData.serverId = interaction.guildId;
 	  }
   
-	  // fallback
-	  await interaction.reply(buildEmbed({
-		title: '<:zrmark1:1368337595724992572> Unknown Command',
-		description: 'Unknown subcommand.',
-		footer: 'Please use a valid buddyread subcommand.'
-	  }));
+	  const session = new BuddyReadSession(sessionData);
+	  await session.save();
+  
+	  // Remove the announcement so it's not available to others
+	  await BuddyReadAnnouncement.deleteOne({ _id: announcement._id });
+
+	  // DM both users
+	try {
+	const announcer = await interaction.client.users.fetch(announcement.userId);
+  
+	// Create embed for announcer
+	const announcerEmbed = new EmbedBuilder()
+	  .setColor(0xb399ff) // or any color you like
+	  .setTitle('<:bk4:1368587956364771349> You have been paired for a buddy read!')
+	  .addFields(
+		{ name: 'Book', value: announcement.book, inline: false },
+		{ name: 'With', value: interaction.user.tag, inline: false },
+		{ name: 'Audience', value: announcement.audience, inline: false }
+	  )
+	  .setFooter({ text: 'Happy reading!' });
+	if (announcement.note) {
+	  announcerEmbed.addFields({ name: 'Note', value: announcement.note, inline: false });
 	}
-  };  
+  
+	// Create embed for the user who paired
+	const userEmbed = new EmbedBuilder()
+	  .setColor(0xb399ff)
+	  .setTitle('<:bk4:1368587956364771349> You have been paired for a buddy read!')
+	  .addFields(
+		{ name: 'Book', value: announcement.book, inline: false },
+		{ name: 'With', value: announcement.username, inline: false },
+		{ name: 'Audience', value: announcement.audience, inline: false }
+	  )
+	  .setFooter({ text: 'Happy reading!' });
+	if (announcement.note) {
+	  userEmbed.addFields({ name: 'Note', value: announcement.note, inline: false });
+	}
+  
+	// Send the embeds as DMs
+	await announcer.send({ embeds: [announcerEmbed] });
+	await interaction.user.send({ embeds: [userEmbed] });
+  
+  } catch (e) {
+	// Ignore DM error
+  }
+  
+	  // Confirm to the user
+	  return interaction.reply({
+		content: `You are now paired with **${announcement.username}** for **${announcement.book}**! Both of you have been notified.`,
+		ephemeral: true
+	  });
+	} catch (err) {
+	  console.error('Error in /buddyread pair:', err);
+	  return interaction.reply({
+		content: 'An error occurred while pairing. Please contact an admin.',
+		ephemeral: true
+	  });
+	 }
+   };
+  }
+	} 

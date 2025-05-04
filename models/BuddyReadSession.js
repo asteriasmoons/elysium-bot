@@ -8,7 +8,7 @@ const buddyReadSessionSchema = new mongoose.Schema({
     userId: String,
     username: String
   }],
-  serverId: { type: String, required: true },
+  serverId: { type: String, required: false },
   startedAt: { type: Date, default: Date.now },
   endedAt: Date,
   status: { type: String, enum: ['active', 'finished', 'unmatched'], default: 'active' }
