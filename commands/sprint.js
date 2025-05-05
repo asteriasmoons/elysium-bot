@@ -1,20 +1,25 @@
-const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
-const fs = require('fs');
-const leaderboardPath = './leaderboard.json';
-const configPath = './sprint-config.json';
+const { SlashCommandBuilder, EmbedBuilder, PermissionsBitField } = require('discord.js');
+const Sprint = require('../models/Sprint');
+const Leaderboard = require('../models/Leaderboard');
+const SprintConfig = require('../models/SprintConfig');
 
-// --- Helper function for designated sprint channel ---
-function getSprintChannel(interaction) {
+// Helper: Get designated sprint channel (uses MongoDB now)
+async function getSprintChannel(interaction) {
   if (!interaction.guild) return interaction.channel;
-  let config = {};
-  if (fs.existsSync(configPath)) {
-    config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
-  }
-  const channelId = config[interaction.guild.id];
-  if (channelId) {
-    return interaction.guild.channels.cache.get(channelId) || interaction.channel;
+  const config = await SprintConfig.findOne({ guildId: interaction.guild.id });
+  if (config) {
+    const channel = interaction.guild.channels.cache.get(config.channelId);
+    if (channel) return channel;
   }
   return interaction.channel;
+}
+
+// Helper: Find active sprint for this guild/DM
+async function findActiveSprint(interaction) {
+  const query = interaction.guild
+    ? { guildId: interaction.guild.id, active: true }
+    : { guildId: null, channelId: interaction.channel.id, active: true };
+  return await Sprint.findOne(query);
 }
 
 module.exports = {
@@ -55,14 +60,19 @@ module.exports = {
     .addSubcommand(sub =>
       sub.setName('end')
         .setDescription('Manually end the current sprint and show results')
+    )
+    .addSubcommand(sub =>
+      sub.setName('leaderboard')
+        .setDescription('Show the sprint leaderboard')
     ),
 
   async execute(interaction) {
-    const sprintState = interaction.client.sprintState;
+    const sub = interaction.options.getSubcommand();
 
     // /sprint start
-    if (interaction.options.getSubcommand() === 'start') {
-      if (sprintState.active) {
+    if (sub === 'start') {
+      const existing = await findActiveSprint(interaction);
+      if (existing) {
         return interaction.reply({
           embeds: [
             new EmbedBuilder()
@@ -70,13 +80,12 @@ module.exports = {
               .setDescription('A sprint is already active! Use `/sprint join` to participate.')
               .setColor('#4ac4d7')
           ],
+          ephemeral: true
         });
       }
 
       const durationInput = interaction.options.getString('duration').trim().toLowerCase();
       let durationMinutes = 0;
-
-      // Parse duration
       if (/^\d+\s*m(in)?$/.test(durationInput)) {
         durationMinutes = parseInt(durationInput);
       } else if (/^\d+\s*h(ours?)?$/.test(durationInput)) {
@@ -91,6 +100,7 @@ module.exports = {
               .setDescription('Please provide a valid duration (e.g., `30m` or `1h`).')
               .setColor('#4ac4d7')
           ],
+          ephemeral: true
         });
       }
 
@@ -102,24 +112,20 @@ module.exports = {
               .setDescription('Sprint duration must be between 5 and 120 minutes.')
               .setColor('#4ac4d7')
           ],
+          ephemeral: true
         });
       }
 
-      sprintState.active = true;
-      sprintState.duration = durationMinutes;
-      sprintState.endTime = Date.now() + durationMinutes * 60 * 1000;
-      sprintState.participants = {};
+      // Create sprint in DB
+      const sprint = await Sprint.create({
+        guildId: interaction.guild ? interaction.guild.id : null,
+        channelId: interaction.channel.id,
+        active: true,
+        duration: durationMinutes,
+        endTime: new Date(Date.now() + durationMinutes * 60 * 1000),
+        participants: []
+      });
 
-      // Clear any previous timeouts
-      if (sprintState.timeout) {
-        clearTimeout(sprintState.timeout);
-        sprintState.timeout = null;
-      }
-      if (sprintState.warningTimeout) {
-        clearTimeout(sprintState.warningTimeout);
-        sprintState.warningTimeout = null;
-      }
-      
       await interaction.reply({
         embeds: [
           new EmbedBuilder()
@@ -129,64 +135,72 @@ module.exports = {
         ]
       });
 
-      // Schedule 5-minute warning if sprint is longer than 5 minutes
-      if (durationMinutes > 5) {
-        sprintState.warningTimeout = setTimeout(async () => {
-          try {
-            const sprintChannel = getSprintChannel(interaction); // <-- NEW
-            await sprintChannel.send({
-              embeds: [
-                new EmbedBuilder()
-                  .setTitle('⏰ 5 Minutes Left!')
-                  .setDescription('Only 5 minutes left in the sprint! Finish strong! 💪')
-                  .setColor('#4ac4d7')
-              ]
-            });
-          } catch (err) {
-            // Ignore errors (e.g. channel deleted)
-          }
-        }, (durationMinutes - 5) * 60 * 1000);
-      }
+      // Schedule warning and finish using setTimeout, manage timeouts in client.sprintTimeouts
+      const warningTimeout = durationMinutes > 5
+        ? setTimeout(async () => {
+            try {
+              // Double-check if sprint is still active
+              const sprintCheck = await Sprint.findById(sprint._id);
+              if (!sprintCheck || !sprintCheck.active) return;
+              const sprintChannel = await getSprintChannel(interaction);
+              await sprintChannel.send({
+                embeds: [
+                  new EmbedBuilder()
+                    .setTitle('<a:zxpin3:1368804727395061760> 5 Minutes Left!')
+                    .setDescription('Only 5 minutes left in the sprint! Finish strong!')
+                    .setColor('#4ac4d7')
+                ]
+              });
+            } catch (err) {}
+          }, (durationMinutes - 5) * 60 * 1000)
+        : null;
 
-      // Schedule end-of-sprint message with results and leaderboard update
-      sprintState.timeout = setTimeout(async () => {
-        sprintState.active = false;
-        sprintState.endTime = null;
-        sprintState.duration = 0;
-        sprintState.timeout = null;
-        sprintState.warningTimeout = null;
-
-        // --- Update leaderboard ---
-        let leaderboard = {};
-        if (fs.existsSync(leaderboardPath)) {
-          leaderboard = JSON.parse(fs.readFileSync(leaderboardPath, 'utf8'));
+      const endTimeout = setTimeout(async () => {
+        // Remove timeouts from the map
+        const timeouts = interaction.client.sprintTimeouts.get(sprint._id.toString());
+        if (timeouts) {
+          if (timeouts.warningTimeout) clearTimeout(timeouts.warningTimeout);
+          // No need to clear endTimeout here, it's this function!
+          interaction.client.sprintTimeouts.delete(sprint._id.toString());
         }
-        for (const [userId, p] of Object.entries(sprintState.participants)) {
-          if (p.endingPages !== null && p.endingPages !== undefined) {
+
+        const sprintDoc = await Sprint.findById(sprint._id);
+        if (!sprintDoc || !sprintDoc.active) return;
+
+        sprintDoc.active = false;
+        await sprintDoc.save();
+
+        // Update leaderboard
+        for (const p of sprintDoc.participants) {
+          if (p.endingPages !== undefined && p.endingPages !== null) {
             const pagesRead = p.endingPages - p.startingPages;
-            if (!leaderboard[userId]) leaderboard[userId] = 0;
-            leaderboard[userId] += pagesRead;
+            if (pagesRead > 0) {
+              await Leaderboard.findOneAndUpdate(
+                { userId: p.userId },
+                { $inc: { totalPages: pagesRead } },
+                { upsert: true }
+              );
+            }
           }
         }
-        fs.writeFileSync(leaderboardPath, JSON.stringify(leaderboard, null, 2));
 
-        // --- Build results message ---
+        // Build results message
         let results = '';
-        if (Object.keys(sprintState.participants).length === 0) {
+        if (sprintDoc.participants.length === 0) {
           results = 'No one joined this sprint!';
         } else {
-          results = Object.entries(sprintState.participants).map(([userId, p]) => {
-            if (p.endingPages !== null && p.endingPages !== undefined) {
+          results = sprintDoc.participants.map(p => {
+            if (p.endingPages !== undefined && p.endingPages !== null) {
               const pagesRead = p.endingPages - p.startingPages;
-              return `<@${userId}>: ${p.startingPages} → ${p.endingPages} (**${pagesRead} pages**)`;
+              return `<@${p.userId}>: ${p.startingPages} → ${p.endingPages} (**${pagesRead} pages**)`;
             } else {
-              return `<@${userId}>: started at ${p.startingPages}, did not submit ending page.`;
+              return `<@${p.userId}>: started at ${p.startingPages}, did not submit ending page.`;
             }
           }).join('\n');
         }
 
         try {
-          const sprintChannel = getSprintChannel(interaction); // <-- NEW
+          const sprintChannel = await getSprintChannel(interaction);
           await sprintChannel.send({
             embeds: [
               new EmbedBuilder()
@@ -195,18 +209,19 @@ module.exports = {
                 .setColor('#4ac4d7')
             ]
           });
-        } catch (err) {
-          // Ignore errors (e.g. channel deleted)
-        }
-        sprintState.participants = {};
+        } catch (err) {}
       }, durationMinutes * 60 * 1000);
+
+      // Store timeouts in client map
+      interaction.client.sprintTimeouts.set(sprint._id.toString(), { warningTimeout, endTimeout });
 
       return;
     }
 
     // /sprint join
-    if (interaction.options.getSubcommand() === 'join') {
-      if (!sprintState.active) {
+    if (sub === 'join') {
+      const sprint = await findActiveSprint(interaction);
+      if (!sprint) {
         return interaction.reply({
           embeds: [
             new EmbedBuilder()
@@ -214,12 +229,14 @@ module.exports = {
               .setDescription('There is no active sprint to join. Start one with `/sprint start`!')
               .setColor('#4ac4d7')
           ],
+          ephemeral: true
         });
       }
+
       const userId = interaction.user.id;
       const startingPages = interaction.options.getInteger('starting_pages');
 
-      if (sprintState.participants[userId]) {
+      if (sprint.participants.some(p => p.userId === userId)) {
         return interaction.reply({
           embeds: [
             new EmbedBuilder()
@@ -227,19 +244,22 @@ module.exports = {
               .setDescription('You have already joined this sprint!')
               .setColor('#4ac4d7')
           ],
+          ephemeral: true
         });
       }
 
-      sprintState.participants[userId] = {
+      sprint.participants.push({
+        userId,
         username: interaction.user.username,
         startingPages,
-        endingPages: null,
-      };
+        endingPages: null
+      });
+      await sprint.save();
 
       return interaction.reply({
         embeds: [
           new EmbedBuilder()
-            .setTitle('Joined Sprint! <:boox5:1291879709873016842>')
+            .setTitle('Joined Sprint! <:pcbuk:1368854535220494367>')
             .setDescription(`You joined the sprint at page **${startingPages}**!`)
             .setColor('#4ac4d7')
         ],
@@ -247,8 +267,9 @@ module.exports = {
     }
 
     // /sprint finish
-    if (interaction.options.getSubcommand() === 'finish') {
-      if (!sprintState.active) {
+    if (sub === 'finish') {
+      const sprint = await findActiveSprint(interaction);
+      if (!sprint) {
         return interaction.reply({
           embeds: [
             new EmbedBuilder()
@@ -256,12 +277,14 @@ module.exports = {
               .setDescription('There is no active sprint running.')
               .setColor('#4ac4d7')
           ],
+          ephemeral: true
         });
       }
       const userId = interaction.user.id;
       const endingPages = interaction.options.getInteger('ending_pages');
+      const participant = sprint.participants.find(p => p.userId === userId);
 
-      if (!sprintState.participants[userId]) {
+      if (!participant) {
         return interaction.reply({
           embeds: [
             new EmbedBuilder()
@@ -269,10 +292,12 @@ module.exports = {
               .setDescription('You have not joined this sprint yet. Use `/sprint join` first!')
               .setColor('#4ac4d7')
           ],
+          ephemeral: true
         });
       }
 
-      sprintState.participants[userId].endingPages = endingPages;
+      participant.endingPages = endingPages;
+      await sprint.save();
 
       return interaction.reply({
         embeds: [
@@ -285,8 +310,9 @@ module.exports = {
     }
 
     // /sprint timeleft
-    if (interaction.options.getSubcommand() === 'timeleft') {
-      if (!sprintState.active) {
+    if (sub === 'timeleft') {
+      const sprint = await findActiveSprint(interaction);
+      if (!sprint) {
         return interaction.reply({
           embeds: [
             new EmbedBuilder()
@@ -294,10 +320,11 @@ module.exports = {
               .setDescription('There is no active sprint running.')
               .setColor('#4ac4d7')
           ],
+          ephemeral: true
         });
       }
 
-      const msLeft = sprintState.endTime - Date.now();
+      const msLeft = sprint.endTime - Date.now();
       if (msLeft <= 0) {
         return interaction.reply({
           embeds: [
@@ -316,17 +343,16 @@ module.exports = {
       return interaction.reply({
         embeds: [
           new EmbedBuilder()
-            .setTitle('Sprint Time Left')
-            .setDescription(`⏳ **${minutes}** minutes **${seconds}** seconds left!`)
+            .setTitle('<a:zxpin3:1368804727395061760> Sprint Time Left')
+            .setDescription(`**${minutes}** minutes **${seconds}** seconds left!`)
             .setColor('#4ac4d7')
         ],
       });
     }
 
     // /sprint end
-    if (interaction.options.getSubcommand() === 'end') {
-      // Permission check: only allow users with Manage Guild
-      if (!interaction.member.permissions.has('Administrator')) {
+    if (sub === 'end') {
+      if (interaction.guild && !interaction.member.permissions.has(PermissionsBitField.Flags.Administrator)) {
         return interaction.reply({
           embeds: [
             new EmbedBuilder()
@@ -334,10 +360,11 @@ module.exports = {
               .setDescription('Only server admins can end the sprint early.')
               .setColor('#4ac4d7')
           ],
+          ephemeral: true
         });
       }
-
-      if (!sprintState.active) {
+      const sprint = await findActiveSprint(interaction);
+      if (!sprint) {
         return interaction.reply({
           embeds: [
             new EmbedBuilder()
@@ -345,55 +372,51 @@ module.exports = {
               .setDescription('There is no active sprint to end.')
               .setColor('#4ac4d7')
           ],
+          ephemeral: true
         });
       }
 
-      // Clear any running timeouts
-      if (sprintState.timeout) {
-        clearTimeout(sprintState.timeout);
-        sprintState.timeout = null;
-      }
-      if (sprintState.warningTimeout) {
-        clearTimeout(sprintState.warningTimeout);
-        sprintState.warningTimeout = null;
+      // Clear any timeouts for this sprint
+      const timeouts = interaction.client.sprintTimeouts.get(sprint._id.toString());
+      if (timeouts) {
+        if (timeouts.warningTimeout) clearTimeout(timeouts.warningTimeout);
+        if (timeouts.endTimeout) clearTimeout(timeouts.endTimeout);
+        interaction.client.sprintTimeouts.delete(sprint._id.toString());
       }
 
-      // --- Update leaderboard ---
-      let leaderboard = {};
-      if (fs.existsSync(leaderboardPath)) {
-        leaderboard = JSON.parse(fs.readFileSync(leaderboardPath, 'utf8'));
-      }
-      for (const [userId, p] of Object.entries(sprintState.participants)) {
-        if (p.endingPages !== null && p.endingPages !== undefined) {
+      sprint.active = false;
+      await sprint.save();
+
+      // Update leaderboard
+      for (const p of sprint.participants) {
+        if (p.endingPages !== undefined && p.endingPages !== null) {
           const pagesRead = p.endingPages - p.startingPages;
-          if (!leaderboard[userId]) leaderboard[userId] = 0;
-          leaderboard[userId] += pagesRead;
+          if (pagesRead > 0) {
+            await Leaderboard.findOneAndUpdate(
+              { userId: p.userId },
+              { $inc: { totalPages: pagesRead } },
+              { upsert: true }
+            );
+          }
         }
       }
-      fs.writeFileSync(leaderboardPath, JSON.stringify(leaderboard, null, 2));
 
-      // --- Build results message ---
+      // Build results message
       let results = '';
-      if (Object.keys(sprintState.participants).length === 0) {
+      if (sprint.participants.length === 0) {
         results = 'No one joined this sprint!';
       } else {
-        results = Object.entries(sprintState.participants).map(([userId, p]) => {
-          if (p.endingPages !== null && p.endingPages !== undefined) {
+        results = sprint.participants.map(p => {
+          if (p.endingPages !== undefined && p.endingPages !== null) {
             const pagesRead = p.endingPages - p.startingPages;
-            return `<@${userId}>: ${p.startingPages} → ${p.endingPages} (**${pagesRead} pages**)`;
+            return `<@${p.userId}>: ${p.startingPages} → ${p.endingPages} (**${pagesRead} pages**)`;
           } else {
-            return `<@${userId}>: started at ${p.startingPages}, did not submit ending page.`;
+            return `<@${p.userId}>: started at ${p.startingPages}, did not submit ending page.`;
           }
         }).join('\n');
       }
 
-      sprintState.active = false;
-      sprintState.endTime = null;
-      sprintState.duration = 0;
-      sprintState.participants = {};
-
-      // Post results in designated channel
-      const sprintChannel = getSprintChannel(interaction); // <-- NEW
+      const sprintChannel = await getSprintChannel(interaction);
       await sprintChannel.send({
         embeds: [
           new EmbedBuilder()
@@ -402,10 +425,46 @@ module.exports = {
             .setColor('#4ac4d7')
         ]
       });
+
       await interaction.reply({
-        content: 'Sprint results posted in the designated sprint channel!',
+        embeds: [
+          new EmbedBuilder().setColor('#4ac4d7').setDescription('Sprint results posted in the designated sprint channel!')
+        ],
+        ephemeral: true
       });
       return;
+    }
+
+    // /sprint leaderboard
+    if (sub === 'leaderboard') {
+      // Get top 10 users by totalPages
+      const top = await Leaderboard.find().sort({ totalPages: -1 }).limit(10);
+
+      if (!top.length) {
+        return interaction.reply({
+          embeds: [
+            new EmbedBuilder()
+              .setTitle('Sprint Leaderboard')
+              .setDescription('No one is on the leaderboard yet! Join a sprint to get started.')
+              .setColor('#4ac4d7')
+          ]
+        });
+      }
+
+      let desc = '';
+      for (let i = 0; i < top.length; i++) {
+        const entry = top[i];
+        desc += `**${i + 1}.** <@${entry.userId}> — **${entry.totalPages}** pages\n`;
+      }
+
+      return interaction.reply({
+        embeds: [
+          new EmbedBuilder()
+            .setTitle('<:pcbuk:1368854535220494367> Sprint Leaderboard')
+            .setDescription(desc)
+            .setColor('#4ac4d7')
+        ]
+      });
     }
   },
 };

@@ -6,18 +6,8 @@ const {
 	ButtonStyle,
 	ComponentType
   } = require('discord.js');
-  const fs = require('fs');
-  const path = require('path');
+  const Review = require('../models/Review.js'); // Adjust path as needed
   
-  const reviewsPath = path.join(__dirname, 'reviews.json');
-  
-  function loadReviews() {
-	if (!fs.existsSync(reviewsPath)) fs.writeFileSync(reviewsPath, '[]');
-	return JSON.parse(fs.readFileSync(reviewsPath));
-  }
-  function saveReviews(data) {
-	fs.writeFileSync(reviewsPath, JSON.stringify(data, null, 2));
-  }
   const norm = str => str.trim().toLowerCase();
   
   function truncateWords(text, wordLimit = 4) {
@@ -27,7 +17,7 @@ const {
   }
   
   function createListEmbed(reviews, page, perPage) {
-	const totalPages = Math.ceil(reviews.length / perPage);
+	const totalPages = Math.ceil(reviews.length / perPage) || 1;
 	const start = (page - 1) * perPage;
 	const end = start + perPage;
 	const pageReviews = reviews.slice(start, end);
@@ -51,7 +41,7 @@ const {
 		new ButtonBuilder()
 		  .setCustomId(`full_list_${start + i}`)
 		  .setLabel('Show Full Review')
-		  .setStyle(ButtonStyle.Secondary) // Grey button
+		  .setStyle(ButtonStyle.Secondary)
 	  );
 	});
 	return row;
@@ -76,7 +66,7 @@ const {
 	return new EmbedBuilder()
 	  .setTitle(`Full Review #${idx + 1}`)
 	  .setDescription(
-		`⭐ **${r.rating}** — "${r.book}" by ${r.author}\nby **${r.username}**\n${r.review}`
+		`<:sprkstr2:1368587309733118014> **${r.rating}** — "${r.book}" by ${r.author}\nby **${r.username}**\n${r.review}`
 	  );
   }
   
@@ -107,8 +97,8 @@ const {
 		  .setDescription('Edit your review')
 		  .addStringOption(opt => opt.setName('book').setDescription('Book title').setRequired(true))
 		  .addStringOption(opt => opt.setName('author').setDescription('Author name').setRequired(true))
-		  .addStringOption(opt => opt.setName('review').setDescription('New review text').setRequired(false))
-		  .addIntegerOption(opt => opt.setName('rating').setDescription('New rating (1-5)').setMinValue(1).setMaxValue(5).setRequired(false))
+		  .addStringOption(opt => opt.setName('review').setDescription('New review text').setRequired(true))
+		  .addIntegerOption(opt => opt.setName('rating').setDescription('New rating (1-5)').setMinValue(1).setMaxValue(5).setRequired(true))
 	  )
 	  .addSubcommand(sub =>
 		sub.setName('delete')
@@ -127,47 +117,57 @@ const {
 	  ),
   
 	async execute(interaction) {
-	  let reviews = loadReviews();
 	  const sub = interaction.options.getSubcommand();
   
 	  // ADD
 	  if (sub === 'add') {
-		const book = norm(interaction.options.getString('book'));
-		const author = norm(interaction.options.getString('author'));
+		const book = interaction.options.getString('book').trim();
+		const author = interaction.options.getString('author').trim();
 		const rating = interaction.options.getInteger('rating');
 		const reviewText = interaction.options.getString('review').trim();
   
-		if (reviews.find(r =>
-		  r.userId === interaction.user.id &&
-		  norm(r.book) === book &&
-		  norm(r.author) === author
-		)) {
-		  return interaction.reply({ content: 'You already reviewed this book by this author. Use `/review edit` to update it.', ephemeral: true });
+		// Check for existing review
+		const exists = await Review.findOne({
+		  userId: interaction.user.id,
+		  book: new RegExp(`^${book}$`, 'i'),
+		  author: new RegExp(`^${author}$`, 'i')
+		});
+  
+		if (exists) {
+		  return interaction.reply({
+			embeds: [new EmbedBuilder().setColor('0b94b8').setDescription('You already reviewed this book by this author. Use `/review edit` to update it.')],
+			ephemeral: false
+		  });
 		}
   
-		reviews.push({
+		const newReview = new Review({
 		  userId: interaction.user.id,
 		  username: interaction.user.username,
-		  book: interaction.options.getString('book').trim(),
-		  author: interaction.options.getString('author').trim(),
+		  book,
+		  author,
 		  review: reviewText,
-		  rating,
-		  timestamp: Date.now()
+		  rating
 		});
-		saveReviews(reviews);
-		return interaction.reply(`✅ Review for **${interaction.options.getString('book')}** by **${interaction.options.getString('author')}** added!`);
+		await newReview.save();
+  
+		return interaction.reply({
+		  embeds: [new EmbedBuilder().setColor('0b94b8').setDescription(`<a:zpyesno2:1368590432488915075> Review for **${book}** by **${author}** added!`)]
+		});
 	  }
   
-	  // BOOK or VIEW (shortcut)
+	  // BOOK or VIEW
 	  if (sub === 'book' || sub === 'view') {
-		const book = norm(interaction.options.getString('book'));
-		const bookReviews = reviews.filter(r => norm(r.book) === book);
+		const book = interaction.options.getString('book').trim();
+		const bookReviews = await Review.find({ book: new RegExp(`^${book}$`, 'i') }).sort({ timestamp: -1 }).lean();
 		if (bookReviews.length === 0)
-		  return interaction.reply('No reviews found for that book.');
+		  return interaction.reply({
+			embeds: [new EmbedBuilder().setColor('0b94b8').setDescription('No reviews found for that book.')]
+		  });
+  
 		const embed = new EmbedBuilder()
-		  .setTitle(`Reviews for "${interaction.options.getString('book')}"`)
+		  .setTitle(`Reviews for "${book}"`)
 		  .setDescription(bookReviews.slice(0, 3).map((r, idx) =>
-			`**${idx + 1}.** ⭐ **${r.rating}** by **${r.username}**\n${truncateWords(r.review, 4)}\n*by ${r.author}*`
+			`**${idx + 1}.** <:sprkstr2:1368587309733118014> **${r.rating}** by **${r.username}**\n${truncateWords(r.review, 4)}\n*by ${r.author}*`
 		  ).join('\n\n'))
 		  .setFooter({ text: `${bookReviews.length} review(s) found.` });
   
@@ -176,13 +176,13 @@ const {
 		bookReviews.slice(0, 3).forEach((r, idx) => {
 		  row.addComponents(
 			new ButtonBuilder()
-			  .setCustomId(`full_book_${reviews.indexOf(r)}`)
+			  .setCustomId(`full_book_${r._id}`)
 			  .setLabel('Show Full Review')
 			  .setStyle(ButtonStyle.Secondary)
 		  );
 		});
   
-		const reply = await interaction.reply({ embeds: [embed], components: [row] });
+		const reply = await interaction.reply({ embeds: [embed], components: [row], fetchReply: true });
   
 		const collector = reply.createMessageComponentCollector({
 		  componentType: ComponentType.Button,
@@ -192,10 +192,10 @@ const {
   
 		collector.on('collect', async i => {
 		  if (i.customId.startsWith('full_book_')) {
-			const idx = parseInt(i.customId.split('_')[2]);
-			const review = reviews[idx];
-			if (!review) return i.reply({ content: 'Review not found.', ephemeral: true });
-			return i.reply({ embeds: [createReviewEmbedSingle(review, idx)], allowedMentions: { repliedUser: false } });
+			const id = i.customId.split('_')[2];
+			const review = await Review.findById(id).lean();
+			if (!review) return i.reply({ embeds: [new EmbedBuilder().setColor('0b94b8').setDescription('Review not found.')] });
+			return i.reply({ embeds: [createReviewEmbedSingle(review, 0)] });
 		  }
 		});
   
@@ -215,14 +215,17 @@ const {
   
 	  // AUTHOR
 	  if (sub === 'author') {
-		const author = norm(interaction.options.getString('author'));
-		const authorReviews = reviews.filter(r => norm(r.author) === author);
+		const author = interaction.options.getString('author').trim();
+		const authorReviews = await Review.find({ author: new RegExp(`^${author}$`, 'i') }).sort({ timestamp: -1 }).lean();
 		if (authorReviews.length === 0)
-		  return interaction.reply('No reviews found for that author.');
+		  return interaction.reply({
+			embeds: [new EmbedBuilder().setColor('0b94b8').setDescription('No reviews found for that author.')]
+		  });
+  
 		const embed = new EmbedBuilder()
-		  .setTitle(`Reviews for books by "${interaction.options.getString('author')}"`)
+		  .setTitle(`Reviews for books by "${author}"`)
 		  .setDescription(authorReviews.slice(0, 3).map((r, idx) =>
-			`**${idx + 1}.** ⭐ **${r.rating}** for "${r.book}" by **${r.username}**\n${truncateWords(r.review, 4)}`
+			`**${idx + 1}.** <:sprkstr2:1368587309733118014> **${r.rating}** for "${r.book}" by **${r.username}**\n${truncateWords(r.review, 4)}`
 		  ).join('\n\n'))
 		  .setFooter({ text: `${authorReviews.length} review(s) found.` });
   
@@ -231,13 +234,13 @@ const {
 		authorReviews.slice(0, 3).forEach((r, idx) => {
 		  row.addComponents(
 			new ButtonBuilder()
-			  .setCustomId(`full_author_${reviews.indexOf(r)}`)
+			  .setCustomId(`full_author_${r._id}`)
 			  .setLabel('Show Full Review')
 			  .setStyle(ButtonStyle.Secondary)
 		  );
 		});
   
-		const reply = await interaction.reply({ embeds: [embed], components: [row] });
+		const reply = await interaction.reply({ embeds: [embed], components: [row], fetchReply: true });
   
 		const collector = reply.createMessageComponentCollector({
 		  componentType: ComponentType.Button,
@@ -247,10 +250,10 @@ const {
   
 		collector.on('collect', async i => {
 		  if (i.customId.startsWith('full_author_')) {
-			const idx = parseInt(i.customId.split('_')[2]);
-			const review = reviews[idx];
-			if (!review) return i.reply({ content: 'Review not found.', ephemeral: true });
-			return i.reply({ embeds: [createReviewEmbedSingle(review, idx)], allowedMentions: { repliedUser: false } });
+			const id = i.customId.split('_')[2];
+			const review = await Review.findById(id).lean();
+			if (!review) return i.reply({ embeds: [new EmbedBuilder().setColor('0b94b8').setDescription('Review not found.')] });
+			return i.reply({ embeds: [createReviewEmbedSingle(review, 0)] });
 		  }
 		});
   
@@ -270,49 +273,73 @@ const {
   
 	  // EDIT
 	  if (sub === 'edit') {
-		const book = norm(interaction.options.getString('book'));
-		const author = norm(interaction.options.getString('author'));
-		const newReviewText = interaction.options.getString('review');
+		const book = interaction.options.getString('book').trim();
+		const author = interaction.options.getString('author').trim();
+		const newReviewText = interaction.options.getString('review').trim();
 		const newRating = interaction.options.getInteger('rating');
-		const idx = reviews.findIndex(r =>
-		  r.userId === interaction.user.id &&
-		  norm(r.book) === book &&
-		  norm(r.author) === author
-		);
-		if (idx === -1)
-		  return interaction.reply({ content: 'You have not reviewed this book by this author yet.', ephemeral: true });
-		if (!newReviewText && !newRating)
-		  return interaction.reply({ content: 'You must provide a new review or new rating.', ephemeral: true });
-		if (newReviewText) reviews[idx].review = newReviewText.trim();
-		if (newRating) reviews[idx].rating = newRating;
-		reviews[idx].timestamp = Date.now();
-		saveReviews(reviews);
-		return interaction.reply('✅ Your review has been updated.');
+  
+		// All fields required
+		if (!newReviewText || !newRating) {
+		  return interaction.reply({
+			embeds: [new EmbedBuilder().setColor('0b94b8').setDescription('You must provide both a new review and new rating.')],
+		  });
+		}
+  
+		const review = await Review.findOne({
+		  userId: interaction.user.id,
+		  book: new RegExp(`^${book}$`, 'i'),
+		  author: new RegExp(`^${author}$`, 'i')
+		});
+  
+		if (!review) {
+		  return interaction.reply({
+			embeds: [new EmbedBuilder().setColor('0b94b8').setDescription('You have not reviewed this book by this author yet.')],
+		  });
+		}
+  
+		review.review = newReviewText;
+		review.rating = newRating;
+		review.timestamp = Date.now();
+		await review.save();
+  
+		return interaction.reply({
+		  embeds: [new EmbedBuilder().setColor('0b94b8').setDescription('<a:zpyesno2:1368590432488915075> Your review has been updated.')],
+		});
 	  }
   
 	  // DELETE
 	  if (sub === 'delete') {
-		const book = norm(interaction.options.getString('book'));
-		const author = norm(interaction.options.getString('author'));
-		const idx = reviews.findIndex(r =>
-		  r.userId === interaction.user.id &&
-		  norm(r.book) === book &&
-		  norm(r.author) === author
-		);
-		if (idx === -1)
-		  return interaction.reply({ content: 'You have not reviewed this book by this author yet.', ephemeral: true });
-		reviews.splice(idx, 1);
-		saveReviews(reviews);
-		return interaction.reply('✅ Your review has been deleted.');
+		const book = interaction.options.getString('book').trim();
+		const author = interaction.options.getString('author').trim();
+  
+		const review = await Review.findOneAndDelete({
+		  userId: interaction.user.id,
+		  book: new RegExp(`^${book}$`, 'i'),
+		  author: new RegExp(`^${author}$`, 'i')
+		});
+  
+		if (!review) {
+		  return interaction.reply({
+			embeds: [new EmbedBuilder().setColor('0b94b8').setDescription('You have not reviewed this book by this author yet.')],
+		  });
+		}
+  
+		return interaction.reply({
+		  embeds: [new EmbedBuilder().setColor('0b94b8').setDescription('<a:zpyesno2:1368590432488915075> Your review has been deleted.')],
+		});
 	  }
   
 	  // LIST ALL REVIEWS WITH BUTTON PAGINATION
 	  if (sub === 'list') {
+		const reviews = await Review.find().sort({ timestamp: -1 }).lean();
+  
 		if (reviews.length === 0)
-		  return interaction.reply('No reviews have been added yet.');
+		  return interaction.reply({
+			embeds: [new EmbedBuilder().setColor('0b94b8').setDescription('No reviews have been added yet.')]
+		  });
   
 		const perPage = 5;
-		const totalPages = Math.ceil(reviews.length / perPage);
+		const totalPages = Math.ceil(reviews.length / perPage) || 1;
 		let page = 1;
   
 		const embed = createListEmbed(reviews, page, perPage);
@@ -322,15 +349,12 @@ const {
 		const reply = await interaction.reply({
 		  embeds: [embed],
 		  components: [row, fullReviewRow],
-		  fetchReply: true,
-		  ephemeral: false
+		  fetchReply: true
 		});
-  
-		if (totalPages === 1) ; // No need for buttons
   
 		const collector = reply.createMessageComponentCollector({
 		  componentType: ComponentType.Button,
-		  time: 60 * 1000, // 1 minute
+		  time: 60 * 1000,
 		  filter: i => !i.user.bot
 		});
   
@@ -340,8 +364,8 @@ const {
 		  else if (i.customId.startsWith('full_list_')) {
 			const idx = parseInt(i.customId.split('_')[2]);
 			const review = reviews[idx];
-			if (!review) return i.reply({ content: 'Review not found.', ephemeral: true });
-			return i.reply({ embeds: [createReviewEmbedSingle(review, idx)], allowedMentions: { repliedUser: false } });
+			if (!review) return i.reply({ embeds: [new EmbedBuilder().setColor('0b94b8').setDescription('Review not found.')] });
+			return i.reply({ embeds: [createReviewEmbedSingle(review, idx)] });
 		  }
   
 		  // Update both paginated list and buttons
@@ -352,7 +376,6 @@ const {
 		});
   
 		collector.on('end', async () => {
-		  // Disable buttons after timeout
 		  try {
 			await reply.edit({
 			  components: [

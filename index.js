@@ -33,6 +33,7 @@ const client = new Client({
         GatewayIntentBits.GuildMembers
     ]
 });
+client.sprintTimeouts = new Map();
 client.sprintState = sprintState;
 client.commands = new Collection();
 
