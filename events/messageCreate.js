@@ -1,24 +1,28 @@
 // events/messageCreate.js
 const { EmbedBuilder } = require('discord.js');
-const fs = require('fs');
-const path = require('path');
 const BuddyReadSession = require('../models/BuddyReadSession');
-// ADD THIS LINE (for logging messages later)
-const BuddyReadMessage = require('../models/BuddyReadMessage'); // <-- add this model soon!
+const BuddyReadMessage = require('../models/BuddyReadMessage');
+const ThreadEmbed = require('../models/ThreadEmbed');
 
 // List of allowed channel IDs (edit these!)
 const ALLOWED_CHANNELS = [
-  '1337159554248609833', // <--- Replace with your channel IDs
-  '1358072745664970875'
+  '1337159554248609833', // Wellness
+  '1358072745664970875'  // Book Cafe
 ];
 
-// Path to the embed config file (edit path if needed)
-const EMBED_CONFIG_PATH = path.join(__dirname, '..', 'thread_embeds.json');
-
-function loadEmbedConfig() {
-  if (!fs.existsSync(EMBED_CONFIG_PATH)) fs.writeFileSync(EMBED_CONFIG_PATH, '{}');
-  return JSON.parse(fs.readFileSync(EMBED_CONFIG_PATH));
-}
+// Default embed templates for known channels
+const DEFAULT_EMBEDS = {
+  "1337159554248609833": {
+    title: "Welcome to the Wellness Thread!",
+    description: "This is your safe space to share, support, and grow together. 🌱\n\nFeel free to talk about your wellness journey, ask for advice, or just check in.",
+    color: 0x43b581
+  },
+  "1358072745664970875": {
+    title: "Book Cafe Discussion",
+    description: "Welcome to your Book Cafe thread! ☕📚\n\nShare your thoughts about the book, post reading updates, or discuss your favorite characters here.",
+    color: 0xfaa61a
+  }
+};
 
 module.exports = {
   name: 'messageCreate',
@@ -67,9 +71,22 @@ module.exports = {
     // --- GUILD MESSAGE LOGIC (THREAD + EMBED) ---
     if (!ALLOWED_CHANNELS.includes(message.channel.id)) return;
 
-    const config = loadEmbedConfig();
-    const embedData = config[message.channel.id];
-    if (!embedData) return; // No embed set for this channel
+    // Fetch or create embed config from MongoDB
+    let embedData = await ThreadEmbed.findOne({ channelId: message.channel.id });
+
+    if (!embedData) {
+      // Use a default if available, otherwise a generic fallback
+      const def = DEFAULT_EMBEDS[message.channel.id] || {
+        title: "Thread",
+        description: "Welcome to your new thread!",
+        color: 0x5865F2
+      };
+
+      embedData = await ThreadEmbed.create({
+        channelId: message.channel.id,
+        ...def
+      });
+    }
 
     // Create thread from the message
     let thread;
@@ -85,7 +102,11 @@ module.exports = {
 
     // Send embed in the thread
     try {
-      const embed = new EmbedBuilder(embedData);
+      const embed = new EmbedBuilder({
+        title: embedData.title,
+        description: embedData.description,
+        color: embedData.color
+      });
       await thread.send({ embeds: [embed] });
     } catch (e) {
       console.error('Failed to send embed in thread:', e);
@@ -100,7 +121,6 @@ async function relayMessage(session, message, originalMessage) {
   const otherParticipant = session.participants.find(p => p.userId !== senderId);
 
   // Save the message to the database (for /buddyread messages)
-  // You will need to create the BuddyReadMessage model for this to work!
   try {
     await BuddyReadMessage.create({
       sessionId: session._id,
@@ -117,7 +137,7 @@ async function relayMessage(session, message, originalMessage) {
   try {
     const user = await message.client.users.fetch(otherParticipant.userId);
     await user.send(
-      `📚 **BuddyRead Message** (${session.book})\n**From ${sender.tag}:**\n${originalMessage}`
+      `<:pcbuk:1368854535220494367> **BuddyRead Message** (${session.book})\n**From ${sender.tag}:**\n${originalMessage}`
     );
     await sender.send('Your message has been sent to your buddyread partner!');
   } catch (e) {

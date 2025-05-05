@@ -1,36 +1,50 @@
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
-const fs = require('fs');
-const path = require('path');
 const { DateTime } = require('luxon');
+const Reminder = require('../models/Reminder');
+const ReminderConfig = require('../models/ReminderConfig');
 
-const REMINDER_CHANNEL_ID = '1367691153297772724';
-const REMINDERS_FILE = path.resolve(__dirname, '../reminders.json');
+const scheduled = {};
 
-function loadReminders() {
-    if (!fs.existsSync(REMINDERS_FILE)) return {};
-    return JSON.parse(fs.readFileSync(REMINDERS_FILE, 'utf8'));
-}
-function saveReminders(reminders) {
-    fs.writeFileSync(REMINDERS_FILE, JSON.stringify(reminders, null, 2));
-}
+// --- Helper Functions for Channels ---
 
-function getUserReminders(reminders, userId) {
-    return reminders[userId] || [];
+async function getReminderChannels(guildId) {
+    if (!guildId) return [];
+    let config = await ReminderConfig.findOne({ guildId });
+    return config ? config.channelIds : [];
 }
 
-function setUserReminders(reminders, userId, userReminders) {
-    reminders[userId] = userReminders;
+async function addReminderChannel(guildId, channelId) {
+    if (!guildId || !channelId) return;
+    await ReminderConfig.findOneAndUpdate(
+        { guildId },
+        { $addToSet: { channelIds: channelId } },
+        { upsert: true }
+    );
 }
 
-function scheduleAllReminders(client, reminders, scheduled) {
-    for (const userId in reminders) {
-        for (const reminder of reminders[userId]) {
-            scheduleReminder(client, userId, reminder, scheduled);
-        }
+async function removeReminderChannel(guildId, channelId) {
+    if (!guildId || !channelId) return;
+    await ReminderConfig.findOneAndUpdate(
+        { guildId },
+        { $pull: { channelIds: channelId } }
+    );
+}
+
+// SCHEDULE HELPERS
+
+async function getUserReminders(userId, guildId) {
+    return await Reminder.find({ userId, guildId });
+}
+
+async function scheduleAllReminders(client) {
+    const reminders = await Reminder.find({});
+    for (const reminder of reminders) {
+        scheduleReminder(client, reminder);
     }
 }
 
-function scheduleReminder(client, userId, reminder, scheduled) {
+function scheduleReminder(client, reminder) {
+    // Clear existing timeout if any
     if (reminder._timeout) clearTimeout(reminder._timeout);
 
     // Timezone support
@@ -42,31 +56,42 @@ function scheduleReminder(client, userId, reminder, scheduled) {
 
     reminder._timeout = setTimeout(async () => {
         try {
-            const channel = await client.channels.fetch(REMINDER_CHANNEL_ID);
-            if (!channel) return;
+            const guildId = reminder.guildId;
+            const channelIds = await getReminderChannels(guildId);
+
+            if (!channelIds.length) return; // No channels set, skip sending
 
             const embed = new EmbedBuilder()
                 .setColor(0x572c86)
-                .setTitle('<:rayne:1291858438321602602><:boe:1291858383636529192> Reminder!')
+                .setTitle('<:xmail:1368803966304911371> Reminder!')
                 .setDescription(reminder.text ? reminder.text : 'This is your reminder!');
 
-            await channel.send({
-                content: `<@${userId}>`,
-                embeds: [embed]
-            });
+            for (const channelId of channelIds) {
+                try {
+                    const channel = await client.channels.fetch(channelId);
+                    if (channel) {
+                        await channel.send({
+                            content: `<@${reminder.userId}>`,
+                            embeds: [embed]
+                        });
+                    }
+                } catch (e) {
+                    // Channel might not exist or bot can't send
+                }
+            }
 
             // Reschedule for next day
-            scheduleReminder(client, userId, reminder, scheduled);
+            scheduleReminder(client, reminder);
         } catch (err) {
             console.error('Failed to send reminder:', err);
         }
     }, msUntil);
 
-    scheduled[userId] = scheduled[userId] || [];
-    scheduled[userId].push(reminder._timeout);
+    scheduled[reminder.userId] = scheduled[reminder.userId] || [];
+    scheduled[reminder.userId].push(reminder._timeout);
 }
 
-const scheduled = {};
+// COMMAND MODULE
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -114,31 +139,71 @@ module.exports = {
                 .addStringOption(option =>
                     option.setName('text')
                         .setDescription('The new reminder message')
-                        .setRequired(true))),
+                        .setRequired(true)))
+        .addSubcommandGroup(group =>
+            group.setName('channel')
+                .setDescription('Manage reminder channels')
+                .addSubcommand(sub =>
+                    sub.setName('add')
+                        .setDescription('Add a channel to receive reminders')
+                        .addChannelOption(option =>
+                            option.setName('channel')
+                                .setDescription('The channel to add')
+                                .setRequired(true)))
+                .addSubcommand(sub =>
+                    sub.setName('remove')
+                        .setDescription('Remove a channel from reminder channels')
+                        .addChannelOption(option =>
+                            option.setName('channel')
+                                .setDescription('The channel to remove')
+                                .setRequired(true)))
+                .addSubcommand(sub =>
+                    sub.setName('list')
+                        .setDescription('List all reminder channels')))
+    ,
     async execute(interaction) {
         const client = interaction.client;
         const userId = interaction.user.id;
+        const guildId = interaction.guild ? interaction.guild.id : null;
+
+        // Handle channel subcommands first
+        if (interaction.options.getSubcommandGroup(false) === 'channel') {
+            const sub = interaction.options.getSubcommand();
+            if (sub === 'add') {
+                const channel = interaction.options.getChannel('channel');
+                await addReminderChannel(guildId, channel.id);
+                await interaction.reply({ content: `Added <#${channel.id}> as a reminder channel!`, ephemeral: true });
+            } else if (sub === 'remove') {
+                const channel = interaction.options.getChannel('channel');
+                await removeReminderChannel(guildId, channel.id);
+                await interaction.reply({ content: `Removed <#${channel.id}> from reminder channels!`, ephemeral: true });
+            } else if (sub === 'list') {
+                const channelIds = await getReminderChannels(guildId);
+                if (!channelIds.length)
+                    return interaction.reply({ content: 'No reminder channels set.', ephemeral: true });
+                const names = channelIds.map(id => `<#${id}>`).join('\n');
+                await interaction.reply({ content: `Reminder channels:\n${names}`, ephemeral: true });
+            }
+            return;
+        }
+
         const sub = interaction.options.getSubcommand();
-        let reminders = loadReminders();
 
         if (sub === 'set') {
             const hour = interaction.options.getInteger('hour');
             const minute = interaction.options.getInteger('minute');
             const text = interaction.options.getString('text') || 'This is your reminder!';
-            let userReminders = getUserReminders(reminders, userId);
 
             // Get user's timezone, default to UTC
+            let userReminders = await getUserReminders(userId, guildId);
             let zone = 'UTC';
             if (userReminders.length > 0 && userReminders[0].zone) {
                 zone = userReminders[0].zone;
             }
 
-            const newReminder = { hour, minute, text, zone };
-            userReminders.push(newReminder);
-            setUserReminders(reminders, userId, userReminders);
-            saveReminders(reminders);
+            const newReminder = await Reminder.create({ userId, guildId, hour, minute, text, zone });
 
-            scheduleReminder(client, userId, newReminder, scheduled);
+            scheduleReminder(client, newReminder);
 
             const embed = new EmbedBuilder()
                 .setColor(0x00BFFF)
@@ -149,7 +214,7 @@ module.exports = {
         }
         else if (sub === 'remove') {
             const index = interaction.options.getInteger('index') - 1;
-            let userReminders = getUserReminders(reminders, userId);
+            let userReminders = await getUserReminders(userId, guildId);
 
             if (!userReminders[index]) {
                 await interaction.reply({ content: 'Invalid reminder number.', embeds: [] });
@@ -158,9 +223,7 @@ module.exports = {
 
             if (userReminders[index]._timeout) clearTimeout(userReminders[index]._timeout);
 
-            userReminders.splice(index, 1);
-            setUserReminders(reminders, userId, userReminders);
-            saveReminders(reminders);
+            await Reminder.deleteOne({ _id: userReminders[index]._id });
 
             const embed = new EmbedBuilder()
                 .setColor(0xFF6347)
@@ -170,7 +233,7 @@ module.exports = {
             await interaction.reply({ embeds: [embed] });
         }
         else if (sub === 'list') {
-            let userReminders = getUserReminders(reminders, userId);
+            let userReminders = await getUserReminders(userId, guildId);
 
             if (!userReminders.length) {
                 await interaction.reply({ content: 'You have no reminders set.' });
@@ -199,13 +262,12 @@ module.exports = {
                 return;
             }
 
-            let userReminders = getUserReminders(reminders, userId);
-            userReminders.forEach(r => r.zone = zone);
-            if (userReminders.length === 0) userReminders.push({ hour: 9, minute: 0, text: 'This is your reminder!', zone });
-            setUserReminders(reminders, userId, userReminders);
-            saveReminders(reminders);
-
-            userReminders.forEach(r => scheduleReminder(client, userId, r, scheduled));
+            let userReminders = await getUserReminders(userId, guildId);
+            for (const r of userReminders) {
+                r.zone = zone;
+                await r.save();
+                scheduleReminder(client, r);
+            }
 
             const embed = new EmbedBuilder()
                 .setColor(0x00BFFF)
@@ -217,18 +279,17 @@ module.exports = {
         else if (sub === 'message') {
             const index = interaction.options.getInteger('index') - 1;
             const text = interaction.options.getString('text');
-            let userReminders = getUserReminders(reminders, userId);
+            let userReminders = await getUserReminders(userId, guildId);
 
             if (!userReminders[index]) {
                 await interaction.reply({ content: 'Invalid reminder number.', embeds: [] });
                 return;
             }
             userReminders[index].text = text;
-            setUserReminders(reminders, userId, userReminders);
-            saveReminders(reminders);
+            await userReminders[index].save();
 
             // Reschedule this reminder in case it's running
-            scheduleReminder(client, userId, userReminders[index], scheduled);
+            scheduleReminder(client, userReminders[index]);
 
             const embed = new EmbedBuilder()
                 .setColor(0x00BFFF)
@@ -239,7 +300,6 @@ module.exports = {
         }
     },
     async init(client) {
-        const reminders = loadReminders();
-        scheduleAllReminders(client, reminders, scheduled);
+        await scheduleAllReminders(client);
     }
 };
