@@ -68,11 +68,9 @@ if (fs.existsSync(eventsPath)) {
     }
 }
 
-// Initialize reminders
-reminders.init(client);
-
 client.once('ready', () => {
     console.log(`Logged in as ${client.user.tag}!`);
+	reminders.init(client); // <-- MOVE IT HERE
 });
 
 client.login(process.env.BOT_TOKEN);

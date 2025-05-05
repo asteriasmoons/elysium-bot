@@ -32,8 +32,8 @@ async function removeReminderChannel(guildId, channelId) {
 
 // SCHEDULE HELPERS
 
-async function getUserReminders(userId, guildId) {
-    return await Reminder.find({ userId, guildId });
+async function getUserReminders(userId) {
+    return await Reminder.find({ userId });
 }
 
 async function scheduleAllReminders(client) {
@@ -42,7 +42,6 @@ async function scheduleAllReminders(client) {
         scheduleReminder(client, reminder);
     }
 }
-
 function scheduleReminder(client, reminder) {
     // Clear existing timeout if any
     if (reminder._timeout) clearTimeout(reminder._timeout);
@@ -54,7 +53,15 @@ function scheduleReminder(client, reminder) {
 
     const msUntil = next.diff(now).as('milliseconds');
 
+    // === Move the log here, after variables are defined ===
+    console.log(
+        `[SCHEDULE] User: ${reminder.userId} | Zone: ${reminder.zone} | Now: ${now.toISO()} | Next: ${next.toISO()} | msUntil: ${msUntil}`
+    );
+
     reminder._timeout = setTimeout(async () => {
+        console.log(
+            `[TRIGGER] Reminder for user ${reminder.userId} triggered at ${DateTime.now().setZone(reminder.zone).toISO()} (should be at ${reminder.hour}:${reminder.minute} in ${reminder.zone})`
+        );
         try {
             const guildId = reminder.guildId;
             const channelIds = await getReminderChannels(guildId);
@@ -66,19 +73,25 @@ function scheduleReminder(client, reminder) {
                 .setTitle('<:xmail:1368803966304911371> Reminder!')
                 .setDescription(reminder.text ? reminder.text : 'This is your reminder!');
 
-            for (const channelId of channelIds) {
-                try {
-                    const channel = await client.channels.fetch(channelId);
-                    if (channel) {
-                        await channel.send({
-                            content: `<@${reminder.userId}>`,
-                            embeds: [embed]
-                        });
-                    }
-                } catch (e) {
-                    // Channel might not exist or bot can't send
-                }
-            }
+				console.log(`[SEND] Attempting to send reminder to user ${reminder.userId} in channels:`, channelIds);
+				console.log("[DEBUG] embed:", embed);
+
+				for (const channelId of channelIds) {
+					try {
+						const channel = await client.channels.fetch(channelId);
+						if (channel && channel.isTextBased()) {
+							await channel.send({
+								content: `<@${reminder.userId}>`,
+								embeds: [embed]
+							});
+							console.log(`[SEND SUCCESS] Reminder sent to channel ${channelId}`);
+						} else {
+							console.error(`[SEND ERROR] Channel ${channelId} is not text-based or inaccessible.`);
+						}
+					} catch (e) {
+						console.error(`[SEND ERROR] Could not send to channel ${channelId}:`, e);
+					}				
+			}
 
             // Reschedule for next day
             scheduleReminder(client, reminder);
@@ -140,6 +153,21 @@ module.exports = {
                     option.setName('text')
                         .setDescription('The new reminder message')
                         .setRequired(true)))
+		.addSubcommand(sub =>
+			sub.setName('reschedule')
+				.setDescription('Change the time of a reminder')
+				.addIntegerOption(option =>
+					option.setName('index')
+						.setDescription('Reminder number (from /reminders list)')
+						.setRequired(true))
+				.addIntegerOption(option =>
+					option.setName('hour')
+						.setDescription('New hour (0-23)')
+						.setRequired(true))
+				.addIntegerOption(option =>
+					option.setName('minute')
+						.setDescription('New minute (0-59)')
+						.setRequired(true)))						
         .addSubcommandGroup(group =>
             group.setName('channel')
                 .setDescription('Manage reminder channels')
@@ -194,9 +222,9 @@ module.exports = {
             const minute = interaction.options.getInteger('minute');
             const text = interaction.options.getString('text') || 'This is your reminder!';
 
-            // Get user's timezone, default to UTC
-            let userReminders = await getUserReminders(userId, guildId);
-            let zone = 'UTC';
+            // Get user's timezone, default to America/Chicago
+            let userReminders = await getUserReminders(userId);
+            let zone = 'America/Chicago';
             if (userReminders.length > 0 && userReminders[0].zone) {
                 zone = userReminders[0].zone;
             }
@@ -214,7 +242,7 @@ module.exports = {
         }
         else if (sub === 'remove') {
             const index = interaction.options.getInteger('index') - 1;
-            let userReminders = await getUserReminders(userId, guildId);
+            let userReminders = await getUserReminders(userId);
 
             if (!userReminders[index]) {
                 await interaction.reply({ content: 'Invalid reminder number.', embeds: [] });
@@ -233,7 +261,7 @@ module.exports = {
             await interaction.reply({ embeds: [embed] });
         }
         else if (sub === 'list') {
-            let userReminders = await getUserReminders(userId, guildId);
+            let userReminders = await getUserReminders(userId);
 
             if (!userReminders.length) {
                 await interaction.reply({ content: 'You have no reminders set.' });
@@ -262,7 +290,7 @@ module.exports = {
                 return;
             }
 
-            let userReminders = await getUserReminders(userId, guildId);
+            let userReminders = await getUserReminders(userId);
             for (const r of userReminders) {
                 r.zone = zone;
                 await r.save();
@@ -279,7 +307,7 @@ module.exports = {
         else if (sub === 'message') {
             const index = interaction.options.getInteger('index') - 1;
             const text = interaction.options.getString('text');
-            let userReminders = await getUserReminders(userId, guildId);
+            let userReminders = await getUserReminders(userId);
 
             if (!userReminders[index]) {
                 await interaction.reply({ content: 'Invalid reminder number.', embeds: [] });
@@ -298,6 +326,32 @@ module.exports = {
 
             await interaction.reply({ embeds: [embed] });
         }
+
+		else if (sub === 'reschedule') {
+			const index = interaction.options.getInteger('index') - 1;
+			const hour = interaction.options.getInteger('hour');
+			const minute = interaction.options.getInteger('minute');
+			let userReminders = await getUserReminders(userId);
+		
+			if (!userReminders[index]) {
+				await interaction.reply({ content: 'Invalid reminder number.', ephemeral: true });
+				return;
+			}
+		
+			userReminders[index].hour = hour;
+			userReminders[index].minute = minute;
+			await userReminders[index].save();
+		
+			// Reschedule this reminder in case it's running
+			scheduleReminder(client, userReminders[index]);
+		
+			const embed = new EmbedBuilder()
+				.setColor(0x00BFFF)
+				.setTitle('Reminder Rescheduled')
+				.setDescription(`Your reminder #${index + 1} has been rescheduled to **${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}**.`);
+		
+			await interaction.reply({ embeds: [embed] });
+		}		
     },
     async init(client) {
         await scheduleAllReminders(client);

@@ -1,12 +1,8 @@
 const mongoose = require('mongoose');
 
-const ReminderSchema = new mongoose.Schema({
-    userId: String,
-    guildId: String, // <-- Add this line!
-    hour: Number,
-    minute: Number,
-    text: String,
-    zone: String
+const ReminderConfigSchema = new mongoose.Schema({
+    guildId: { type: String, required: true, unique: true },
+    channelIds: { type: [String], default: [] }
 });
 
-module.exports = mongoose.model('Reminder', ReminderSchema);
+module.exports = mongoose.models.ReminderConfig || mongoose.model('ReminderConfig', ReminderConfigSchema);
