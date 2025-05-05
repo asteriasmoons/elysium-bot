@@ -7,7 +7,7 @@ const BuddyReadAnnouncementSchema = new mongoose.Schema({
   audience: { type: String, required: true },
   note: { type: String },
   serverId: { type: String }, // optional, for tracking where used
+  status: { type: String, enum: ['open', 'paired'], default: 'open' }, // <-- ADDED STATUS FIELD
   timestamp: { type: Date, default: Date.now }
-});
-
+}, { timestamps: true }); // <-- ENSURE createdAt exists
 module.exports = mongoose.model('BuddyReadAnnouncement', BuddyReadAnnouncementSchema);
