@@ -41,7 +41,7 @@ module.exports = function initAgendaJobs(agenda, client) {
         const pagesRead = p.endingPages - p.startingPages;
         if (pagesRead > 0) {
           await Leaderboard.findOneAndUpdate(
-            { userId: p.userId },
+            { userId: p.userId, guildId: guildId },
             { $inc: { totalPages: pagesRead } },
             { upsert: true }
           );

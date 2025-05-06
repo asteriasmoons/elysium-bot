@@ -370,9 +370,9 @@ module.exports = {
           const pagesRead = p.endingPages - p.startingPages;
           if (pagesRead > 0) {
             await Leaderboard.findOneAndUpdate(
-              { userId: p.userId },
+              { userId: p.userId, guildId: interaction.guild.id },
               { $inc: { totalPages: pagesRead } },
-              { upsert: true }
+              { upsert: true, new: true }
             );
           }
         }
@@ -414,14 +414,16 @@ module.exports = {
 
     // /sprint leaderboard
     if (sub === 'leaderboard') {
-      const top = await Leaderboard.find().sort({ totalPages: -1 }).limit(10);
+      const top = await Leaderboard.find({ guildId: interaction.guild.id }) // <-- ADD THIS FILTER
+	  .sort({ totalPages: -1 })
+	  .limit(10);
 
       if (!top.length) {
         return interaction.reply({
           embeds: [
             new EmbedBuilder()
               .setTitle('Sprint Leaderboard')
-              .setDescription('No one is on the leaderboard yet! Join a sprint to get started.')
+              .setDescription(`No one is on the leaderboard for **${interaction.guild.name}** yet! Join a sprint to get started.`) // Maybe add server name? 
               .setColor('#4ac4d7')
           ]
         });
@@ -436,7 +438,7 @@ module.exports = {
       return interaction.reply({
         embeds: [
           new EmbedBuilder()
-            .setTitle('<:pcbuk:1368854535220494367> Sprint Leaderboard')
+		  .setTitle(`<:pcbuk:1368854535220494367> Sprint Leaderboard for ${interaction.guild.name}`) // Add server name?
             .setDescription(desc)
             .setColor('#4ac4d7')
         ]

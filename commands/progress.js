@@ -1,16 +1,5 @@
 const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
-const fs = require('fs');
-const path = require('path');
-
-const progressPath = path.join(__dirname, 'progress.json');
-
-function loadProgress() {
-  if (!fs.existsSync(progressPath)) fs.writeFileSync(progressPath, '[]');
-  return JSON.parse(fs.readFileSync(progressPath));
-}
-function saveProgress(data) {
-  fs.writeFileSync(progressPath, JSON.stringify(data, null, 2));
-}
+const ProgressEntry = require('../models/ProgressEntry'); // Adjust path as needed
 
 function normalize(str) {
   return str.trim().toLowerCase();
@@ -68,35 +57,88 @@ module.exports = {
       sub.setName('history')
         .setDescription('See recent reading progress entries')
         .addUserOption(opt => opt.setName('user').setDescription('Whose history to view (leave blank for yourself)'))
-    ),
+    )
+	.addSubcommand(sub =>
+		sub.setName('leaderboard')
+		  .setDescription('Show the top 10 users with the longest reading streaks')
+	  ),	  
 
   async execute(interaction) {
     const sub = interaction.options.getSubcommand();
-    let progressData = loadProgress();
-
+	// === PROGRESS LEADERBOARD === 
+	if (sub === 'leaderboard') {
+		// Get all unique user IDs that have logged progress
+		const users = await ProgressEntry.distinct('userId');
+	  
+		// For each user, fetch their entries and calculate current streak
+		const streaks = [];
+		for (const userId of users) {
+		  const entries = await ProgressEntry.find({ userId }).sort({ timestamp: 1 }).exec();
+		  if (!entries.length) continue;
+		  // Build set of unique dates
+		  const datesSet = new Set(entries.map(e => new Date(e.timestamp).toISOString().split('T')[0]));
+		  // Calculate streak
+		  let streak = 0;
+		  let date = new Date();
+		  while (true) {
+			const dateStr = date.toISOString().split('T')[0];
+			if (datesSet.has(dateStr)) {
+			  streak++;
+			  date.setDate(date.getDate() - 1);
+			} else {
+			  break;
+			}
+		  }
+		  if (streak > 0) {
+			streaks.push({ userId, streak });
+		  }
+		}
+	  
+		// Sort by streak descending, then by userId for tie-breaker
+		streaks.sort((a, b) => b.streak - a.streak || a.userId.localeCompare(b.userId));
+	  
+		// Get top 10
+		const top = streaks.slice(0, 10);
+	  
+		// Format leaderboard with user mentions
+		let desc = top.length
+		  ? top.map((entry, i) =>
+			`**${i + 1}.** <@${entry.userId}> — **${entry.streak}** day${entry.streak === 1 ? '' : 's'}`
+		  ).join('\n')
+		  : 'No active streaks found.';
+	  
+		const embed = new EmbedBuilder()
+		  .setTitle('🏆 Longest Current Reading Streaks')
+		  .setDescription(desc)
+		  .setColor(0x6040bf);
+	  
+		return interaction.reply({ embeds: [embed], ephemeral: false });
+	  }	  
+	
+	// ==== PROGRESS LOG ====
     if (sub === 'log') {
       const book = interaction.options.getString('book');
       const prog = interaction.options.getString('progress');
       const note = interaction.options.getString('note') || '';
-      const entry = {
+
+      const entry = new ProgressEntry({
         userId: interaction.user.id,
         username: interaction.user.username,
         book: book.trim(),
         progress: prog.trim(),
         note: note.trim(),
         timestamp: Date.now()
-      };
-      progressData.push(entry);
-      saveProgress(progressData);
+      });
+      await entry.save();
 
       return interaction.reply({
         content: `<a:noyes1:1339800615622152237> Progress logged for **${book}**: ${prog}${note ? `\n_Note: ${note}_` : ''}`,
         ephemeral: false
       });
     }
-
+	// === PROGRESS STREAK ===
     if (sub === 'streak') {
-      const userEntries = progressData.filter(e => e.userId === interaction.user.id);
+      const userEntries = await ProgressEntry.find({ userId: interaction.user.id }).exec();
       if (userEntries.length === 0) {
         return interaction.reply({ content: "You haven't logged any progress yet. Use `/progress log` to start your streak!", ephemeral: false });
       }
@@ -117,9 +159,7 @@ module.exports = {
     // === HISTORY WITH PAGINATION ===
     if (sub === 'history') {
       const targetUser = interaction.options.getUser('user') || interaction.user;
-      const userEntries = progressData
-        .filter(e => e.userId === targetUser.id)
-        .sort((a, b) => b.timestamp - a.timestamp);
+      const userEntries = await ProgressEntry.find({ userId: targetUser.id }).sort({ timestamp: -1 }).exec();
 
       if (userEntries.length === 0) {
         return interaction.reply({
@@ -157,14 +197,12 @@ module.exports = {
         );
       }
 
-      // Initial reply
       await interaction.reply({
         embeds: [buildEmbed(page)],
         components: [buildRow(page)],
         ephemeral: false
       });
 
-      // Create a collector for button interactions
       const msg = await interaction.fetchReply();
       const filter = btnInt =>
         btnInt.user.id === interaction.user.id &&
@@ -187,7 +225,6 @@ module.exports = {
       });
 
       collector.on('end', async () => {
-        // Disable buttons after timeout
         try {
           await interaction.editReply({
             components: [buildRow(page).setComponents(

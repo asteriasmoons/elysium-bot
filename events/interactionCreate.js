@@ -1,9 +1,11 @@
 const BuddyReadAnnouncement = require('../models/BuddyReadAnnouncement');
 const BuddyReadSession = require('../models/BuddyReadSession');
+const JournalEntry = require('../models/JournalEntry');
+const { EmbedBuilder } = require('discord.js');
 
 // === Embed Editor Imports ===
 const EmbedModel = require('../models/Embed');
-const { sendEmbedEditor, buildEmbed } = require('../utils/embedEditorUI');
+const { buildEmbed } = require('../utils/embedEditorUI');
 const { 
   ModalBuilder, 
   TextInputBuilder, 
@@ -24,19 +26,19 @@ module.exports = {
     if (interaction.isButton()) {
 
       // ======================
-      // BUDDYREAD ANNOUNCEMENT DELETE BUTTON HANDLER (add here!)
+      // BUDDYREAD ANNOUNCEMENT DELETE BUTTON HANDLER
       // ======================
       if (interaction.customId.startsWith('buddyread_announcement_delete_')) {
         const announcementId = interaction.customId.replace('buddyread_announcement_delete_', '');
         const announcement = await BuddyReadAnnouncement.findById(announcementId);
         if (!announcement) {
-          return interaction.reply({ content: 'Announcement not found or already deleted.', ephemeral: false });
+          return interaction.reply({ content: 'Announcement not found or already deleted.' });
         }
         if (announcement.userId !== interaction.user.id) {
-          return interaction.reply({ content: 'You can only delete your own announcements!', ephemeral: false });
+          return interaction.reply({ content: 'You can only delete your own announcements!' });
         }
         await BuddyReadAnnouncement.deleteOne({ _id: announcementId });
-        return interaction.reply({ content: '<a:noyes1:1339800615622152237> Your announcement has been deleted.', ephemeral: false });
+        return interaction.reply({ content: '<a:noyes1:1339800615622152237> Your announcement has been deleted.' });
       }
 
       // --- BuddyRead Connect Button (full session logic) ---
@@ -46,13 +48,13 @@ module.exports = {
         const serverId = interaction.guild?.id || null;
 
         if (announcerUserId === connector.id) {
-          return interaction.reply({ content: "You can't connect with yourself.", ephemeral: false });
+          return interaction.reply({ content: "You can't connect with yourself." });
         }
 
         // Find the announcement in MongoDB
         const announcement = await BuddyReadAnnouncement.findOne({ userId: announcerUserId });
         if (!announcement) {
-          return interaction.reply({ content: "That announcement no longer exists.", ephemeral: false });
+          return interaction.reply({ content: "That announcement no longer exists." });
         }
 
         // --- Normalize book title for matching ---
@@ -66,13 +68,13 @@ module.exports = {
         });
 
         if (existingSession) {
-          return interaction.reply({ content: "There is already an active buddy read session between you and this user for this book.", ephemeral: false });
+          return interaction.reply({ content: "There is already an active buddy read session between you and this user for this book." });
         }
 
         // --- Save normalized book title in session (add a new field) ---
         const session = new BuddyReadSession({
           book: announcement.book,
-          book_normalized: normalizedBook, // new normalized field
+          book_normalized: normalizedBook,
           audience: announcement.audience,
           participants: [
             { userId: announcerUserId, username: announcement.username },
@@ -103,8 +105,7 @@ module.exports = {
 
         // Confirm to the connector
         await interaction.reply({
-          content: `You are now matched with **${announcement.username}** for **${announcement.book}**!`,
-          ephemeral: false
+          content: `You are now matched with **${announcement.username}** for **${announcement.book}**!`
         });
         return;
       }
@@ -116,7 +117,7 @@ module.exports = {
       if (prefix === 'embed' && action === 'edit') {
         // Fetch embed from DB
         const doc = await EmbedModel.findById(embedId);
-        if (!doc) return interaction.reply({ content: 'Embed not found.', ephemeral: false });
+        if (!doc) return interaction.reply({ content: 'Embed not found.' });
 
         // Show modal for the relevant section
         if (section === 'basic') {
@@ -153,6 +154,7 @@ module.exports = {
         }
 
         if (section === 'author') {
+          if (!doc.author) doc.author = {};
           const modal = new ModalBuilder()
             .setCustomId(`embed_modal_author_${embedId}`)
             .setTitle('Edit Author')
@@ -178,6 +180,7 @@ module.exports = {
         }
 
         if (section === 'footer') {
+          if (!doc.footer) doc.footer = {};
           const modal = new ModalBuilder()
             .setCustomId(`embed_modal_footer_${embedId}`)
             .setTitle('Edit Footer')
@@ -237,15 +240,68 @@ module.exports = {
         return; // prevent fallthrough
       }
 
-      // --- Example: Other Button Handlers ---
-      // Add more button handlers below as needed, for example:
-      /*
-      if (interaction.customId.startsWith('reminder_complete_')) {
-        // Your reminder button logic here
-        return;
-      }
-      */
+      // ======================
+      // JOURNAL PAGINATION BUTTON HANDLER
+      // ======================
+      if (interaction.customId.startsWith('journal_')) {
+        const ENTRIES_PER_PAGE = 3;
+        const [prefix, direction, pageStr] = interaction.customId.split('_');
+        let page = parseInt(pageStr, 10);
+        if (isNaN(page) || page < 1) page = 1;
+        const userId = interaction.user.id;
 
+        // Only allow the original user to paginate their own journal list
+        if (
+          interaction.message.interaction?.user?.id &&
+          interaction.message.interaction.user.id !== userId
+        ) {
+          return interaction.reply({
+            content: "You can't use these buttons.",
+            ephemeral: true
+          });
+        }
+
+        // Fetch entries
+        const entries = await JournalEntry.find({ userId }).sort({ createdAt: -1 });
+        const totalEntries = entries.length;
+        const totalPages = Math.max(1, Math.ceil(totalEntries / ENTRIES_PER_PAGE));
+        if (page > totalPages) page = totalPages;
+        const noEntries = totalEntries === 0;
+
+        const start = (page - 1) * ENTRIES_PER_PAGE;
+        const pageEntries = entries.slice(start, start + ENTRIES_PER_PAGE);
+
+        const embed = new EmbedBuilder()
+          .setTitle(`Your Journal Entries (Page ${page}/${totalPages})`)
+          .setColor(0x9370db)
+          .setDescription(
+            pageEntries.length
+              ? pageEntries.map((e, i) =>
+                `**${start + i + 1}.** [${new Date(e.createdAt).toLocaleDateString()}] \`${e.entry.slice(0, 10)}\``
+              ).join('\n')
+              : 'No entries found.'
+          );
+
+        const row = new ActionRowBuilder().addComponents(
+          new ButtonBuilder()
+            .setCustomId(`journal_previous_${Math.max(page - 1, 1)}`)
+            .setLabel('Previous')
+            .setStyle(ButtonStyle.Secondary)
+            .setEmoji('1368587424556646420')
+            .setDisabled(page === 1 || noEntries),
+          new ButtonBuilder()
+            .setCustomId(`journal_next_${Math.min(page + 1, totalPages)}`)
+            .setLabel('Next')
+            .setStyle(ButtonStyle.Secondary)
+            .setEmoji('1368587337646211082')
+            .setDisabled(page === totalPages || noEntries)
+        );
+
+        return interaction.update({
+          embeds: [embed],
+          components: [row]
+        });
+      }
       // --- End Button Handlers ---
     }
 
@@ -256,34 +312,36 @@ module.exports = {
       const [prefix, type, section, embedId] = interaction.customId.split('_');
       if (prefix === 'embed' && type === 'modal') {
         const doc = await EmbedModel.findById(embedId);
-        if (!doc) return interaction.reply({ content: 'Embed not found.', ephemeral: false });
+        if (!doc) return interaction.reply({ content: 'Embed not found.' });
 
-		function emptyToNull(str) {
-			return (typeof str === 'string' && str.trim() === '') ? null : str;
-		  }
-		  
-		  if (section === 'basic') {
-			doc.title = emptyToNull(interaction.fields.getTextInputValue('title'));
-			doc.description = emptyToNull(interaction.fields.getTextInputValue('description'));
-			doc.color = emptyToNull(interaction.fields.getTextInputValue('color')) || '#993377';
-		  }
-		  
-		  if (section === 'author') {
-			doc.author.name = emptyToNull(interaction.fields.getTextInputValue('author_name'));
-			doc.author.icon_url = emptyToNull(interaction.fields.getTextInputValue('author_icon'));
-		  }
-		  
-		  if (section === 'footer') {
-			doc.footer.text = emptyToNull(interaction.fields.getTextInputValue('footer_text'));
-			doc.footer.icon_url = emptyToNull(interaction.fields.getTextInputValue('footer_icon'));
-			const timestampInput = interaction.fields.getTextInputValue('footer_timestamp').toLowerCase();
-			doc.footer.timestamp = timestampInput === 'yes' || timestampInput === 'true';
-		  }
-		  
-		  if (section === 'images') {
-			doc.thumbnail = emptyToNull(interaction.fields.getTextInputValue('thumbnail'));
-			doc.image = emptyToNull(interaction.fields.getTextInputValue('image'));
-		  }		  
+        function emptyToNull(str) {
+          return (typeof str === 'string' && str.trim() === '') ? null : str;
+        }
+
+        if (section === 'basic') {
+          doc.title = emptyToNull(interaction.fields.getTextInputValue('title'));
+          doc.description = emptyToNull(interaction.fields.getTextInputValue('description'));
+          doc.color = emptyToNull(interaction.fields.getTextInputValue('color')) || '#993377';
+        }
+
+        if (section === 'author') {
+          if (!doc.author) doc.author = {};
+          doc.author.name = emptyToNull(interaction.fields.getTextInputValue('author_name'));
+          doc.author.icon_url = emptyToNull(interaction.fields.getTextInputValue('author_icon'));
+        }
+
+        if (section === 'footer') {
+          if (!doc.footer) doc.footer = {};
+          doc.footer.text = emptyToNull(interaction.fields.getTextInputValue('footer_text'));
+          doc.footer.icon_url = emptyToNull(interaction.fields.getTextInputValue('footer_icon'));
+          const timestampInput = interaction.fields.getTextInputValue('footer_timestamp').toLowerCase();
+          doc.footer.timestamp = timestampInput === 'yes' || timestampInput === 'true';
+        }
+
+        if (section === 'images') {
+          doc.thumbnail = emptyToNull(interaction.fields.getTextInputValue('thumbnail'));
+          doc.image = emptyToNull(interaction.fields.getTextInputValue('image'));
+        }
 
         await doc.save();
 
@@ -318,7 +376,7 @@ module.exports = {
         await command.execute(interaction, agenda);
       } catch (error) {
         console.error(error);
-        await interaction.reply({ content: 'There was an error executing this command!', ephemeral: false });
+        await interaction.reply({ content: 'There was an error executing this command!' });
       }
     }
   }
