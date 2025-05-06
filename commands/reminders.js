@@ -47,7 +47,7 @@ function scheduleReminder(client, reminder) {
     if (reminder._timeout) clearTimeout(reminder._timeout);
 
     // Timezone support
-    const now = DateTime.now().setZone(reminder.zone || 'UTC');
+    const now = DateTime.now().setZone(reminder.zone || 'America/Chicago');
     let next = now.set({ hour: reminder.hour, minute: reminder.minute, second: 0, millisecond: 0 });
     if (next <= now) next = next.plus({ days: 1 });
 
@@ -69,7 +69,7 @@ function scheduleReminder(client, reminder) {
             if (!channelIds.length) return; // No channels set, skip sending
 
             const embed = new EmbedBuilder()
-                .setColor(0x572c86)
+                .setColor(0x993377)
                 .setTitle('<:xmail:1368803966304911371> Reminder!')
                 .setDescription(reminder.text ? reminder.text : 'This is your reminder!');
 
@@ -200,17 +200,17 @@ module.exports = {
             if (sub === 'add') {
                 const channel = interaction.options.getChannel('channel');
                 await addReminderChannel(guildId, channel.id);
-                await interaction.reply({ content: `Added <#${channel.id}> as a reminder channel!`, ephemeral: true });
+                await interaction.reply({ content: `Added <#${channel.id}> as a reminder channel!`, ephemeral: false });
             } else if (sub === 'remove') {
                 const channel = interaction.options.getChannel('channel');
                 await removeReminderChannel(guildId, channel.id);
-                await interaction.reply({ content: `Removed <#${channel.id}> from reminder channels!`, ephemeral: true });
+                await interaction.reply({ content: `Removed <#${channel.id}> from reminder channels!`, ephemeral: false });
             } else if (sub === 'list') {
                 const channelIds = await getReminderChannels(guildId);
                 if (!channelIds.length)
-                    return interaction.reply({ content: 'No reminder channels set.', ephemeral: true });
+                    return interaction.reply({ content: 'No reminder channels set.', ephemeral: false });
                 const names = channelIds.map(id => `<#${id}>`).join('\n');
-                await interaction.reply({ content: `Reminder channels:\n${names}`, ephemeral: true });
+                await interaction.reply({ content: `Reminder channels:\n${names}`, ephemeral: false });
             }
             return;
         }
@@ -234,7 +234,7 @@ module.exports = {
             scheduleReminder(client, newReminder);
 
             const embed = new EmbedBuilder()
-                .setColor(0x00BFFF)
+                .setColor(0x993377)
                 .setTitle('Reminder Set')
                 .setDescription(`Your reminder is set for **${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}** (${zone}).\nMessage: "${text}"`);
 
@@ -254,7 +254,7 @@ module.exports = {
             await Reminder.deleteOne({ _id: userReminders[index]._id });
 
             const embed = new EmbedBuilder()
-                .setColor(0xFF6347)
+                .setColor(0x993377)
                 .setTitle('Reminder Removed')
                 .setDescription(`Your reminder #${index + 1} has been removed.`);
 
@@ -269,7 +269,7 @@ module.exports = {
             }
 
             const embed = new EmbedBuilder()
-                .setColor(0x00BFFF)
+                .setColor(0x993377)
                 .setTitle('Your Reminders');
 
             userReminders.forEach((r, i) => {
@@ -298,7 +298,7 @@ module.exports = {
             }
 
             const embed = new EmbedBuilder()
-                .setColor(0x00BFFF)
+                .setColor(0x993377)
                 .setTitle('Timezone Set')
                 .setDescription(`Your timezone has been set to **${zone}**. All your reminders will use this timezone.`);
 
@@ -320,7 +320,7 @@ module.exports = {
             scheduleReminder(client, userReminders[index]);
 
             const embed = new EmbedBuilder()
-                .setColor(0x00BFFF)
+                .setColor(0x993377)
                 .setTitle('Reminder Message Updated')
                 .setDescription(`Your reminder #${index + 1} message has been set to:\n"${text}"`);
 
@@ -346,7 +346,7 @@ module.exports = {
 			scheduleReminder(client, userReminders[index]);
 		
 			const embed = new EmbedBuilder()
-				.setColor(0x00BFFF)
+				.setColor(0x993377)
 				.setTitle('Reminder Rescheduled')
 				.setDescription(`Your reminder #${index + 1} has been rescheduled to **${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}**.`);
 		

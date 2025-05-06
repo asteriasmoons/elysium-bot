@@ -4,13 +4,17 @@ const mongoose = require('mongoose');
 const fs = require('node:fs');
 const path = require('node:path');
 const { Client, Collection, GatewayIntentBits } = require('discord.js');
+const Agenda = require('agenda'); // <-- Make sure to import Agenda!
 
 // MongoDB connection
 mongoose.connect(process.env.MONGO_URI)
 .then(() => console.log('Connected to MongoDB!'))
 .catch(err => console.error('MongoDB connection error:', err));
 
-// Sprint state
+// Agenda setup (use process.env.MONGO_URI, not mongoConnectionString)
+const agenda = new Agenda({ db: { address: process.env.MONGO_URI, collection: 'agendaJobs' } });
+
+// Sprint state (legacy, can be removed if not used elsewhere)
 const sprintState = {
     active: false,
     endTime: null,
@@ -62,7 +66,8 @@ if (fs.existsSync(eventsPath)) {
     for (const file of eventFiles) {
         const event = require(path.join(eventsPath, file));
         if (event.name && typeof event.execute === 'function') {
-            client.on(event.name, (...args) => event.execute(...args));
+            // Pass agenda and client to events if needed
+            client.on(event.name, (...args) => event.execute(...args, client, agenda));
             console.log(`Loaded event: ${event.name}`);
         }
     }
@@ -70,7 +75,9 @@ if (fs.existsSync(eventsPath)) {
 
 client.once('ready', () => {
     console.log(`Logged in as ${client.user.tag}!`);
-	reminders.init(client); // <-- MOVE IT HERE
+    reminders.init(client);
+    agenda.start(); // <-- Start Agenda when bot is ready
+    require('./agendaJobs')(agenda, client); // <-- Load Agenda jobs
 });
 
 client.login(process.env.BOT_TOKEN);

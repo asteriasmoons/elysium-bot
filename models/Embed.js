@@ -7,7 +7,7 @@ const EmbedSchema = new mongoose.Schema({
   creatorId: { type: String, required: true },
   title: { type: String, default: '' },
   description: { type: String, default: '' },
-  color: { type: String, default: '#5865F2' }, // Discord blurple
+  color: { type: String, default: '#993377' }, // Discord blurple
   author: {
     name: { type: String, default: '' },
     icon_url: { type: String, default: '' }

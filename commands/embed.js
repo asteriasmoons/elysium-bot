@@ -71,7 +71,7 @@ module.exports = {
           embeds: [{
             title: 'Server Embeds',
             description: 'No embeds found for this server.',
-            color: 0x5865F2
+            color: 0x993377
           }]
         });
       }
@@ -81,7 +81,7 @@ module.exports = {
         embeds: [{
           title: 'Server Embeds',
           description: embedList,
-          color: 0x5865F2
+          color: 0x993377
         }]
       });
     }
@@ -92,7 +92,7 @@ module.exports = {
     if (sub === 'create') {
       const exists = await EmbedModel.findOne({ guildId, name });
       if (exists) {
-        return interaction.reply({ content: `❌ An embed named \`${name}\` already exists.`, ephemeral: false });
+        return interaction.reply({ content: `<a:zpyesno1:1368590377887469598> An embed named \`${name}\` already exists.`, ephemeral: false });
       }
 
       const embedDoc = await EmbedModel.create({ guildId, name, creatorId: userId });
@@ -102,7 +102,7 @@ module.exports = {
     if (sub === 'edit') {
       const embedDoc = await EmbedModel.findOne({ guildId, name });
       if (!embedDoc) {
-        return interaction.reply({ content: `❌ No embed named \`${name}\` found.`, ephemeral: false });
+        return interaction.reply({ content: `<a:zpyesno1:1368590377887469598> No embed named \`${name}\` found.`, ephemeral: false });
       }
 
       return sendEmbedEditor(interaction, embedDoc, false);
@@ -111,31 +111,31 @@ module.exports = {
     if (sub === 'delete') {
       const deletedEmbed = await EmbedModel.findOneAndDelete({ guildId, name });
       if (!deletedEmbed) {
-        return interaction.reply({ content: `❌ No embed found named \`${name}\`.`, ephemeral: false });
+        return interaction.reply({ content: `<a:zpyesno1:1368590377887469598> No embed found named \`${name}\`.`, ephemeral: false });
       }
 
-      return interaction.reply({ content: `✅ Embed \`${name}\` successfully deleted.` });
+      return interaction.reply({ content: `<a:zpyesno2:1368590432488915075> Embed \`${name}\` successfully deleted.` });
     }
 
     if (sub === 'send') {
       const embedDoc = await EmbedModel.findOne({ guildId, name });
       if (!embedDoc) {
-        return interaction.reply({ content: `❌ No embed named \`${name}\` found.`, ephemeral: false });
+        return interaction.reply({ content: `<a:zpyesno1:1368590377887469598> No embed named \`${name}\` found.`, ephemeral: false });
       }
 
       const embed = buildEmbed(embedDoc);
       return interaction.channel.send({ embeds: [embed] })
-        .then(() => interaction.reply({ content: `✅ Embed \`${name}\` sent successfully.`, ephemeral: false }))
+        .then(() => interaction.reply({ content: `<a:zpyesno2:1368590432488915075> Embed \`${name}\` sent successfully.`, ephemeral: false }))
         .catch(err => {
           console.error(err);
-          interaction.reply({ content: `❌ Failed to send embed \`${name}\`.`, ephemeral: false });
+          interaction.reply({ content: `<a:zpyesno1:1368590377887469598> Failed to send embed \`${name}\`.`, ephemeral: false });
         });
     }
 
     if (sub === 'view') {
       const embedDoc = await EmbedModel.findOne({ guildId, name });
       if (!embedDoc) {
-        return interaction.reply({ content: `❌ No embed named \`${name}\` found.`, ephemeral: false });
+        return interaction.reply({ content: `<a:zpyesno1:1368590377887469598> No embed named \`${name}\` found.`, ephemeral: false });
       }
 
       const embed = buildEmbed(embedDoc);

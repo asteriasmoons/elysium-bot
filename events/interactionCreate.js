@@ -19,7 +19,7 @@ function normalizeBookTitle(book) {
 
 module.exports = {
   name: 'interactionCreate',
-  async execute(interaction) {
+  async execute(interaction, client, agenda) {
     // --- BUTTON HANDLERS ---
     if (interaction.isButton()) {
 
@@ -143,10 +143,10 @@ module.exports = {
               new ActionRowBuilder().addComponents(
                 new TextInputBuilder()
                   .setCustomId('color')
-                  .setLabel('Hex Color (e.g. #5865F2)')
+                  .setLabel('Hex Color (e.g. #993377)')
                   .setStyle(TextInputStyle.Short)
                   .setRequired(false)
-                  .setValue(doc.color || '#5865F2')
+                  .setValue(doc.color || '#993377')
               )
             );
           return interaction.showModal(modal);
@@ -265,7 +265,7 @@ module.exports = {
 		  if (section === 'basic') {
 			doc.title = emptyToNull(interaction.fields.getTextInputValue('title'));
 			doc.description = emptyToNull(interaction.fields.getTextInputValue('description'));
-			doc.color = emptyToNull(interaction.fields.getTextInputValue('color')) || '#5865F2';
+			doc.color = emptyToNull(interaction.fields.getTextInputValue('color')) || '#993377';
 		  }
 		  
 		  if (section === 'author') {
@@ -315,7 +315,7 @@ module.exports = {
       const command = interaction.client.commands.get(interaction.commandName);
       if (!command) return;
       try {
-        await command.execute(interaction);
+        await command.execute(interaction, agenda);
       } catch (error) {
         console.error(error);
         await interaction.reply({ content: 'There was an error executing this command!', ephemeral: false });

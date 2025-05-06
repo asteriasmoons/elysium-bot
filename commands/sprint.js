@@ -2,6 +2,7 @@ const { SlashCommandBuilder, EmbedBuilder, PermissionsBitField } = require('disc
 const Sprint = require('../models/Sprint');
 const Leaderboard = require('../models/Leaderboard');
 const SprintConfig = require('../models/SprintConfig');
+const SprintPingRole = require('../models/SprintPingRole');
 
 // Helper: Get designated sprint channel (uses MongoDB now)
 async function getSprintChannel(interaction) {
@@ -16,11 +17,18 @@ async function getSprintChannel(interaction) {
 
 // Helper: Find active sprint for this guild/DM
 async function findActiveSprint(interaction) {
-  const query = interaction.guild
-    ? { guildId: interaction.guild.id, active: true }
-    : { guildId: null, channelId: interaction.channel.id, active: true };
-  return await Sprint.findOne(query);
-}
+	const now = new Date();
+	const query = interaction.guild
+	  ? { guildId: interaction.guild.id, active: true }
+	  : { guildId: null, channelId: interaction.channel.id, active: true };
+	const sprint = await Sprint.findOne(query);
+	if (sprint && sprint.endTime <= now) {
+	  sprint.active = false;
+	  await sprint.save();
+	  return null;
+	}
+	return sprint;
+    }
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -64,9 +72,52 @@ module.exports = {
     .addSubcommand(sub =>
       sub.setName('leaderboard')
         .setDescription('Show the sprint leaderboard')
+    )
+    .addSubcommandGroup(group =>
+      group.setName('set')
+        .setDescription('Sprint settings')
+        .addSubcommand(sub =>
+          sub.setName('role')
+            .setDescription('Set the role to ping for sprint warnings and endings')
+            .addRoleOption(opt =>
+              opt.setName('role')
+                .setDescription('The role to ping')
+                .setRequired(true)
+            )
+        )
     ),
 
-  async execute(interaction) {
+  async execute(interaction, agenda) {
+    // /sprint set role
+    if (interaction.options.getSubcommandGroup() === 'set' && interaction.options.getSubcommand() === 'role') {
+      if (!interaction.member.permissions.has(PermissionsBitField.Flags.ManageGuild)) {
+        return interaction.reply({
+          embeds: [
+            new EmbedBuilder()
+              .setTitle('No Permission')
+              .setDescription('Only server managers can set the sprint ping role.')
+              .setColor('#4ac4d7')
+          ],
+          ephemeral: true
+        });
+      }
+      const role = interaction.options.getRole('role');
+      await SprintPingRole.findOneAndUpdate(
+        { guildId: interaction.guild.id },
+        { roleId: role.id },
+        { upsert: true }
+      );
+      return interaction.reply({
+        embeds: [
+          new EmbedBuilder()
+            .setTitle('Sprint Ping Role Set')
+            .setDescription(`Sprint ping role set to ${role}`)
+            .setColor('#4ac4d7')
+        ],
+        ephemeral: true
+      });
+    }
+
     const sub = interaction.options.getSubcommand();
 
     // /sprint start
@@ -135,86 +186,20 @@ module.exports = {
         ]
       });
 
-      // Schedule warning and finish using setTimeout, manage timeouts in client.sprintTimeouts
-      const warningTimeout = durationMinutes > 5
-        ? setTimeout(async () => {
-            try {
-              // Double-check if sprint is still active
-              const sprintCheck = await Sprint.findById(sprint._id);
-              if (!sprintCheck || !sprintCheck.active) return;
-              const sprintChannel = await getSprintChannel(interaction);
-              await sprintChannel.send({
-                embeds: [
-                  new EmbedBuilder()
-                    .setTitle('<a:zxpin3:1368804727395061760> 5 Minutes Left!')
-                    .setDescription('Only 5 minutes left in the sprint! Finish strong!')
-                    .setColor('#4ac4d7')
-                ]
-              });
-            } catch (err) {}
-          }, (durationMinutes - 5) * 60 * 1000)
-        : null;
-
-      const endTimeout = setTimeout(async () => {
-        // Remove timeouts from the map
-        const timeouts = interaction.client.sprintTimeouts.get(sprint._id.toString());
-        if (timeouts) {
-          if (timeouts.warningTimeout) clearTimeout(timeouts.warningTimeout);
-          // No need to clear endTimeout here, it's this function!
-          interaction.client.sprintTimeouts.delete(sprint._id.toString());
-        }
-
-        const sprintDoc = await Sprint.findById(sprint._id);
-        if (!sprintDoc || !sprintDoc.active) return;
-
-        sprintDoc.active = false;
-        await sprintDoc.save();
-
-        // Update leaderboard
-        for (const p of sprintDoc.participants) {
-          if (p.endingPages !== undefined && p.endingPages !== null) {
-            const pagesRead = p.endingPages - p.startingPages;
-            if (pagesRead > 0) {
-              await Leaderboard.findOneAndUpdate(
-                { userId: p.userId },
-                { $inc: { totalPages: pagesRead } },
-                { upsert: true }
-              );
-            }
-          }
-        }
-
-        // Build results message
-        let results = '';
-        if (sprintDoc.participants.length === 0) {
-          results = 'No one joined this sprint!';
-        } else {
-          results = sprintDoc.participants.map(p => {
-            if (p.endingPages !== undefined && p.endingPages !== null) {
-              const pagesRead = p.endingPages - p.startingPages;
-              return `<@${p.userId}>: ${p.startingPages} → ${p.endingPages} (**${pagesRead} pages**)`;
-            } else {
-              return `<@${p.userId}>: started at ${p.startingPages}, did not submit ending page.`;
-            }
-          }).join('\n');
-        }
-
-        try {
-          const sprintChannel = await getSprintChannel(interaction);
-          await sprintChannel.send({
-            embeds: [
-              new EmbedBuilder()
-                .setTitle('Sprint Finished! <a:zpopz:1366768293368827964>')
-                .setDescription(`The reading sprint has ended!\n\n__**Results:**__\n${results}\n\nUse \`/sprint start\` to begin another.`)
-                .setColor('#4ac4d7')
-            ]
-          });
-        } catch (err) {}
-      }, durationMinutes * 60 * 1000);
-
-      // Store timeouts in client map
-      interaction.client.sprintTimeouts.set(sprint._id.toString(), { warningTimeout, endTimeout });
-
+      // Schedule warning and finish using Agenda
+      const sprintId = sprint._id.toString();
+      if (durationMinutes > 5) {
+        await agenda.schedule(
+          new Date(Date.now() + (durationMinutes - 5) * 60 * 1000),
+          'sprint-5min-warning',
+          { sprintId, guildId: interaction.guild?.id, channelId: interaction.channel.id }
+        );
+      }
+      await agenda.schedule(
+        new Date(Date.now() + durationMinutes * 60 * 1000),
+        'sprint-end',
+        { sprintId, guildId: interaction.guild?.id, channelId: interaction.channel.id }
+      );
       return;
     }
 
@@ -376,14 +361,6 @@ module.exports = {
         });
       }
 
-      // Clear any timeouts for this sprint
-      const timeouts = interaction.client.sprintTimeouts.get(sprint._id.toString());
-      if (timeouts) {
-        if (timeouts.warningTimeout) clearTimeout(timeouts.warningTimeout);
-        if (timeouts.endTimeout) clearTimeout(timeouts.endTimeout);
-        interaction.client.sprintTimeouts.delete(sprint._id.toString());
-      }
-
       sprint.active = false;
       await sprint.save();
 
@@ -437,7 +414,6 @@ module.exports = {
 
     // /sprint leaderboard
     if (sub === 'leaderboard') {
-      // Get top 10 users by totalPages
       const top = await Leaderboard.find().sort({ totalPages: -1 }).limit(10);
 
       if (!top.length) {
