@@ -7,7 +7,7 @@ module.exports = {
   data: new SlashCommandBuilder()
     .setName('journal')
     .setDescription('Manage your journal entries')
-    .addSubcommand(sub => 
+    .addSubcommand(sub =>
       sub.setName('add')
         .setDescription('Add a new journal entry')
         .addStringOption(opt => opt.setName('entry').setDescription('Your journal text').setRequired(true))
@@ -59,20 +59,18 @@ module.exports = {
 
       const start = (page - 1) * ENTRIES_PER_PAGE;
       const pageEntries = entries.slice(start, start + ENTRIES_PER_PAGE);
-	  
-	  const embed = new EmbedBuilder()
-	  .setTitle(`<a:zfcharts:1368590695446745099> Journal Entries (Page ${page}/${totalPages})`)
-	  .setColor(0x9370db)
-	  .setDescription(
-		pageEntries.length
-		  ? pageEntries.map((e, i) =>
-			  `**${start + i + 1}.** [${e.createdAt.toLocaleDateString()}] ${e.entry.slice(0, 10)}`
-			).join('\n')
-		  : 'No entries found.'
-	  );
-	
 
-      // Buttons with emoji (you can change emoji as you like)
+      const embed = new EmbedBuilder()
+        .setTitle(`<a:zfcharts:1368590695446745099> Journal Entries (Page ${page}/${totalPages})`)
+        .setColor(0x9370db)
+        .setDescription(
+          pageEntries.length
+            ? pageEntries.map((e, i) =>
+                `**${start + i + 1}.** [${e.createdAt.toLocaleDateString()}] ${e.entry.slice(0, 25)}`
+              ).join('\n')
+            : 'No entries found.'
+        );
+
       const row = new ActionRowBuilder().addComponents(
         new ButtonBuilder()
           .setCustomId(`journal_previous_${page - 1}`)
@@ -88,18 +86,41 @@ module.exports = {
           .setDisabled(page === totalPages)
       );
 
-      return interaction.reply({
-        embeds: [embed],
-        components: [row],
-        ephemeral: true
-      });
+      // Try to DM the user
+      try {
+        await interaction.user.send({ embeds: [embed], components: [row] });
+        return interaction.reply({
+			embeds: [
+				new EmbedBuilder()
+				.setDescription('<:xmail:1368803966304911371> Your journal entries have been sent to your DMs!')
+				.setColor(0x9370db)
+			],
+          ephemeral: false
+        });
+      } catch (e) {
+        return interaction.reply({
+			embeds: [
+				new EmbedBuilder()
+				.setDescription('<a:zpyesno1:1368590377887469598> I could not send you a DM. Please check your privacy settings.')
+				.setColor(0x9370db)
+			],
+          ephemeral: false
+        });
+      }
     }
 
     if (sub === 'view') {
       const number = interaction.options.getInteger('number');
       const entries = await JournalEntry.find({ userId }).sort({ createdAt: -1 });
       if (number < 1 || number > entries.length) {
-        return interaction.reply({ content: 'Invalid entry number.', ephemeral: true });
+		return interaction.reply({
+			embeds: [
+			  new EmbedBuilder()
+                .setDescription('Invalid entry number.')
+				.setColor (0x9370db)
+		   ],
+		   ephemeral: false
+		});
       }
       const entry = entries[number - 1];
       const embed = new EmbedBuilder()
@@ -107,7 +128,27 @@ module.exports = {
         .setDescription(entry.entry)
         .setFooter({ text: `Created at: ${entry.createdAt.toLocaleString()}` })
         .setColor(0x9370db);
-      return interaction.reply({ embeds: [embed], ephemeral: true });
+
+		try {
+			await interaction.user.send({ embeds: [embed] });
+			return interaction.reply({
+			  embeds: [
+				new EmbedBuilder()
+				  .setDescription(`<:xmail:1368803966304911371> Entry #${number} has been sent to your DMs!`)
+				  .setColor(0x9370db)
+			  ],
+			  ephemeral: false
+			});
+		  } catch (e) {
+			return interaction.reply({
+			  embeds: [
+				new EmbedBuilder()
+				  .setDescription('<a:zpyesno1:1368590377887469598> I could not send you a DM. Please check your privacy settings.')
+				  .setColor(0x9370db)
+			  ],
+			  ephemeral: false
+			});
+		  }		  
     }
 
     if (sub === 'edit') {
@@ -115,7 +156,7 @@ module.exports = {
       const newText = interaction.options.getString('entry');
       const entries = await JournalEntry.find({ userId }).sort({ createdAt: -1 });
       if (number < 1 || number > entries.length) {
-        return interaction.reply({ content: 'Invalid entry number.', ephemeral: true });
+        return interaction.reply({ content: 'Invalid entry number.', ephemeral: false });
       }
       const entry = entries[number - 1];
       entry.entry = newText;
@@ -125,14 +166,14 @@ module.exports = {
         .setDescription(newText)
         .setFooter({ text: `Edited at: ${new Date().toLocaleString()}` })
         .setColor(0x9370db);
-      return interaction.reply({ embeds: [embed], ephemeral: true });
+      return interaction.reply({ embeds: [embed], ephemeral: false });
     }
 
     if (sub === 'delete') {
       const number = interaction.options.getInteger('number');
       const entries = await JournalEntry.find({ userId }).sort({ createdAt: -1 });
       if (number < 1 || number > entries.length) {
-        return interaction.reply({ content: 'Invalid entry number.', ephemeral: true });
+        return interaction.reply({ content: 'Invalid entry number.', ephemeral: false });
       }
       const entry = entries[number - 1];
       await entry.deleteOne();
@@ -140,7 +181,7 @@ module.exports = {
         .setTitle(`<a:zpyesno2:1368590432488915075> Entry #${number} Deleted`)
         .setDescription('Your entry has been deleted.')
         .setColor(0x9370db);
-      return interaction.reply({ embeds: [embed], ephemeral: true });
+      return interaction.reply({ embeds: [embed], ephemeral: false });
     }
   }
 };

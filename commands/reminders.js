@@ -70,7 +70,7 @@ function scheduleReminder(client, reminder) {
 
             const embed = new EmbedBuilder()
                 .setColor(0x993377)
-                .setTitle('<:xmail:1368803966304911371> Reminder!')
+                .setTitle('<:xsbk1:1369375260624818338> Reminder!')
                 .setDescription(reminder.text ? reminder.text : 'This is your reminder!');
 
 				console.log(`[SEND] Attempting to send reminder to user ${reminder.userId} in channels:`, channelIds);

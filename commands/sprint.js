@@ -244,7 +244,7 @@ module.exports = {
       return interaction.reply({
         embeds: [
           new EmbedBuilder()
-            .setTitle('Joined Sprint! <:pcbuk:1368854535220494367>')
+            .setTitle('Joined Sprint! <:xsbk1:1369375260624818338>')
             .setDescription(`You joined the sprint at page **${startingPages}**!`)
             .setColor('#4ac4d7')
         ],
@@ -438,7 +438,7 @@ module.exports = {
       return interaction.reply({
         embeds: [
           new EmbedBuilder()
-		  .setTitle(`<:pcbuk:1368854535220494367> Sprint Leaderboard for ${interaction.guild.name}`) // Add server name?
+		  .setTitle(`<:xsbk1:1369375260624818338> Sprint Leaderboard for ${interaction.guild.name}`) // Add server name?
             .setDescription(desc)
             .setColor('#4ac4d7')
         ]
