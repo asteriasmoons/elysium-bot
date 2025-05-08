@@ -1,7 +1,10 @@
 const SprintPingRole = require('./models/SprintPingRole');
 const Sprint = require('./models/Sprint');
 const Leaderboard = require('./models/Leaderboard');
+const RecommendationPreferences = require('./models/RecommendationPreferences');
+const RecommendationHistory = require('./models/RecommendationHistory');
 const { EmbedBuilder } = require('discord.js');
+const axios = require('axios');
 
 module.exports = function initAgendaJobs(agenda, client) {
   // 5-Minute Warning
@@ -79,5 +82,93 @@ module.exports = function initAgendaJobs(agenda, client) {
           .setColor('#4ac4d7')
       ]
     });
+  });
+
+  // ===========================
+  // Book Recommendation Job
+  // ===========================
+  agenda.define('send-book-recommendation', async job => {
+    const { userId } = job.attrs.data;
+    const prefs = await RecommendationPreferences.findOne({ userId });
+    if (!prefs) return;
+
+    // Fetch history to avoid repeats
+    const userHistory = await RecommendationHistory.find({ userId });
+    const alreadySentBookKeys = userHistory.map(h => h.bookKey);
+
+    // Try up to 5 times to find a new book that hasn't been sent
+    let book = null;
+    for (let attempt = 0; attempt < 5; attempt++) {
+      // Pick random genre/language from user's preferences
+      const genre = prefs.genres[Math.floor(Math.random() * prefs.genres.length)];
+      const language = prefs.languages[Math.floor(Math.random() * prefs.languages.length)];
+      // Fetch books from Open Library
+      const url = `https://openlibrary.org/subjects/${encodeURIComponent(genre)}.json?limit=50&language=${language}`;
+      try {
+        const res = await axios.get(url);
+        const works = res.data.works || [];
+        // Filter out already recommended
+        const candidates = works.filter(w => !alreadySentBookKeys.includes(w.key));
+        if (candidates.length === 0) continue;
+        const randomBook = candidates[Math.floor(Math.random() * candidates.length)];
+        book = {
+          title: randomBook.title,
+          author: randomBook.authors?.[0]?.name || 'Unknown',
+          cover: randomBook.cover_id ? `https://covers.openlibrary.org/b/id/${randomBook.cover_id}-L.jpg` : null,
+          openLibraryUrl: `https://openlibrary.org${randomBook.key}`,
+          firstPublishYear: randomBook.first_publish_year || 'N/A',
+          genre,
+          language,
+          key: randomBook.key
+        };
+        break;
+      } catch (err) {
+        continue; // Try again
+      }
+    }
+
+    if (!book) return; // Could not find a new book
+
+    // Save to history
+    await RecommendationHistory.create({
+      userId,
+      bookKey: book.key,
+      genre: book.genre,
+      language: book.language
+    });
+
+    // Send recommendation
+    const embed = new EmbedBuilder()
+      .setTitle(book.title)
+      .setURL(book.openLibraryUrl)
+      .setDescription(
+        `**Author:** ${book.author}\n` +
+        `**Genre:** ${book.genre}\n` +
+        `**Language:** ${book.language}\n` +
+        `**Published:** ${book.firstPublishYear}`
+      )
+      .setColor('#8e44ad');
+    if (book.cover) embed.setImage(book.cover);
+
+    // DM or Channel
+    if (prefs.notify === 'dm') {
+      try {
+        const user = await client.users.fetch(userId);
+        await user.send({ embeds: [embed] });
+      } catch (err) {
+        // DM failed, optionally log
+      }
+    } else if (prefs.notify === 'channel' && prefs.channelId) {
+      try {
+        const channel = await client.channels.fetch(prefs.channelId);
+        await channel.send({ content: `<@${userId}>`, embeds: [embed] });
+      } catch (err) {
+        // Channel send failed, optionally log
+      }
+    }
+
+    // Update lastSent
+    prefs.lastSent = new Date();
+    await prefs.save();
   });
 };
