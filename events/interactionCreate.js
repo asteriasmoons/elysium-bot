@@ -2,6 +2,7 @@ const BuddyReadAnnouncement = require('../models/BuddyReadAnnouncement');
 const BuddyReadSession = require('../models/BuddyReadSession');
 const JournalEntry = require('../models/JournalEntry');
 const { EmbedBuilder } = require('discord.js');
+const axios = require('axios');
 
 // === Embed Editor Imports ===
 const EmbedModel = require('../models/Embed');
@@ -372,11 +373,21 @@ module.exports = {
     if (interaction.isChatInputCommand()) {
       const command = interaction.client.commands.get(interaction.commandName);
       if (!command) return;
-      try {
+	  try {
         await command.execute(interaction, agenda);
       } catch (error) {
         console.error(error);
-        await interaction.reply({ content: 'There was an error executing this command!' });
+        // Prevent double reply/edit and avoid "Unknown interaction" error
+        try {
+          if (interaction.deferred || interaction.replied) {
+            await interaction.editReply({ content: 'There was an error executing this command!' });
+          } else {
+            await interaction.reply({ content: 'There was an error executing this command!' });
+          }
+        } catch (err) {
+          // If the interaction is already expired, just log the error.
+          console.error('Failed to reply to interaction:', err);
+        }
       }
     }
   }

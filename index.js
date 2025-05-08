@@ -75,6 +75,10 @@ if (fs.existsSync(eventsPath)) {
 
 client.once('ready', () => {
     console.log(`Logged in as ${client.user.tag}!`);
+	client.user.setPresence({
+		activities: [{ name: 'with books 📚', type: 'PLAYING' }],
+		status: 'online'
+	  });
     reminders.init(client);
     agenda.start(); // <-- Start Agenda when bot is ready
     require('./agendaJobs')(agenda, client); // <-- Load Agenda jobs
