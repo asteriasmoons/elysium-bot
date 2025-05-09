@@ -1,5 +1,6 @@
 // agendaJobs.js
 const SprintPingRole = require('./models/SprintPingRole');
+const SprintConfig = require('./models/SprintConfig');
 const Sprint = require('./models/Sprint');
 const Leaderboard = require('./models/Leaderboard'); // Assuming you still use this
 const RecommendationPreferences = require('./models/RecommendationPreferences');
@@ -27,15 +28,18 @@ module.exports = function initAgendaJobs(agenda, client) {
       content,
       embeds: [
         new EmbedBuilder()
-          .setTitle('<a:zxpin3:1368804727395061760> 5 Minutes Left!')
+          .setTitle('<:xbuuke:1369320075126898748> 5 Minutes Left!')
           .setDescription('Only 5 minutes left in the sprint! Finish strong!')
           .setColor('#4ac4d7')
       ]
     });
   });
 
-  // Sprint End
+  // ===========================
+  // Sprint End Message Job
+  // ===========================
   agenda.define('sprint-end', async job => {
+    console.log('Sprint-end job fired!', job.attrs.data);
     const { sprintId, guildId, channelId } = job.attrs.data;
     const sprint = await Sprint.findById(sprintId);
     if (!sprint || !sprint.active) return;
@@ -43,7 +47,9 @@ module.exports = function initAgendaJobs(agenda, client) {
     sprint.active = false;
     await sprint.save();
 
+    // =======================
     // Update leaderboard
+    // =======================
     for (const p of sprint.participants) {
       if (p.endingPages !== undefined && p.endingPages !== null) {
         const pagesRead = p.endingPages - p.startingPages;
@@ -57,24 +63,24 @@ module.exports = function initAgendaJobs(agenda, client) {
       }
     }
 
+    // ========================
     // Build results message
+    // =========================
     let results = '';
+    const channel = await client.channels.fetch(channelId);
     if (sprint.participants.length === 0) {
       results = 'No one joined this sprint!';
     } else {
       results = sprint.participants.map(p => {
         if (p.endingPages !== undefined && p.endingPages !== null) {
           const pagesRead = p.endingPages - p.startingPages;
-          return `<@${p.userId}>: ${p.startingPages} → ${p.endingPages} (**$
-{pagesRead} pages**)`;
+          return `<@${p.userId}>: ${p.startingPages} → ${p.endingPages} (**${pagesRead} pages**)`;
         } else {
-          return `<@${p.userId}>: started at ${p.startingPages}, did not submit 
-ending page.`;
+          return `<@${p.userId}>: started at ${p.startingPages}, did not submit ending page.`;
         }
       }).join('\n');
     }
 
-    const channel = await client.channels.fetch(channelId);
     let content = '';
     if (guildId) {
       const pingRole = await SprintPingRole.findOne({ guildId });
@@ -85,12 +91,11 @@ ending page.`;
       embeds: [
         new EmbedBuilder()
           .setTitle('Sprint Finished! <a:zpopz:1366768293368827964>')
-          .setDescription(`The reading sprint has ended!\n\n__**Results:**__\n$
-{results}\n\nUse \`/sprint start\` to begin another.`)
+          .setDescription(`The reading sprint has ended!\n\n__**Results:**__\n${results}\n\nUse \`/sprint start\` to begin another.`)
           .setColor('#4ac4d7')
       ]
     });
-});
+  });
 
   // ===========================
   // Book Recommendation Job

@@ -154,7 +154,7 @@ const {
 		const announcement = new BuddyReadAnnouncement({ userId, username, book, audience, note, serverId, status: 'open' }); // <-- ADDED status: 'open'
 		await announcement.save();
 		return interaction.reply(buildEmbed({
-		  title: '<:xsbk1:1369375260624818338> New BuddyRead Announcement!',
+		  title: '<:xbuuke:1369320075126898748> New BuddyRead Announcement!',
 		  description: `**${username}** is looking for a buddy to read **${book}**!\n**Audience:** ${audience}${note ? `\n**Note:** ${note}` : ''}`,
 		  footer: 'Find your next reading partner!',
 		  ephemeral: false
@@ -235,7 +235,7 @@ const {
   
 		const embed = new EmbedBuilder()
 		  .setAuthor({ name: authorTag, iconURL: authorIcon })
-		  .setTitle(`<:xsbk1:1369375260624818338> Buddy Read Announcements for "${book}"`)
+		  .setTitle(`<:xbuuke:1369320075126898748> Buddy Read Announcements for "${book}"`)
 		  .setColor(0xb399ff)
 		  .setDescription(results.slice(0, 5).map((a, i) =>
 			`**${i + 1}. ${a.username}**\nAudience: ${a.audience}${a.note ? `\n_Note: ${a.note}_` : ''}\n`
@@ -258,14 +258,14 @@ const {
   
 		if (!announcements.length)
 		  return interaction.reply(buildEmbed({
-			title: '<:xsbk1:1369375260624818338> No Announcements Found',
+			title: '<:xbuuke:1369320075126898748> No Announcements Found',
 			description: 'No BuddyRead announcements are currently posted!',
 			footer: 'Be the first to announce!'
 		  }));
   
 		const embed = new EmbedBuilder()
 		  .setAuthor({ name: authorTag, iconURL: authorIcon })
-		  .setTitle('<:xsbk1:1369375260624818338> Recent BuddyRead Announcements')
+		  .setTitle('<:xbuuke:1369320075126898748> Recent BuddyRead Announcements')
 		  .setColor(0xb399ff)
 		  .setDescription(
 			announcements.map((a, i) =>
@@ -303,7 +303,7 @@ const {
 		else {
 		  if (!bookTitle)
 			return interaction.reply(buildEmbed({
-			  title: '<:xsbk1:1369375260624818338> Multiple Sessions Found',
+			  title: '<:xbuuke:1369320075126898748> Multiple Sessions Found',
 			  description: `You are in multiple buddyread sessions. Please specify the book with the \`book\` option.\n\n${sessions.map(s => `• ${s.book}`).join('\n')}`,
 			  footer: 'Specify the book title!'
 			}));
@@ -378,7 +378,7 @@ const {
 		else {
 		  if (!bookTitle)
 			return interaction.reply(buildEmbed({
-			  title: '<:xsbk1:1369375260624818338> Multiple Sessions Found',
+			  title: '<:xbuuke:1369320075126898748> Multiple Sessions Found',
 			  description: `You are in multiple buddyread sessions. Please specify the book with the \`book\` option.\n\n${sessions.map(s => `• ${s.book}`).join('\n')}`,
 			  footer: 'Specify the book title!'
 			}));
@@ -413,14 +413,14 @@ const {
 		const sessions = await BuddyReadSession.find({ 'participants.userId': userId }).sort({ startedAt: -1 });
 		if (!sessions.length)
 		  return interaction.reply(buildEmbed({
-			title: '<:xsbk1:1369375260624818338> No Sessions Found',
+			title: '<:xbuuke:1369320075126898748> No Sessions Found',
 			description: 'You are not in any BuddyRead sessions yet!',
 			footer: 'Start a new session to begin!'
 		  }));
   
 		const embed = new EmbedBuilder()
 		  .setAuthor({ name: authorTag, iconURL: authorIcon })
-		  .setTitle('<:xsbk1:1369375260624818338> Your BuddyRead Sessions')
+		  .setTitle('<:xbuuke:1369320075126898748> Your BuddyRead Sessions')
 		  .setColor(0xb399ff)
 		  .setDescription(
 			sessions.map((s, i) => {
@@ -443,7 +443,7 @@ const {
 		const sessions = await BuddyReadSession.find(query);
 		if (!sessions.length)
 		  return interaction.reply(buildEmbed({
-			title: '<:xsbk1:1369375260624818338> No Active Sessions',
+			title: '<:xbuuke:1369320075126898748> No Active Sessions',
 			description: book ? `You have no active BuddyRead session for **${book}**.` : 'You have no active BuddyRead sessions.',
 			footer: 'Start a new session to get reading!'
 		  }));
@@ -452,7 +452,7 @@ const {
 		  const buddy = session.participants.find(p => p.userId !== userId);
 		  return new EmbedBuilder()
 			.setAuthor({ name: authorTag, iconURL: authorIcon })
-			.setTitle(`<:xsbk1:1369375260624818338> BuddyRead: ${session.book}`)
+			.setTitle(`<:xbuuke:1369320075126898748> BuddyRead: ${session.book}`)
 			.setColor(0xb399ff)
 			.addFields(
 			  { name: 'Buddy', value: buddy ? buddy.username : 'N/A', inline: false },
@@ -474,7 +474,7 @@ const {
 		const session = await BuddyReadSession.findOne({ status: 'active', 'participants.userId': userId, book: new RegExp(`^${book}$`, 'i') });
 		if (!session)
 		  return interaction.reply(buildEmbed({
-			title: '<:xsbk1:1369375260624818338> Session Not Found',
+			title: '<:xbuuke:1369320075126898748> Session Not Found',
 			description: `No active BuddyRead session found for **${book}**.`,
 			footer: 'Check your active sessions!'
 		  }));
@@ -504,7 +504,7 @@ const {
 		const session = await BuddyReadSession.findOne({ status: 'active', 'participants.userId': userId, book: new RegExp(`^${book}$`, 'i') });
 		if (!session)
 		  return interaction.reply(buildEmbed({
-			title: '<:xsbk1:1369375260624818338> Session Not Found',
+			title: '<:xbuuke:1369320075126898748> Session Not Found',
 			description: `No active BuddyRead session found for **${book}**.`,
 			footer: 'Check your active sessions!'
 		  }));
@@ -604,7 +604,7 @@ const {
   
 			const announcerEmbed = new EmbedBuilder()
 			  .setColor(0xb399ff)
-			  .setTitle('<:xsbk1:1369375260624818338> You have been paired for a buddy read!')
+			  .setTitle('<:xbuuke:1369320075126898748> You have been paired for a buddy read!')
 			  .addFields(
 				{ name: 'Book', value: announcement.book, inline: false },
 				{ name: 'With', value: interaction.user.tag, inline: false },
@@ -617,7 +617,7 @@ const {
   
 			const userEmbed = new EmbedBuilder()
 			  .setColor(0xb399ff)
-			  .setTitle('<:xsbk1:1369375260624818338> You have been paired for a buddy read!')
+			  .setTitle('<:xbuuke:1369320075126898748> You have been paired for a buddy read!')
 			  .addFields(
 				{ name: 'Book', value: announcement.book, inline: false },
 				{ name: 'With', value: announcement.username, inline: false },
@@ -637,7 +637,7 @@ const {
 		  // Confirm to the user WITH EMBED
 		const confirmEmbed = new EmbedBuilder()
 		.setColor(0xb399ff)
-		.setTitle('<:xsbk1:1369375260624818338> Paired Successfully!')
+		.setTitle('<:xbuuke:1369320075126898748> Paired Successfully!')
 		.setDescription(`You are now paired with **${announcement.username}** for **${announcement.book}**!\n\nBoth of you have been notified.`)
 		.setFooter({ text: 'Happy reading!' })
 		.setTimestamp();

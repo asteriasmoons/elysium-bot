@@ -186,6 +186,15 @@ module.exports = {
         ]
       });
 
+      const now = new Date();
+      const warningTime = new Date(Date.now() + (durationMinutes - 5) * 60 * 1000);
+      const endTime = new Date(Date.now() + durationMinutes * 60 * 1000);
+
+      console.log('Now:', now, 'Local:', now.toLocaleString());
+      console.log('Warning will fire at:', warningTime, 'Local:', warningTime.toLocaleString());
+      console.log('End will fire at:', endTime, 'Local:', endTime.toLocaleString());
+
+
       // Schedule warning and finish using Agenda
       const sprintId = sprint._id.toString();
       if (durationMinutes > 5) {
@@ -244,7 +253,7 @@ module.exports = {
       return interaction.reply({
         embeds: [
           new EmbedBuilder()
-            .setTitle('Joined Sprint! <:xsbk1:1369375260624818338>')
+            .setTitle('Joined Sprint! <:xbuuke:1369320075126898748>')
             .setDescription(`You joined the sprint at page **${startingPages}**!`)
             .setColor('#4ac4d7')
         ],
@@ -328,7 +337,7 @@ module.exports = {
       return interaction.reply({
         embeds: [
           new EmbedBuilder()
-            .setTitle('<a:zxpin3:1368804727395061760> Sprint Time Left')
+            .setTitle('<:zxblt:1370269490885034095> Sprint Time Left')
             .setDescription(`**${minutes}** minutes **${seconds}** seconds left!`)
             .setColor('#4ac4d7')
         ],
@@ -438,7 +447,7 @@ module.exports = {
       return interaction.reply({
         embeds: [
           new EmbedBuilder()
-		  .setTitle(`<:xsbk1:1369375260624818338> Sprint Leaderboard for ${interaction.guild.name}`) // Add server name?
+		  .setTitle(`<:xbuuke:1369320075126898748> Sprint Leaderboard for ${interaction.guild.name}`) // Add server name?
             .setDescription(desc)
             .setColor('#4ac4d7')
         ]
