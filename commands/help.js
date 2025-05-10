@@ -8,12 +8,19 @@ module.exports = {
     // Embed 1: Command List
     const helpEmbed = new EmbedBuilder()
       .setTitle('<:xbuuke:1369320075126898748> Book Bot Help')
-      .setDescription('Welcome to BookBot Help Menu! In this menu you will find ALL the commands the bot has to offer. If you need to see more about a command group, use ``/help commandgroupname`` and you will get a new message with the commands and all their details. Thank you so much for choosing BookBot!')
+      .setDescription('Welcome to BookBot Help Menu! In this menu you will find ALL the commands the bot has to offer. Click on a command to pull up the command in the commands center on mobile or if on desktop it will be placed in the channel where you can then hit send. Thank you so much for choosing BookBot!')
       .addFields(
         { name: '</help:1368067383742304302>', value: 'This shows you these help menus with their buttons. Use the buttons to navigate.' },
         { name: '</report:1368067384107339871>', value: 'Use this command to directly send me feedback or bug reports!' }
       )
       .setColor('#69359c')
+      .setFooter({ text: 'BookBot Help Menus' });
+
+      // Embed 14: How Sprints Work
+      const howEmbed = new EmbedBuilder()
+      .setTitle('<:xbuuke:1369320075126898748> How Book Sprints Work')
+      .setColor('#69359c')
+      .setDescription('Book sprints are a fun way to read together and track your progress! When a sprint starts, join in by telling the bot what page youre currently on—this is your starting page. Once the sprint ends, submit the page you finished on. The bot will do the math and let you know how many pages you read during the sprint For example, if you start on page 25 and end on page 40, the bot will record that you read 15 pages. Its a great way to stay motivated and see how much you can read with friends!')
       .setFooter({ text: 'BookBot Help Menus' });
 
     // Embed 2: More Commands (Buddy Reads)
@@ -180,17 +187,7 @@ module.exports = {
       )
       .setFooter({ text: 'BookBot Help Menus' });
 
-    // Embed 14: How Sprints Work
-    const howEmbed = new EmbedBuilder()
-      .setTitle('<:xbuuke:1369320075126898748> How Book Sprints Work')
-      .setColor('#69359c')
-      .setDescription(
-        `Book sprints are a fun way to read together and track your progress! When a sprint starts, join in by telling the bot what page you're currently on—this is your starting page. Once the sprint ends, submit the page you finished on. The bot will do the math and let you know how many pages you read during the sprint!\n\n` +
-        `For example, if you start on page 25 and end on page 40, the bot will record that you read 15 pages. It's a great way to stay motivated and see how much you can read with friends!`
-      )
-      .setFooter({ text: 'BookBot Help Menus' });
-
-      const embeds = [helpEmbed, moreCmdsEmbed, channelCmds, profileCmds, progressCmds, remindersCmds, reviewCmds, sprintCmds, tbrCmds, inventoryCmds, embedCmds, journalCmds, recommendCmds, howEmbed];
+      const embeds = [helpEmbed, howEmbed, moreCmdsEmbed, channelCmds, profileCmds, progressCmds, remindersCmds, reviewCmds, sprintCmds, tbrCmds, inventoryCmds, embedCmds, journalCmds, recommendCmds];
 
     // Embed navigation logic
     let currentPage = 0;
@@ -277,17 +274,107 @@ module.exports = {
                     .setDisabled(true)
             );
 
-            try {
-                await message.edit({ components: [disabledRow] });
-                // If you prefer to remove buttons entirely after timeout:
-                // await message.edit({ components: [] });
-            } catch (error) {
-                // Ignore error if the message was already deleted or is otherwise inaccessible
-                // Discord API error code 10008 is "Unknown Message"
-                if (error.code !== 10008) {
-                    console.error("Error trying to edit message after help collector timed out:", error);
-                }
+            // This whole block goes inside your: collector.on('end', async (collected, reason) => { ... });
+            // Make sure 'disabledRow', 'interaction', and 'message' variables are defined and accessible here.
+            // 'message' is the object from your initial: await interaction.reply({ ..., fetchReply: true });
+
+        try {
+        // 1. Try to fetch the channel using the channelId from the original message
+        const channel = await interaction.client.channels.fetch(message.channelId).catch(err => {
+        // Log if channel fetch itself fails, then return null to be handled below
+        console.warn(`Failed to fetch channel ${message.channelId} directly: ${err.message}`);
+        return null;
+    });
+
+      if (channel && channel.isTextBased()) { // Works for guild text channels and DM channels
+        // 2. Try to fetch the message itself from the (potentially newly) fetched channel
+      const freshMessage = await channel.messages.fetch(message.id).catch(err => {
+        // Log if message fetch fails, then return null
+      if (err.code !== 10008) { // Don't log an error if it's just "Unknown Message"
+      console.warn(`Failed to fetch message ${message.id} from channel ${channel.id}: ${err.message}`);
             }
+            return null;
         });
+
+        if (freshMessage) {
+            // 3. Now, edit the fresh (and confirmed existing) message object
+            await freshMessage.edit({ components: [disabledRow] });
+            console.log(`Successfully disabled buttons for help message ${freshMessage.id}`);
+        } else {
+            // This means channel.messages.fetch(message.id) returned null (or threw an error caught by its .catch)
+            // It implies the message was likely deleted.
+            console.log(`Help command message (ID: ${message.id}) could not be found in channel ${message.channelId} when collector ended. Might have been deleted by a user.`);
+        }
+    } else {
+        // This means client.channels.fetch(message.channelId) returned null or the channel isn't text-based.
+        console.log(`Channel (ID: ${message.channelId}) for help command message could not be fetched, is not text-based, or bot lost access when collector ended.`);
+    }
+} catch (error) { // This single catch block will handle errors from the 'try' block above
+    if (error.code === 10008) { // Unknown Message (already handled by freshMessage being null, but good to have as a fallback)
+        console.log(`Help command message (ID: ${message.id}) was already deleted before buttons could be disabled (Error 10008).`);
+    } else if (error.code === 50007) { // Cannot send messages to this user (relevant for DMs)
+        console.warn(`Could not edit message in DM for user ${interaction.user.id} (Message ID: ${message.id}, Channel: ${message.channelId}). They might have DMs closed or blocked the bot.`);
+    } else if (error.code === 50001) { // Missing Access (e.g., bot kicked, channel permissions changed)
+        console.error(`Missing access to channel ${message.channelId} when trying to disable help buttons (Error 50001 for Message ID: ${message.id}).`);
+    } else if (error.code === 'ChannelNotCached' || (error.message && error.message.includes('ChannelNotCached'))) {
+        console.warn(`Encountered ChannelNotCached for ${message.channelId} despite fetch attempt. This can happen if the channel truly became inaccessible. (Error: ${error.message}, Message ID: ${message.id})`);
+    } else {
+        // Log other unexpected errors
+        console.error(`Unexpected error trying to edit message after help collector timed out (Message ID: ${message.id}, Channel ID: ${message.channelId}):`, error);
+    }
+}
+    
+// This whole block goes inside your: collector.on('end', async (collected, reason) => { ... });
+// Make sure 'disabledRow', 'interaction', and 'message' variables are defined and accessible here.
+// 'message' is the object from your initial: await interaction.reply({ ..., fetchReply: true });
+
+// --- START OF THE TRY BLOCK ---
+try {
+  // 1. Try to fetch the channel using the channelId from the original message
+  const channel = await interaction.client.channels.fetch(message.channelId).catch(err => {
+      console.warn(`[CollectorEnd] Failed to fetch channel ${message.channelId} directly: ${err.message}`);
+      return null; // Return null to be handled by the 'if (channel ...)' check below
+  });
+
+  if (channel && channel.isTextBased()) { // Works for guild text channels and DM channels
+      // 2. Try to fetch the message itself from the (potentially newly) fetched channel
+      const freshMessage = await channel.messages.fetch(message.id).catch(err => {
+          // Don't log an error if it's just "Unknown Message" (10008), as it means the message was deleted.
+          if (err.code !== 10008) {
+              console.warn(`[CollectorEnd] Failed to fetch message ${message.id} from channel ${channel.id}: ${err.message}`);
+          }
+          return null; // Return null if message fetch fails
+      });
+
+      if (freshMessage) {
+          // 3. Now, edit the fresh (and confirmed existing) message object
+          await freshMessage.edit({ components: [disabledRow] }); // Ensure 'disabledRow' is defined
+          console.log(`[CollectorEnd] Successfully disabled buttons for help message ${freshMessage.id}`);
+      } else {
+          // This means channel.messages.fetch(message.id) returned null (or threw an error caught by its .catch)
+          // It implies the message was likely deleted by a user or another process.
+          console.log(`[CollectorEnd] Help command message (ID: ${message.id}) could not be found in channel ${message.channelId}. Might have been deleted.`);
+      }
+  } else {
+      // This means client.channels.fetch(message.channelId) returned null or the channel isn't text-based.
+      console.log(`[CollectorEnd] Channel (ID: ${message.channelId}) for help message could not be fetched, is not text-based, or bot lost access.`);
+  }
+// --- END OF THE TRY BLOCK ---
+} catch (error) { // <<< THIS CATCH NOW CORRECTLY FOLLOWS THE COMPLETED TRY BLOCK
+  if (error.code === 10008) { // Unknown Message (This case is mostly handled by freshMessage being null, but good as a fallback)
+      console.log(`[CollectorEnd] Help command message (ID: ${message.id}) was already deleted before buttons could be disabled (Error 10008).`);
+  } else if (error.code === 50007) { // Cannot send messages to this user (relevant for DMs)
+      console.warn(`[CollectorEnd] Could not edit message in DM for user ${interaction.user.id} (Message ID: ${message.id}, Channel: ${message.channelId}). They might have DMs closed or blocked the bot.`);
+  } else if (error.code === 50001) { // Missing Access (e.g., bot kicked, channel permissions changed)
+      console.error(`[CollectorEnd] Missing access to channel ${message.channelId} when trying to disable help buttons (Error 50001 for Message ID: ${message.id}).`);
+  } else if (error.code === 'ChannelNotCached' || (error.message && error.message.includes('ChannelNotCached'))) {
+      console.warn(`[CollectorEnd] Encountered ChannelNotCached for ${message.channelId} despite fetch attempt. (Error: ${error.message}, Message ID: ${message.id})`);
+  } else {
+      // Log other unexpected errors
+      console.error(`[CollectorEnd] Unexpected error trying to edit message after help collector timed out (Message ID: ${message.id}, Channel ID: ${message.channelId}):`, error);
       }
     }
+  });
+    }
+  }
+// --- END OF THE CATCH BLOCK ---
