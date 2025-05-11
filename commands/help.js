@@ -11,7 +11,8 @@ module.exports = {
       .setDescription('Welcome to BookBot Help Menu! In this menu you will find ALL the commands the bot has to offer. Click on a command to pull up the command in the commands center on mobile or if on desktop it will be placed in the channel where you can then hit send. Thank you so much for choosing BookBot!')
       .addFields(
         { name: '</help:1368067383742304302>', value: 'This shows you these help menus with their buttons. Use the buttons to navigate.' },
-        { name: '</report:1368067384107339871>', value: 'Use this command to directly send me feedback or bug reports!' }
+        { name: '</report:1368067384107339871>', value: 'Use this command to directly send me feedback or bug reports!' },
+        { name: '</giftlist:1371203722780344360>', value: 'A new command allowing you to announce your purchase off someones giftlist from their profile' }
       )
       .setColor('#69359c')
       .setFooter({ text: 'BookBot Help Menus' });
@@ -47,7 +48,8 @@ module.exports = {
       .setTitle('<:xbuuke:1369320075126898748> Channel Commands')
       .setColor('#69359c')
       .addFields(
-        { name: '</channel set:1368067383742304300>', value: 'Set the current channel as the reading sprints channel to run the sprint commands' },
+        { name: '</channel set sprints:1368067383742304300>', value: 'Set a channel for the sprint events youll host' },
+        { name: '</channel set gifts:1368067383742304300>', value: 'Set a channel for where the giftlist announcements should go' },
         { name: '</channel view:1368067383742304300>', value: 'View the channel that is set for doing reading sprints in with the sprints commands' },
         { name: '</channel reset:1368067383742304300>', value: 'Reset the channel settings for the bot in your server.' }
       )
