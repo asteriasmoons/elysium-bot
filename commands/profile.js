@@ -58,15 +58,6 @@ module.exports = {
         return interaction.reply({ embeds: [noProfileEmbed], ephemeral: true });
       }
 
-      if (profile.giftListUrl) {
-        fields.push({
-            name: `${customEmoji} Gift List`,
-            // Format the URL as a hyperlink using Markdown [Text](URL)
-            value: `[Gift List](${profile.giftListUrl})`,
-            inline: false // Keeping it inline: false based on your structure
-        });
-    }
-
       const embed = new EmbedBuilder()
         .setTitle(`${user.username}'s Book Profile`)
         .setColor('#4ac4d7')
@@ -80,8 +71,17 @@ module.exports = {
           { name: `${customEmoji} Favorite Author`, value: profile.favoriteAuthor || 'Not set', inline: false },
           { name: `${customEmoji} Member Since`, value: formatDate(profile.memberSince), inline: false }
         );
+
+        if (profile.giftListUrl) {
+        embed.addFields({
+        name: `${customEmoji} Gift List`,
+        // Format the URL as a hyperlink using Markdown [Text](URL)
+        value: `[Gift List](${profile.giftListUrl})`,
+        inline: true // Keeping it inline: false based on your structure
+      });
       return interaction.reply({ embeds: [embed] });
     }
+  }
 
     // ----------- SET -----------
     if (subcommand === 'set') {
