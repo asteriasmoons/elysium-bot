@@ -27,6 +27,7 @@ module.exports = {
         .addStringOption(opt => opt.setName('favorite_genre').setDescription('Your favorite book genre').setRequired(true))
         .addStringOption(opt => opt.setName('preferred_format').setDescription('Preferred reading format (Physical, eBook, Audiobook, All)').setRequired(true))
         .addStringOption(opt => opt.setName('favorite_author').setDescription('Your favorite author').setRequired(true))
+        .addStringOption(opt => opt.setName('gift_list_url').setDescription('Optionally add your Amazon gift list URL').setRequired(false))
     )
     // Edit subcommand
     .addSubcommand(sub =>
@@ -38,6 +39,7 @@ module.exports = {
         .addStringOption(opt => opt.setName('favorite_genre').setDescription('Edit your favorite genre').setRequired(false))
         .addStringOption(opt => opt.setName('preferred_format').setDescription('Edit your preferred format').setRequired(false))
         .addStringOption(opt => opt.setName('favorite_author').setDescription('Edit your favorite author').setRequired(false))
+        .addStringOption(opt => opt.setName('gift_list_url').setDescription('Optionally add your Amazon gift list url').setRequired(false))
     ),
 	
   async execute(interaction) {
@@ -55,6 +57,15 @@ module.exports = {
           .setDescription(`${user.id === interaction.user.id ? 'You have' : `${user.username} has`} not set a profile yet.${user.id === interaction.user.id ? ' Use \`/profile set\` to create one!' : ''}`);
         return interaction.reply({ embeds: [noProfileEmbed], ephemeral: true });
       }
+
+      if (profile.giftListUrl) {
+        fields.push({
+            name: `${customEmoji} Gift List`,
+            // Format the URL as a hyperlink using Markdown [Text](URL)
+            value: `[Gift List](${profile.giftListUrl})`,
+            inline: false // Keeping it inline: false based on your structure
+        });
+    }
 
       const embed = new EmbedBuilder()
         .setTitle(`${user.username}'s Book Profile`)
@@ -81,6 +92,7 @@ module.exports = {
       const favoriteGenre = interaction.options.getString('favorite_genre');
       const preferredFormat = interaction.options.getString('preferred_format');
       const favoriteAuthor = interaction.options.getString('favorite_author');
+      const giftListUrl = interaction.options.getString('gift_list_url');
 
       let profile = await Profile.findOne({ userId });
       if (!profile) {
@@ -92,6 +104,7 @@ module.exports = {
       profile.favoriteGenre = favoriteGenre;
       profile.preferredFormat = preferredFormat;
       profile.favoriteAuthor = favoriteAuthor;
+      profile.giftListUrl = giftListUrl;
       if (!profile.memberSince) profile.memberSince = new Date();
 
       await profile.save();
@@ -122,6 +135,7 @@ module.exports = {
       const favoriteGenre = interaction.options.getString('favorite_genre');
       const preferredFormat = interaction.options.getString('preferred_format');
       const favoriteAuthor = interaction.options.getString('favorite_author');
+      const giftListUrl = interaction.options.getString('gift_list_url');
 
       let updated = false;
 
@@ -131,6 +145,7 @@ module.exports = {
       if (favoriteGenre !== null) { profile.favoriteGenre = favoriteGenre; updated = true; }
       if (preferredFormat !== null) { profile.preferredFormat = preferredFormat; updated = true; }
       if (favoriteAuthor !== null) { profile.favoriteAuthor = favoriteAuthor; updated = true; }
+      if ( giftListUrl !== null ) { profile.giftListUrl = giftListUrl; updated = true; }
 
       if (!updated) {
         const noUpdateEmbed = new EmbedBuilder()

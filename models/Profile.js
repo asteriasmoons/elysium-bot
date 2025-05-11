@@ -9,6 +9,7 @@ const profileSchema = new mongoose.Schema({
   readingGoal: { type: String, default: 0 },
   preferredFormat: { type: String, default: '' },
   favoriteAuthor: { type: String, default: '' },
+  giftListUrl: { type: String, default: '' },
   memberSince: { type: Date, default: Date.now }
 });
 
