@@ -16,14 +16,14 @@ module.exports = {
       .setColor('#69359c')
       .setFooter({ text: 'BookBot Help Menus' });
 
-      // Embed 14: How Sprints Work
+      // Embed 2: How Sprints Work
       const howEmbed = new EmbedBuilder()
       .setTitle('<:xbuuke:1369320075126898748> How Book Sprints Work')
       .setColor('#69359c')
       .setDescription('Book sprints are a fun way to read together and track your progress! When a sprint starts, join in by telling the bot what page youre currently on—this is your starting page. Once the sprint ends, submit the page you finished on. The bot will do the math and let you know how many pages you read during the sprint For example, if you start on page 25 and end on page 40, the bot will record that you read 15 pages. Its a great way to stay motivated and see how much you can read with friends!')
       .setFooter({ text: 'BookBot Help Menus' });
 
-    // Embed 2: More Commands (Buddy Reads)
+    // Embed 3: More Commands (Buddy Reads)
     const moreCmdsEmbed = new EmbedBuilder()
       .setTitle('<:xbuuke:1369320075126898748> Buddy Reads Commands')
       .setColor('#69359c')
@@ -42,7 +42,7 @@ module.exports = {
       )
       .setFooter({ text: 'BookBot Help Menus' });
 
-      // Embed 3: Commands (Channel)
+      // Embed 4: Commands (Channel)
       const channelCmds = new EmbedBuilder()
       .setTitle('<:xbuuke:1369320075126898748> Channel Commands')
       .setColor('#69359c')
@@ -53,7 +53,7 @@ module.exports = {
       )
       .setFooter({ text: 'BookBot Help Menus' });
 
-      // Embed 4: Commands (Profile)
+      // Embed 5: Commands (Profile)
       const profileCmds = new EmbedBuilder()
       .setTitle('<:xbuuke:1369320075126898748> Profile Commands')
       .setColor('#69359c')
@@ -64,7 +64,7 @@ module.exports = {
       )
       .setFooter({ text: 'BookBot Help Menus' });
 
-      // Embed 5: Commands (Progress)
+      // Embed 6: Commands (Progress)
       const progressCmds = new EmbedBuilder()
       .setTitle('<:xbuuke:1369320075126898748> Progress Commands' )
       .setColor('#69359c')
@@ -76,7 +76,7 @@ module.exports = {
       )
       .setFooter({ text: 'BookBot Help Menus' });
 
-      // Embed 6: Commands (Reminders) 
+      // Embed 7: Commands (Reminders) 
       const remindersCmds = new EmbedBuilder()
       .setTitle('<:xbuuke:1369320075126898748> Reminders Commands')
       .setColor('#69359c')
@@ -93,7 +93,7 @@ module.exports = {
       )
       .setFooter({ text: 'BookBot Help Menus' });
 
-      // Embed 7: Commands (Reviews)
+      // Embed 8: Commands (Reviews)
       const reviewCmds = new EmbedBuilder()
       .setTitle('<:xbuuke:1369320075126898748> Review Commands')
       .setColor('#69359c')
@@ -108,7 +108,7 @@ module.exports = {
       )
       .setFooter({ text: 'BookBot Help Menus' });
 
-      // Embed 8: Commands (Sprints)
+      // Embed 9: Commands (Sprints)
       const sprintCmds = new EmbedBuilder()
       .setTitle('<:xbuuke:1369320075126898748> Sprint Commands')
       .setColor('#69359c')
@@ -123,7 +123,7 @@ module.exports = {
       )
       .setFooter({ text: 'BookBot Help Menus' });
 
-      // Embed 9: Commands (TBR)
+      // Embed 10: Commands (TBR)
       const tbrCmds = new EmbedBuilder()
       .setTitle('<:xbuuke:1369320075126898748> TBR (To Be Read) Commands')
       .setColor('#69359c')
@@ -134,7 +134,7 @@ module.exports = {
       )
       .setFooter({ text: 'BookBot Help Menus' });
 
-      // Embed 10: Commands (Inventory)
+      // Embed 11: Commands (Inventory)
       const inventoryCmds = new EmbedBuilder()
       .setTitle('<:xbuuke:1369320075126898748> Inventory Commands')
       .setColor('#69359c')
@@ -145,7 +145,7 @@ module.exports = {
       )
       .setFooter({ text: 'BookBot Help Menus' });
 
-      // Embed 11: Commands (Embeds)
+      // Embed 12: Commands (Embeds)
       const embedCmds = new EmbedBuilder()
       .setTitle('<:xbuuke:1369320075126898748> Embed Commands')
       .setColor('#69359c')
@@ -159,7 +159,7 @@ module.exports = {
       )
       .setFooter({ text: 'BookBot Help Menus' });
 
-      // Embed 12: Commands (Journal)
+      // Embed 13: Commands (Journal)
       const journalCmds = new EmbedBuilder()
       .setTitle('<:xbuuke:1369320075126898748> Journal Commands')
       .setColor('#69359c')
@@ -172,7 +172,7 @@ module.exports = {
       )
       .setFooter({ text: 'BookBot Help Menus' });
 
-      // Embed 13: Commands (Recommendations)
+      // Embed 14: Commands (Recommendations)
       const recommendCmds = new EmbedBuilder()
       .setTitle('<:xbuuke:1369320075126898748> Recommendation Commands')
       .setColor('#69359c')
