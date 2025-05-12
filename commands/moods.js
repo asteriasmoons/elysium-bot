@@ -347,7 +347,7 @@ module.exports = {
                 }
                 statsEmbed.addFields({ name: '🤸‍♀️ Activity Distribution', value: activityDescription.substring(0,1024) });
 
-                await interaction.reply({ embeds: [statsEmbed], ephemeral: true });
+                await interaction.reply({ embeds: [statsEmbed], ephemeral: false });
 
             } catch (error) {
                 console.error("Error fetching or processing mood stats:", error);
