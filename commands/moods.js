@@ -1,19 +1,8 @@
 // commands/mood.js
-const {
-    SlashCommandBuilder,
-    EmbedBuilder,
-    ActionRowBuilder,
-    StringSelectMenuBuilder,
-    StringSelectMenuOptionBuilder,
-    ButtonBuilder,
-    ButtonStyle,
-    ModalBuilder,
-    TextInputBuilder,
-    TextInputStyle
-} = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder, StringSelectMenuOptionBuilder, ButtonBuilder, ButtonStyle, ModalBuilder, TextInputBuilder, TextInputStyle } = require('discord.js');
 const MoodLog = require('../models/MoodLog'); // Adjust path if needed
 const { MessageFlagsBitField } = require('discord.js');
-// const { DateTime } = require('luxon'); // Only if you need it for display in this command's replies
+const { DateTime } = require('luxon'); // Only if you need it for display in this command's replies
 
 // --- Your Predefined Lists (Updated) ---
 const CURATED_MOODS = [
