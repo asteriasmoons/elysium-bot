@@ -12,6 +12,7 @@ const {
     TextInputStyle
 } = require('discord.js');
 const MoodLog = require('../models/MoodLog'); // Adjust path if needed
+const { MessageFlagsBitField } = require('discord.js');
 // const { DateTime } = require('luxon'); // Only if you need it for display in this command's replies
 
 // --- Your Predefined Lists (Updated) ---
@@ -36,8 +37,23 @@ module.exports = {
             sub.setName('log')
             .setDescription('Log your current moods and activities.')
         )
+		// In your commands/mood.js, add this to your SlashCommandBuilder data:
+.addSubcommand(sub =>
+    sub.setName('stats')
+    .setDescription('View your mood and activity statistics.')
+    .addStringOption(option =>
+        option.setName('period')
+            .setDescription('The period to view stats for (default: week)')
+            .setRequired(false)
+            .addChoices(
+                { name: 'Today', value: 'today' },
+                { name: 'Last 7 Days (Week)', value: 'week' },
+                { name: 'Last 30 Days (Month)', value: 'month' },
+                { name: 'All Time', value: 'alltime' }
+        	  )
+	       )
+        )
         // You'll add subcommands for 'stats' and 'remind' later
-        // .addSubcommand(sub => sub.setName('stats').setDescription('View your mood statistics.'))
         // .addSubcommand(sub => sub.setName('remind').setDescription('Set up mood logging reminders.'))
     ,
     async execute(interaction) {
@@ -187,13 +203,13 @@ module.exports = {
                         console.error("Error in mood log collector:", error);
                         if (!i.replied && !i.deferred && i.isMessageComponent()) {
                            try {
-                             await i.reply({content: 'An error occurred while processing your action.', ephemeral: true});
+                             await i.reply({content: 'An error occurred while processing your action.', ephemeral: false});
                            } catch (replyError) {
                              console.error("Error sending error reply in collector: ", replyError);
                            }
                         } else if (i.isMessageComponent()) {
                            try {
-                             await i.followUp({content: 'An error occurred while processing your action.', ephemeral: true});
+                             await i.followUp({content: 'An error occurred while processing your action.', ephemeral: false});
                            } catch (followUpError) {
                              console.error("Error sending error followup in collector: ", followUpError);
                            }
@@ -216,12 +232,138 @@ module.exports = {
             } catch (error) {
                 console.error("Error executing mood log command:", error);
                  if (!interaction.replied && !interaction.deferred) {
-                    await interaction.reply({ content: 'There was an error trying to set up the mood log!', ephemeral: true });
+                    await interaction.reply({ content: 'There was an error trying to set up the mood log!', ephemeral: false });
                 } else {
-                     await interaction.followUp({ content: 'There was an error trying to set up the mood log!', ephemeral: true });
+                     await interaction.followUp({ content: 'There was an error trying to set up the mood log!', ephemeral: false });
                 }
             }
+        } else if (subcommand === 'stats') {
+            const userId = interaction.user.id;
+            const guildId = interaction.guild ? interaction.guild.id : null; // null if in DMs
+            const period = interaction.options.getString('period') || 'week'; // Default to 'week'
+
+            let startDate;
+            const now = DateTime.now(); // Use Luxon DateTime
+
+            // Determine startDate based on the selected period
+            // We'll calculate start dates in UTC for consistent querying,
+            // as timestamps are stored in UTC by default by Mongoose.
+            if (period === 'today') {
+                startDate = now.setZone('utc').startOf('day');
+            } else if (period === 'week') {
+                startDate = now.setZone('utc').minus({ days: 7 }).startOf('day');
+            } else if (period === 'month') {
+                // Using 30 days for simplicity, you could also do start of current month
+                startDate = now.setZone('utc').minus({ days: 30 }).startOf('day');
+            } else { // 'alltime'
+                startDate = null; // No start date needed for all time
+            }
+
+            // Build the MongoDB query
+            const query = {
+                userId: userId,
+                guildId: guildId // This will correctly be null for DMs
+            };
+
+            if (startDate) {
+                query.timestamp = { $gte: startDate.toJSDate() }; // Only need $gte for start of period up to now
+            }
+            // No $lte: now.toJSDate() is needed if we always want up to the current moment.
+            // If you want to cap it at the end of 'today' for the 'today' period for example, you could add $lte.
+
+            try {
+                const logs = await MoodLog.find(query).sort({ timestamp: -1 }); // Get logs for the user/guild/period
+
+                if (!logs || logs.length === 0) {
+                    const location = guildId ? `in ${interaction.guild.name}` : "in your DMs";
+                    const periodText = period === 'alltime' ? 'overall' : `for the ${period === 'week' ? 'last 7 days' : (period === 'month' ? 'last 30 days' : 'today')}`;
+                    return interaction.reply({ content: `No mood logs found for you ${location} ${periodText}. Start logging with \`/mood log\`!`, ephemeral: false });
+                }
+
+                // --- Process Moods ---
+                const moodCounts = {};
+                let totalMoodSelections = 0; // Counts each mood selected in each log
+                logs.forEach(log => {
+                    if (log.moods && log.moods.length > 0) {
+                        log.moods.forEach(mood => {
+                            moodCounts[mood] = (moodCounts[mood] || 0) + 1;
+                            totalMoodSelections++;
+                        });
+                    }
+                });
+
+                // --- Process Activities ---
+                const activityCounts = {};
+                let totalActivitySelections = 0; // Counts each activity selected
+                logs.forEach(log => {
+                    if (log.activities && log.activities.length > 0) {
+                        log.activities.forEach(activity => {
+                            activityCounts[activity] = (activityCounts[activity] || 0) + 1;
+                            totalActivitySelections++;
+                        });
+                    }
+                });
+
+                // --- Build the Embed ---
+                const periodDisplayNames = {
+                    today: "Today",
+                    week: "Last 7 Days",
+                    month: "Last 30 Days",
+                    alltime: "All Time"
+                };
+                const displayPeriod = periodDisplayNames[period] || "Selected Period";
+                const contextName = guildId ? `in ${interaction.guild.name}` : "in DMs";
+
+                const statsEmbed = new EmbedBuilder()
+                    .setColor(0x4CAF50) // A nice green for stats
+                    .setTitle(`📊 Your Mood & Activity Stats (${displayPeriod})`)
+                    .setDescription(`Showing your logged data ${contextName}.`)
+                    .setTimestamp();
+
+                // Moods Field
+                let moodDescription = "No moods logged in this period.";
+                if (totalMoodSelections > 0) {
+                    const sortedMoods = Object.entries(moodCounts)
+                        .sort(([, aCount], [, bCount]) => bCount - aCount) // Sort by count descending
+                        .slice(0, 10); // Show top 10 moods to prevent huge embeds
+
+                    moodDescription = sortedMoods
+                        .map(([mood, count]) => {
+                            const percentage = ((count / totalMoodSelections) * 100).toFixed(1);
+                            return `**${mood}:** ${count} (${percentage}%)`;
+                        })
+                        .join('\n');
+                    if (Object.keys(moodCounts).length > 10) {
+                        moodDescription += "\n*...and more (showing top 10).*";
+                    }
+                }
+                statsEmbed.addFields({ name: '🧠 Mood Distribution', value: moodDescription.substring(0,1024) }); // Max field value length 1024
+
+                // Activities Field
+                let activityDescription = "No activities logged in this period.";
+                if (totalActivitySelections > 0) {
+                    const sortedActivities = Object.entries(activityCounts)
+                        .sort(([, aCount], [, bCount]) => bCount - aCount)
+                        .slice(0, 10); // Show top 10 activities
+
+                    activityDescription = sortedActivities
+                        .map(([activity, count]) => {
+                            const percentage = ((count / totalActivitySelections) * 100).toFixed(1);
+                            return `**${activity}:** ${count} (${percentage}%)`;
+                        })
+                        .join('\n');
+                    if (Object.keys(activityCounts).length > 10) {
+                        activityDescription += "\n*...and more (showing top 10).*";
+                    }
+                }
+                statsEmbed.addFields({ name: '🤸‍♀️ Activity Distribution', value: activityDescription.substring(0,1024) });
+
+                await interaction.reply({ embeds: [statsEmbed], ephemeral: true });
+
+            } catch (error) {
+                console.error("Error fetching or processing mood stats:", error);
+                await interaction.reply({ content: 'Sorry, I encountered an error trying to fetch your stats.', ephemeral: false });
+            }
         }
-        // ... other subcommands for 'stats' and 'remind' will go here ...
-    }
+	}
 };
