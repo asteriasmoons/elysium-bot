@@ -94,7 +94,7 @@ module.exports = {
                 const message = await interaction.reply({
                     embeds: [logEmbed],
                     components: [rowMoods, rowActivities, rowButtons],
-                    ephemeral: true,
+                    ephemeral: false,
                     fetchReply: true
                 });
 
