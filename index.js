@@ -82,6 +82,7 @@ client.once('ready', async () => { // <<< Added 'async' here
         activities: [{ name: 'with books 📚', type: 'PLAYING' }], // Assuming 'PLAYING' is what you intend; discord.js v14 might use ActivityType.Playing
         status: 'online'
     });
+    client.agenda = agenda;
     reminders.init(client); // Assuming 'reminders' is defined
     require('./agendaJobs')(agenda, client); // Assuming 'agenda' is defined
     agenda.start();

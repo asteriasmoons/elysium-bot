@@ -1,6 +1,7 @@
 // commands/mood.js
 const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder, StringSelectMenuOptionBuilder, ButtonBuilder, ButtonStyle, ModalBuilder, TextInputBuilder, TextInputStyle } = require('discord.js');
 const MoodLog = require('../models/MoodLog'); // Adjust path if needed
+const MoodReminderSetting = require('../models/MoodReminderSetting');
 const { MessageFlagsBitField } = require('discord.js');
 const { DateTime } = require('luxon'); // Only if you need it for display in this command's replies
 
@@ -25,13 +26,37 @@ module.exports = {
         .addSubcommand(sub =>
             sub.setName('log')
             .setDescription('Log your current moods and activities.')
+		)
+        .addSubcommandGroup(group => group
+            .setName('remind')
+            .setDescription('Manage your personal mood logging reminders.')
+            .addSubcommand(sub => sub
+                .setName('set')
+                .setDescription('Set or update your mood logging reminder.')
+                .addIntegerOption(option => option.setName('hour').setDescription('Hour to receive reminder (0-23, 24-hour format)').setRequired(true).setMinValue(0).setMaxValue(23))
+                .addIntegerOption(option => option.setName('minute').setDescription('Minute to receive reminder (0-59)').setRequired(true).setMinValue(0).setMaxValue(59))
+                .addStringOption(option => option.setName('frequency').setDescription('How often to receive the reminder').setRequired(true)
+                    .addChoices(
+                        { name: 'Daily', value: 'daily' },
+                        { name: 'Weekly', value: 'weekly' }
+                    ))
+                .addStringOption(option => option.setName('timezone').setDescription('Optional: Your IANA timezone (e.g., America/New_York). Uses default/previous if unset.').setRequired(false))
+            )
+            .addSubcommand(sub => sub
+                .setName('off')
+                .setDescription('Turn off your mood logging reminders.')
+            )
+            .addSubcommand(sub => sub
+                .setName('status')
+                .setDescription('Check the status of your mood logging reminder.')
+            )
         )
-		// In your commands/mood.js, add this to your SlashCommandBuilder data:
-.addSubcommand(sub =>
-    sub.setName('stats')
-    .setDescription('View your mood and activity statistics.')
-    .addStringOption(option =>
-        option.setName('period')
+		// ... your other subcommands like log, stats ...
+			.addSubcommand(sub =>
+    		sub.setName('stats')
+    		.setDescription('View your mood and activity statistics.')
+    		.addStringOption(option =>
+        	option.setName('period')
             .setDescription('The period to view stats for (default: week)')
             .setRequired(false)
             .addChoices(
@@ -41,11 +66,16 @@ module.exports = {
                 { name: 'All Time', value: 'alltime' }
         	  )
 	       )
-        )
-        // You'll add subcommands for 'stats' and 'remind' later
-        // .addSubcommand(sub => sub.setName('remind').setDescription('Set up mood logging reminders.'))
-    ,
-    async execute(interaction) {
+        ),
+    	async execute(interaction) {
+		const client = interaction.client;
+        const agenda = client.agenda; // Assuming agenda is attached to client
+
+        if (!agenda) {
+            console.error("CRITICAL: Agenda instance is not available on the client in mood.js!");
+            return interaction.reply({ content: "The reminder service is currently unavailable. Please try again later.", ephemeral: true });
+        }
+		const subcommandGroup = interaction.options.getSubcommandGroup(false);
         const subcommand = interaction.options.getSubcommand();
 
         if (subcommand === 'log') {
@@ -352,7 +382,122 @@ module.exports = {
             } catch (error) {
                 console.error("Error fetching or processing mood stats:", error);
                 await interaction.reply({ content: 'Sorry, I encountered an error trying to fetch your stats.', ephemeral: false });
+            } 
+		} else if (subcommandGroup === 'remind') {
+            const action = subcommand; // 'set', 'off', or 'status'
+            const userId = interaction.user.id;
+            const jobNameForUser = `send-mood-reminder-${userId}`; // Unique name for Agenda job per user for easier cancellation by name
+
+            if (action === 'set') {
+                const hour = interaction.options.getInteger('hour');
+                const minute = interaction.options.getInteger('minute');
+                const frequency = interaction.options.getString('frequency');
+                const timezoneInput = interaction.options.getString('timezone');
+                let userTimezone = timezoneInput;
+
+                if (!userTimezone) {
+                    const existingSetting = await MoodReminderSetting.findOne({ userId });
+                    userTimezone = (existingSetting && existingSetting.timezone) ? existingSetting.timezone : 'America/Chicago'; // Default
+                } else {
+                    try {
+                        DateTime.now().setZone(timezoneInput); // Validate timezone
+                    } catch (e) {
+                        return interaction.reply({ content: `'${timezoneInput}' is not a valid IANA timezone. Examples: 'America/New_York', 'Europe/London'.`, ephemeral: false });
+                    }
+                }
+
+                // Save/Update the setting in the database
+                const setting = await MoodReminderSetting.findOneAndUpdate(
+                    { userId: userId },
+                    { userId: userId, isEnabled: true, hour, minute, frequency, timezone: userTimezone },
+                    { upsert: true, new: true } // Create if doesn't exist, return the new/updated doc
+                );
+
+                // Cancel any pre-existing mood reminder job for this user to avoid duplicates
+                await agenda.cancel({ name: 'send-mood-reminder', 'data.userId': userId });
+                // Or if you were using unique names: await agenda.cancel({ name: jobNameForUser });
+
+                let replyMessage = `Okay! Your mood reminder is now **ON** and set for **${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}** (Timezone: ${userTimezone}). `;
+
+                if (frequency === 'daily') {
+                    // Schedule daily at the specified hour/minute in the user's timezone
+                    // The cron string is 'minute hour * * *'
+                    const cronPattern = `${minute} ${hour} * * *`;
+                    await agenda.every(cronPattern, 'send-mood-reminder', { userId: userId }, { timezone: userTimezone, skipImmediate: true });
+                    replyMessage += `It will repeat **daily**.`;
+                    console.log(`[AGENDA_MOOD_REMIND] Scheduled daily job for user ${userId} with cron "${cronPattern}" at timezone ${userTimezone}`);
+                } else if (frequency === 'weekly') {
+                    // Schedule to run at H:M, repeating every 7 days, respecting timezone.
+                    const nowInUserZone = DateTime.now().setZone(userTimezone);
+                    let firstRun = nowInUserZone.set({ hour: hour, minute: minute, second: 0, millisecond: 0 });
+
+                    // If the first H:M today has already passed OR is within the next minute (to avoid immediate trigger issues with 'skipImmediate'),
+                    // schedule the very first occurrence for tomorrow at H:M for daily, or next week for weekly (or rather, next occurrence).
+                    // For weekly, it's simpler to set the first desired H:M (today or tomorrow)
+                    // and then just repeat every 7 days from that point.
+                    if (firstRun <= nowInUserZone) {
+                        firstRun = firstRun.plus({ days: 1 }); // Ensure first run is in the future
+                    }
+
+                    const job = agenda.create('send-mood-reminder', { userId: userId });
+                    await job.schedule(firstRun.toJSDate())
+                             .repeatEvery('1 week', { timezone: userTimezone, skipImmediate: true }) // Repeats 1 week after the scheduled time
+                             .save();
+                    replyMessage += `It will run first on ${firstRun.toLocaleString(DateTime.DATE_FULL)} and repeat **weekly** around that time.`;
+                    console.log(`[AGENDA_MOOD_REMIND] Scheduled weekly job for user ${userId} starting ${firstRun.toISO()} (TZ: ${userTimezone}), repeating every 7 days.`);
+                }
+
+                await interaction.reply({ content: replyMessage, ephemeral: false });
+
+            } else if (action === 'off') {
+                const updatedSetting = await MoodReminderSetting.findOneAndUpdate(
+                    { userId: userId },
+                    { isEnabled: false },
+                    { new: true }
+                );
+
+                const numRemoved = await agenda.cancel({ name: 'send-mood-reminder', 'data.userId': userId });
+                // Or: await agenda.cancel({ name: jobNameForUser });
+
+                if (numRemoved > 0 || (updatedSetting && !updatedSetting.isEnabled)) {
+                    console.log(`[AGENDA_MOOD_REMIND] Turned OFF and canceled mood reminder job for user ${userId}`);
+                    await interaction.reply({ content: 'Your mood logging reminders have been turned **OFF** and any scheduled task has been cancelled.', ephemeral: false });
+                } else {
+                    await interaction.reply({ content: 'You didn\'t seem to have an active mood reminder, but they are definitely **OFF** now.', ephemeral: false });
+                }
+
+            } else if (action === 'status') {
+                const setting = await MoodReminderSetting.findOne({ userId: userId });
+                if (setting && setting.isEnabled) {
+                    const jobs = await agenda.jobs({ name: 'send-mood-reminder', 'data.userId': userId });
+                    let nextRunText = "I'll DM you at the scheduled time!";
+                    if (jobs && jobs.length > 0 && jobs[0].attrs.nextRunAt) {
+                        try {
+                             // Ensure setting.timezone is valid before using it with Luxon
+                            DateTime.now().setZone(setting.timezone); // Test if timezone is valid
+                            nextRunText = `The next reminder is approximately ${DateTime.fromJSDate(jobs[0].attrs.nextRunAt).setZone(setting.timezone).toFormat("ff")} (${DateTime.fromJSDate(jobs[0].attrs.nextRunAt).setZone(setting.timezone).toRelative()}).`;
+                        } catch (tzError) {
+                            console.warn(`[MOOD_REMIND_STATUS] Invalid timezone '${setting.timezone}' for user ${userId}. Displaying default.`);
+                            nextRunText = `Next reminder is scheduled (timezone issue with '${setting.timezone}', using default display).`;
+                        }
+                    } else if (jobs && jobs.length === 0) {
+                        nextRunText = "It seems to be set, but I couldn't find its exact next schedule. Try re-setting it if it doesn't arrive.";
+                    }
+
+                    await interaction.reply({
+                        content: `Your mood reminder is currently **ON**.\nIt's set for **${String(setting.hour).padStart(2, '0')}:${String(setting.minute).padStart(2, '0')} ${setting.frequency}** (Timezone: ${setting.timezone}).\n${nextRunText}`,
+                        ephemeral: false
+                    });
+                } else {
+                    await interaction.reply({ content: 'Your mood reminders are currently **OFF**.', ephemeral: false });
+                }
             }
         }
-	}
+        // ... other execute logic ...
+    },
+
+    // The init function for mood.js is NO LONGER needed if Agenda handles persistence
+    // async init(client) {
+    //    // await scheduleAllMoodReminders(client); // This was for setTimeout based scheduling
+    // }
 };

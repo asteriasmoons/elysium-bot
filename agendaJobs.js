@@ -2,9 +2,11 @@
 const SprintPingRole = require('./models/SprintPingRole');
 const SprintConfig = require('./models/SprintConfig');
 const Sprint = require('./models/Sprint');
-const Leaderboard = require('./models/Leaderboard'); // Assuming you still use this
+const Leaderboard = require('./models/Leaderboard');
 const RecommendationPreferences = require('./models/RecommendationPreferences');
 const RecommendationHistory = require('./models/RecommendationHistory');
+const MoodReminderSetting = require('./models/MoodReminderSetting');
+const { DateTime } = require('luxon');
 const { EmbedBuilder } = require('discord.js');
 
 // Import the new utility function from utils/getBookRecommendation.js
@@ -229,5 +231,73 @@ module.exports = function initAgendaJobs(agenda, client) {
     }
   });
 
-  console.log('[Agenda] All jobs defined.');
-};
+    // ==================================
+    // == NEW: Mood Logging Reminder Job ==
+    // ==================================
+    agenda.define('send-mood-reminder', { priority: 'normal', concurrency: 10 }, async job => {
+        const { userId } = job.attrs.data;
+        const jobNameInfo = job.attrs.name + (job.attrs.data?.userId ? ` for ${job.attrs.data.userId}` : '');
+
+
+        if (!userId) {
+            console.error(`[AGENDA_MOOD_REMIND] ${jobNameInfo}: Job data missing userId. Cannot proceed.`);
+            // It's a recurring job, so failing it might not be ideal unless you have robust error handling.
+            // Cancelling might be better if the setup is fundamentally wrong.
+            // For now, just return to prevent error spam if data is missing.
+            return;
+        }
+
+        console.log(`[AGENDA_MOOD_REMIND_TRIGGER] ${jobNameInfo}: Triggered at ${DateTime.now().toISO()}`);
+
+        try {
+            const setting = await MoodReminderSetting.findOne({ userId: userId, isEnabled: true });
+
+            if (!setting) {
+                console.warn(`[AGENDA_MOOD_REMIND_SKIP] ${jobNameInfo}: Reminder setting not found or not enabled for user ${userId}. Cancelling future occurrences of this specific job.`);
+                // Cancel this specific job instance/name if the setting is gone or disabled
+                // This assumes that when a user turns off reminders, the job is also explicitly cancelled by its name/data.
+                // If not, this define block will still run.
+                // A more robust cancel would be done in the command that disables it.
+                // For now, if the setting is disabled, we just won't send.
+                // The job will still try to run based on its Agenda schedule until explicitly cancelled.
+                // To prevent it from running again if setting is disabled:
+                await agenda.cancel({ name: 'send-mood-reminder', 'data.userId': userId });
+                console.log(`[AGENDA_MOOD_REMIND] Cancelled job for ${userId} as setting is disabled/missing.`);
+                return;
+            }
+
+            const user = await client.users.fetch(userId).catch(err => {
+                console.error(`[AGENDA_MOOD_REMIND_DM_FAIL] ${jobNameInfo}: Could not fetch user ${userId}:`, err);
+                return null;
+            });
+
+            if (user) {
+                const embed = new EmbedBuilder()
+                    .setColor(0x8e44ad) // Purple for mood reminders
+                    .setTitle('✨ Gentle Mood Check-in!')
+                    .setDescription("Just a friendly nudge to log how you're feeling and what you've been up to!\n\nUse the `/mood log` command when you have a moment. ✨")
+                    .setTimestamp()
+                    .setFooter({ text: "Taking a moment for yourself is important." });
+
+                await user.send({ embeds: [embed] }).catch(dmError => {
+                    console.error(`[AGENDA_MOOD_REMIND_DM_FAIL] ${jobNameInfo}: Could not send DM to user ${userId}:`, dmError);
+                    if (dmError.code === 50007) { // Cannot send messages to this user
+                        console.warn(`[AGENDA_MOOD_REMIND] ${jobNameInfo}: User ${userId} may have DMs disabled. Consider disabling future mood reminders for them if this persists.`);
+                        // Potentially update MoodReminderSetting to isEnabled: false after X failures
+                        // And then cancel the job: await agenda.cancel({ name: 'send-mood-reminder', 'data.userId': userId });
+                    }
+                });
+                console.log(`[AGENDA_MOOD_REMIND_SENT] ${jobNameInfo}: DM successfully attempted for user ${userId}.`);
+            } else {
+                console.warn(`[AGENDA_MOOD_REMIND_SKIP] ${jobNameInfo}: User ${userId} not found. Cannot send DM.`);
+            }
+        } catch (error) {
+            console.error(`[AGENDA_MOOD_REMIND_ERROR] ${jobNameInfo}: Error processing mood reminder for user ${userId}:`, error);
+        }
+        // For jobs scheduled with agenda.every() or job.repeatEvery(), Agenda handles the next run.
+        // No need to manually reschedule from within the job definition itself.
+    });
+    // ==================================
+
+    console.log('[Agenda] All job definitions (including mood reminder) processed.');
+}; // End of initAgendaJobs function
