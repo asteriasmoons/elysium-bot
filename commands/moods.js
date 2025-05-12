@@ -104,7 +104,7 @@ module.exports = {
                 const activitiesSelectMenu = new StringSelectMenuBuilder()
                     .setCustomId(`mood_log_activities_${userId}`)
                     .setPlaceholder('Select your activities (optional)...')
-                    .setMinValues(0) // Allow selecting no activities
+                    .setMinValues(1) // Allow selecting no activities
                     .setMaxValues(ALL_ACTIVITIES.length)
                     .addOptions(
                         ALL_ACTIVITIES.map(activity =>
@@ -293,6 +293,10 @@ module.exports = {
             try {
                 const logs = await MoodLog.find(query).sort({ timestamp: -1 }); // Get logs for the user/guild/period
 
+				const periodDisplayNames = { today: "Today", week: "Last 7 Days", month: "Last 30 Days", alltime: "All Time" };
+                const displayPeriod = periodDisplayNames[period] || "Selected Period";
+                const contextName = guildId ? `in ${interaction.guild.name}` : "in your DMs";
+
                 if (!logs || logs.length === 0) {
                     const location = guildId ? `in ${interaction.guild.name}` : "in your DMs";
                     const periodText = period === 'alltime' ? 'overall' : `for the ${period === 'week' ? 'last 7 days' : (period === 'month' ? 'last 30 days' : 'today')}`;
@@ -323,19 +327,32 @@ module.exports = {
                     }
                 });
 
-                // --- Build the Embed ---
-                const periodDisplayNames = {
-                    today: "Today",
-                    week: "Last 7 Days",
-                    month: "Last 30 Days",
-                    alltime: "All Time"
-                };
-                const displayPeriod = periodDisplayNames[period] || "Selected Period";
-                const contextName = guildId ? `in ${interaction.guild.name}` : "in DMs";
+				// --- 3. Mood-Activity Co-occurrence (MongoDB Aggregation) ---
+                const moodActivityCooccurrences = await MoodLog.aggregate([
+                    { $match: query }, // Use the same query for user, guildId, and period
+                    { $unwind: "$moods" },
+                    { $unwind: "$activities" }, // Safe now because you enforce activities are not empty
+                    {
+                        $group: {
+                            _id: { mood: "$moods", activity: "$activities" },
+                            count: { $sum: 1 }
+                        }
+                    },
+                    { $sort: { count: -1 } },
+                    { $limit: 10 }, // Show top 10 co-occurrences
+                    {
+                        $project: {
+                            _id: 0,
+                            mood: "$_id.mood",
+                            activity: "$_id.activity",
+                            count: "$count"
+                        }
+                    }
+                ]);
 
                 const statsEmbed = new EmbedBuilder()
-                    .setColor(0x4CAF50) // A nice green for stats
-                    .setTitle(`📊 Your Mood & Activity Stats (${displayPeriod})`)
+                    .setColor(0x663399)
+                    .setTitle(`Your Mood & Activity Stats (${displayPeriod})`)
                     .setDescription(`Showing your logged data ${contextName}.`)
                     .setTimestamp();
 
@@ -356,7 +373,7 @@ module.exports = {
                         moodDescription += "\n*...and more (showing top 10).*";
                     }
                 }
-                statsEmbed.addFields({ name: '🧠 Mood Distribution', value: moodDescription.substring(0,1024) }); // Max field value length 1024
+                statsEmbed.addFields({ name: '<a:ybsh2:1368616493817921597> Mood Distribution', value: moodDescription.substring(0,1024) }); // Max field value length 1024
 
                 // Activities Field
                 let activityDescription = "No activities logged in this period.";
@@ -375,8 +392,17 @@ module.exports = {
                         activityDescription += "\n*...and more (showing top 10).*";
                     }
                 }
-                statsEmbed.addFields({ name: '🤸‍♀️ Activity Distribution', value: activityDescription.substring(0,1024) });
+                statsEmbed.addFields({ name: '<a:ybsh2:1368616493817921597> Activity Distribution', value: activityDescription.substring(0,1024) });
 
+				// Mood-Activity Co-occurrence Field
+                let cooccurrenceDescription = "No significant mood-activity connections found in this period.";
+                if (moodActivityCooccurrences && moodActivityCooccurrences.length > 0) {
+                    cooccurrenceDescription = moodActivityCooccurrences
+                        .map(pair => `When feeling **${pair.mood}**, you also logged **${pair.activity}** (${pair.count} times)`)
+                        .join('\n');
+                }
+                statsEmbed.addFields({ name: '<a:ybsh2:1368616493817921597> Mood-Activity Connections (Top Occurrences)', value: cooccurrenceDescription.substring(0, 1024) });
+                
                 await interaction.reply({ embeds: [statsEmbed], ephemeral: false });
 
             } catch (error) {
