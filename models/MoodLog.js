@@ -1,4 +1,6 @@
-const MoodLogSchema = new mongoose.Schema({
+const { Schema, model } = require('mongoose');
+
+const MoodLogSchema = new Schema({
     userId: { type: String, required: true, index: true },
     guildId: { type: String, index: true, default: null }, // To know if logged via DM or a specific server context (optional)
     timestamp: { type: Date, default: Date.now, index: true },
