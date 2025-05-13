@@ -174,7 +174,20 @@ module.exports = {
       )
       .setFooter({ text: 'BookBot Help Menus' });
 
-      // Embed 14: Commands (Recommendations)
+      // Embed 14: Commands (Mood)
+      const moodCmds = new EmbedBuilder()
+      .setTitle('<:xbuuke:1369320075126898748> Mood Commands')
+      .setColor('#69359c')
+      .addFields(
+        { name: '</mood log:1371296341208334448>', value: 'Use this command to summon the mood logging feature' },
+        { name: '</mood remind set:1371296341208334448>', value: 'Setup a mood reminder to come to your DMs to remind you to log your mood' },
+        { name: '</mood remind off:1371296341208334448>', value: 'Turn off the mood reminder you set.' },
+        { name: '</mood remind status:1371296341208334448>', value: 'Check and see if your mood reminder is set and on' },
+        { name: '</mood stats:1371296341208334448>', value: 'View your mood statistics.' }
+      )
+      .setFooter({ text: 'BookBot Help Menus' });
+
+      // Embed 15: Commands (Recommendations)
       const recommendCmds = new EmbedBuilder()
       .setTitle('<:xbuuke:1369320075126898748> Recommendation Commands')
       .setColor('#69359c')
@@ -189,7 +202,7 @@ module.exports = {
       )
       .setFooter({ text: 'BookBot Help Menus' });
 
-      const embeds = [helpEmbed, howEmbed, moreCmdsEmbed, channelCmds, profileCmds, progressCmds, remindersCmds, reviewCmds, sprintCmds, tbrCmds, inventoryCmds, embedCmds, journalCmds, recommendCmds];
+      const embeds = [helpEmbed, howEmbed, moreCmdsEmbed, channelCmds, profileCmds, progressCmds, remindersCmds, reviewCmds, sprintCmds, tbrCmds, inventoryCmds, embedCmds, journalCmds, moodCmds, recommendCmds];
 
     // Embed navigation logic
     let currentPage = 0;

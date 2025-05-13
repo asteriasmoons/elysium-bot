@@ -299,5 +299,75 @@ module.exports = function initAgendaJobs(agenda, client) {
     });
     // ==================================
 
+    // --- NEW: Definition for Habit Reminders ---
+    agenda.define('send-habit-reminder', { priority: 'normal', concurrency: 10 }, async job => {
+        const { userId, habitId } = job.attrs.data;
+        console.log(`[AGENDA_HABIT_TRIGGER] Running 'send-habit-reminder' for User: ${userId}, HabitID: ${habitId}`);
+
+        try {
+            // 1. Fetch the specific habit
+            const habit = await Habit.findOne({ _id: habitId, userId: userId, isEnabled: true });
+
+            if (!habit) {
+                console.log(`[AGENDA_HABIT_SKIP] Habit ${habitId} not found or not enabled for User ${userId}. Cancelling job.`);
+                await job.remove(); // Remove the job if habit is gone/disabled
+                return;
+            }
+
+            // 2. Fetch the user
+            const user = await client.users.fetch(userId).catch(err => {
+                console.error(`[AGENDA_HABIT_ERROR] Could not fetch user ${userId} for habit ${habitId}:`, err);
+                return null;
+            });
+
+            if (!user) {
+                // Optional: Decide if you want to remove the job if user fetch fails persistently
+                // await job.remove();
+                return; // Cannot send DM
+            }
+
+            // 3. Prepare the DM Embed and Buttons
+            const habitEmbed = new EmbedBuilder()
+                .setColor('#5865F2') // Discord Blurple
+                .setTitle(`💡 Habit Check-in: ${habit.habitName}`)
+                .setDescription(habit.description ? `Remember: ${habit.description}\n\nDid you complete this habit?` : `Did you complete "${habit.habitName}"?`)
+                .setFooter({ text: `Frequency: ${habit.frequency} | Reminder set for ${String(habit.hour).padStart(2, '0')}:${String(habit.minute).padStart(2, '0')}` })
+                .setTimestamp();
+
+             // Add streak info if available
+             if (habit.currentStreak > 0) {
+                 habitEmbed.addFields({ name: 'Current Streak', value: `🔥 ${habit.currentStreak} ${habit.frequency === 'daily' ? 'day(s)' : 'cycle(s)'}`, inline: true });
+             }
+              if (habit.longestStreak > 0) {
+                 habitEmbed.addFields({ name: 'Longest Streak', value: `🏆 ${habit.longestStreak} ${habit.frequency === 'daily' ? 'day(s)' : 'cycle(s)'}`, inline: true });
+             }
+
+
+            const habitButtons = new ActionRowBuilder()
+                .addComponents(
+                    // Custom IDs now include the specific habit's DB ID (_id)
+                    new ButtonBuilder().setCustomId(`habit_yes_${habit._id}`).setLabel('✅ Yes!').setStyle(ButtonStyle.Success),
+                    new ButtonBuilder().setCustomId(`habit_no_${habit._id}`).setLabel('❌ Not Today').setStyle(ButtonStyle.Danger),
+                    new ButtonBuilder().setCustomId(`habit_skip_${habit._id}`).setLabel('⚪ Skip').setStyle(ButtonStyle.Secondary)
+                );
+
+            // 4. Send the DM
+            await user.send({ embeds: [habitEmbed], components: [habitButtons] });
+            console.log(`[AGENDA_HABIT_SENT] Sent reminder for Habit "${habit.habitName}" to User ${userId}`);
+
+        } catch (error) {
+            console.error(`[AGENDA_HABIT_ERROR] Failed processing job for HabitID ${habitId}, User ${userId}:`, error);
+            // Optional: Add logic for failed jobs (e.g., job.fail(), job.remove())
+            // Depending on the error, you might want the job to retry or be removed.
+            // For now, we just log the error. The job will attempt to run again based on its schedule if it wasn't removed.
+             if (error.code === 50007) { // Cannot send messages to this user
+                 console.warn(`[AGENDA_HABIT_WARN] Cannot send DM to user ${userId}. Consider disabling habit ${habitId} or notifying admin.`);
+                 // Optionally disable the habit automatically:
+                 // await Habit.updateOne({ _id: habitId }, { $set: { isEnabled: false } });
+                 // await job.remove();
+             }
+        }
+    });
+
     console.log('[Agenda] All job definitions (including mood reminder) processed.');
 }; // End of initAgendaJobs function
