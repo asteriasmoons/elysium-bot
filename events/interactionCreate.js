@@ -1,4 +1,6 @@
 const JournalEntry = require('../models/JournalEntry');
+const Habit = require('../models/Habit');
+const HabitLog = require('../models/HabitLog');
 const { EmbedBuilder } = require('discord.js');
 const axios = require('axios');
 
@@ -23,6 +25,120 @@ module.exports = {
   async execute(interaction, client, agenda) {
     // --- BUTTON HANDLERS ---
     if (interaction.isButton()) {
+
+    // Check if it's a habit DM button
+    if (interaction.customId.startsWith('habit_dm_')) {
+    // Parse the customId
+    // Example: habit_dm_123456789_yes
+    const [ , , habitId, action ] = interaction.customId.split('_');
+
+    // You can now use habitId and action!
+    if (action === 'yes') {
+      // Mark habit as done for today (custom logic)
+    const embed = new EmbedBuilder().setDescription('Marked as done for today! Good Job!');
+    await interaction.reply ({ embeds: [embed] });
+    } else if (action === 'nottoday') {
+      // Mark as "not today"
+       const embed = new EmbedBuilder().setDescription('Marked for not today. Thats okay. Try again tomorrow!');
+       await interaction.reply ({ embeds: [embed] });
+    } else if (action === 'skip') {
+      // Mark as skipped
+       const embed = new EmbedBuilder().setDescription('Marked as skipped today. Thats perfectly fine. You can always try again tomorrow.');
+       await interaction.reply({ embeds: [embed] }); 
+    } else {
+      await interaction.reply({ content: 'Unknown action.', ephemeral: 
+false });
+    }
+    return;
+    }
+
+      if (interaction.customId === 'habit_frequency_daily' || interaction.customId === 'habit_frequency_weekly') {
+    const frequency = interaction.customId === 'habit_frequency_daily' ? 'daily' : 'weekly';
+
+    const modal = new ModalBuilder()
+      .setCustomId(`habit_modal_create_${frequency}`)
+      .setTitle('Set Up Your Habit')
+      .addComponents(
+        new ActionRowBuilder().addComponents(
+          new TextInputBuilder()
+            .setCustomId('habit_name')
+            .setLabel('Habit Name')
+            .setStyle(TextInputStyle.Short)
+            .setRequired(true)
+        ),
+        new ActionRowBuilder().addComponents(
+          new TextInputBuilder()
+            .setCustomId('habit_description')
+            .setLabel('Description')
+            .setStyle(TextInputStyle.Paragraph)
+            .setRequired(false)
+        ),
+        new ActionRowBuilder().addComponents(
+          new TextInputBuilder()
+            .setCustomId('habit_hour')
+            .setLabel('Hour (0-23)')
+            .setStyle(TextInputStyle.Short)
+            .setRequired(true)
+        ),
+        new ActionRowBuilder().addComponents(
+          new TextInputBuilder()
+            .setCustomId('habit_minute')
+            .setLabel('Minute (0-59)')
+            .setStyle(TextInputStyle.Short)
+            .setRequired(true)
+        )
+      );
+
+    return interaction.showModal(modal);
+  }
+}
+
+// --- Modal Handler ---
+if (interaction.isModalSubmit()) {
+  if (interaction.customId.startsWith('habit_modal_create_')) {
+    const frequency = interaction.customId.split('_').pop(); // daily or weekly
+    const userId = interaction.user.id;
+    const name = interaction.fields.getTextInputValue('habit_name');
+    const description = interaction.fields.getTextInputValue('habit_description');
+    const hour = parseInt(interaction.fields.getTextInputValue('habit_hour'), 10);
+    const minute = parseInt(interaction.fields.getTextInputValue('habit_minute'), 10);
+
+    // Save Habit to DB
+    const habit = await Habit.create({
+      userId,
+      name,
+      description,
+      frequency,
+      hour,
+      minute
+    });
+
+    // --- Schedule with Agenda ---
+    // Build cron string
+    let cron;
+    if (frequency === 'daily') {
+      cron = `${minute} ${hour} * * *`; // Every day at hour:minute
+    } else if (frequency === 'weekly') {
+      cron = `${minute} ${hour} * * 1`; // Every Sunday at hour:minute (adjust as needed)
+    }
+
+    // Schedule the job with Agenda (pass habit._id and userId)
+    await interaction.client.agenda.every(cron, 'send-habit-reminder', {
+    habitId: habit._id.toString(),
+    userId: userId
+    });
+
+    const embed = new EmbedBuilder()
+    .setTitle('Habit Created!')
+    .setDescription(`Habit "**${name}**" created! You'll get **${frequency}** reminders at **${hour}:${minute.toString().padStart(2, '0')}**.`)
+    .setColor(0x663399); // Optional: Choose a color you like
+
+    return interaction.reply({
+    embeds: [embed],
+    ephemeral: false
+   });
+  }
+
 
       // ======================
       // EMBED EDITOR BUTTON HANDLER (NEW!)
@@ -151,6 +267,7 @@ module.exports = {
             );
           return interaction.showModal(modal);
         }
+        return; // prevent fallthrough
       }
 
       // ======================
