@@ -298,7 +298,7 @@ module.exports = function initAgendaJobs(agenda, client) {
         // For jobs scheduled with agenda.every() or job.repeatEvery(), Agenda handles the next run.
         // No need to manually reschedule from within the job definition itself.
     });
-
+ // ==== HABIT TRACKING COMMANDS ====
   agenda.define('send-habit-reminder', async job => {
   try {
     const { userId, habitId } = job.attrs.data;
