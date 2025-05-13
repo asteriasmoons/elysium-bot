@@ -178,7 +178,7 @@ module.exports = {
     }
 
     if (subcommand === 'set') {
-      await interaction.deferReply({ ephemeral: true });
+      await interaction.deferReply({ ephemeral: false });
 
       const intervalInput = interaction.options.getString('interval');
       const genresInput = interaction.options.getString('genres');
@@ -220,45 +220,45 @@ module.exports = {
       await updatePrefs(updatePayload, needsReschedule);
 
       const embed = new EmbedBuilder()
-        .setTitle('✅ Preferences Updated')
-        .setColor('#8e44ad')
+        .setTitle('Preferences Updated')
+        .setColor('#663399')
         .setDescription(`Your recommendation preferences have been updated:\n${changes.join('\n')}`);
       await interaction.editReply({ embeds: [embed] });
 
     } else if (subcommand === 'show') {
-      await interaction.deferReply({ ephemeral: true });
+      await interaction.deferReply({ ephemeral: false });
       const prefs = await getOrCreatePrefs(userId);
 
       const embed = new EmbedBuilder()
         .setTitle(`Your Book Recommendation Preferences`)
-        .setColor('#8e44ad')
+        .setColor('#663399')
         .addFields(
-          { name: '📚 Genres', value: prefs.genres && prefs.genres.length > 0 ? prefs.genres.join(', ') : 'Not set (defaults to fantasy)', inline: false },
-          { name: '🌐 Languages', value: prefs.languages && prefs.languages.length > 0 ? prefs.languages.join(', ') : 'Not set (defaults to English - "en")', inline: false },
-          { name: '⏰ Interval for DMs', value: prefs.interval && prefs.interval !== 'none' ? prefs.interval : 'None (Disabled)', inline: true },
-          { name: '🔔 Notify Method (for DMs)', value: prefs.notify === 'channel' && prefs.channelId ? `Channel (<#${prefs.channelId}>)` : 'Direct Message', inline: true }
+          { name: 'Genres', value: prefs.genres && prefs.genres.length > 0 ? prefs.genres.join(', ') : 'Not set (defaults to fantasy)', inline: false },
+          { name: 'Languages', value: prefs.languages && prefs.languages.length > 0 ? prefs.languages.join(', ') : 'Not set (defaults to English - "en")', inline: false },
+          { name: 'Interval for DMs', value: prefs.interval && prefs.interval !== 'none' ? prefs.interval : 'None (Disabled)', inline: true },
+          { name: 'Notify Method (for DMs)', value: prefs.notify === 'channel' && prefs.channelId ? `Channel (<#${prefs.channelId}>)` : 'Direct Message', inline: true }
         )
         .setFooter({text: "Use /recommend set or other subcommands to change these."});
       await interaction.editReply({ embeds: [embed] });
 
     } else if (subcommand === 'interval') {
-      await interaction.deferReply({ ephemeral: true });
+      await interaction.deferReply({ ephemeral: false });
       const value = interaction.options.getString('value');
       await updatePrefs({ interval: value }, true); // Reschedule based on new interval
       const embed = new EmbedBuilder()
-        .setTitle('⏰ Interval Updated')
-        .setColor('#8e44ad')
+        .setTitle('Interval Updated')
+        .setColor('#663399')
         .setDescription(`Your recommendation interval has been set to **${value === 'none' ? 'None (Scheduled DMs Disabled)' : value}**.`);
       await interaction.editReply({ embeds: [embed] });
 
     } else if (subcommand === 'genres') {
-      await interaction.deferReply({ ephemeral: true });
+      await interaction.deferReply({ ephemeral: false });
       const value = interaction.options.getString('value');
       const genres = value.split(',').map(g => g.trim().toLowerCase()).filter(Boolean);
       await updatePrefs({ genres });
       const embed = new EmbedBuilder()
-        .setTitle('📚 Genres Updated')
-        .setColor('#8e44ad')
+        .setTitle('Genres Updated')
+        .setColor('#663399')
         .setDescription(`Your preferred genres have been set to: **${genres.join(', ') || 'None (Cleared)'}**.`);
       await interaction.editReply({ embeds: [embed] });
 
@@ -275,19 +275,19 @@ module.exports = {
       }
       await updatePrefs(updatePayload);
       const embed = new EmbedBuilder()
-        .setTitle('🔔 Notification Method Updated')
-        .setColor('#8e44ad')
+        .setTitle('Notification Method Updated')
+        .setColor('#663399')
         .setDescription(description);
       await interaction.editReply({ embeds: [embed] });
 
     } else if (subcommand === 'language') {
-      await interaction.deferReply({ ephemeral: true });
+      await interaction.deferReply({ ephemeral: false });
       const value = interaction.options.getString('value');
       const languages = value.split(',').map(l => l.trim().toLowerCase()).filter(Boolean);
       await updatePrefs({ languages });
       const embed = new EmbedBuilder()
-        .setTitle('🌐 Languages Updated')
-        .setColor('#8e44ad')
+        .setTitle('Languages Updated')
+        .setColor('#663399')
         .setDescription(`Your preferred languages have been set to: **${languages.join(', ') || 'None (Cleared)'}**.`);
       await interaction.editReply({ embeds: [embed] });
 
@@ -331,7 +331,7 @@ module.exports = {
           { name: "Genre (Matched)", value: rec.genre || "Unknown", inline: true },
           { name: "Language (Matched)", value: rec.language || "Unknown", inline: true }
         )
-        .setColor('#2ecc71')
+        .setColor('#663399')
         .setFooter({text: `Found based on your preferences. Use /recommend show to see them.`});
 
       if (rec.cover) {
@@ -341,7 +341,7 @@ module.exports = {
         embed.addFields({ name: "First Published", value: rec.firstPublishYear.toString(), inline: true });
       }
 
-      await interaction.editReply({ embeds: [embed], content: "📚 Here's a book recommendation for you:" });
+      await interaction.editReply({ embeds: [embed], content: "Here's a book recommendation for you:" });
     }
   }
 };

@@ -161,7 +161,18 @@ module.exports = {
       )
       .setFooter({ text: 'BookBot Help Menus' });
 
-      // Embed 13: Commands (Journal)
+      // Embed 13: Commands (Habit)
+      const habitCmds = new EmbedBuilder()
+      .setTitle('<:xbuuke:1369320075126898748> Habit Commands')
+      .setColor('#69359c')
+      .addFields(
+        { name: '</habit add:1371896824612388984>', value: 'Add a habit to your habit tracker list.' },
+        { name: '</habit list:1371896824612388984>', value: 'View a list of your habits youve set.' },
+        { name: '</habit remove:1371896824612388984>', value: 'Remove a habit you no longer need!' }
+      )
+      .setFooter({ text: 'BookBot Help Menus' })
+
+      // Embed 14: Commands (Journal)
       const journalCmds = new EmbedBuilder()
       .setTitle('<:xbuuke:1369320075126898748> Journal Commands')
       .setColor('#69359c')
@@ -174,7 +185,7 @@ module.exports = {
       )
       .setFooter({ text: 'BookBot Help Menus' });
 
-      // Embed 14: Commands (Mood)
+      // Embed 15: Commands (Mood)
       const moodCmds = new EmbedBuilder()
       .setTitle('<:xbuuke:1369320075126898748> Mood Commands')
       .setColor('#69359c')
@@ -187,7 +198,7 @@ module.exports = {
       )
       .setFooter({ text: 'BookBot Help Menus' });
 
-      // Embed 15: Commands (Recommendations)
+      // Embed 16: Commands (Recommendations)
       const recommendCmds = new EmbedBuilder()
       .setTitle('<:xbuuke:1369320075126898748> Recommendation Commands')
       .setColor('#69359c')
@@ -202,7 +213,7 @@ module.exports = {
       )
       .setFooter({ text: 'BookBot Help Menus' });
 
-      const embeds = [helpEmbed, howEmbed, moreCmdsEmbed, channelCmds, profileCmds, progressCmds, remindersCmds, reviewCmds, sprintCmds, tbrCmds, inventoryCmds, embedCmds, journalCmds, moodCmds, recommendCmds];
+      const embeds = [helpEmbed, howEmbed, moreCmdsEmbed, channelCmds, profileCmds, progressCmds, remindersCmds, reviewCmds, sprintCmds, tbrCmds, inventoryCmds, embedCmds, habitCmds, journalCmds, moodCmds, recommendCmds];
 
     // Embed navigation logic
     let currentPage = 0;

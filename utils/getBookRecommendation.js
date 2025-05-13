@@ -2,40 +2,40 @@
 const axios = require('axios');
 
 /**
- * Fetches a list of book "works" from Open Library for a specific genre and language.
- * @param {string} genre - The genre to search for.
- * @param {string} language - The ISO 639-1 language code (e.g., 'eng').
- * @returns {Promise<Array|null>} A promise that resolves to an array of book works or null if a fetch error occurs.
- *                                Returns an empty array if no books are found for the criteria.
+ * Fetches a list of books from Google Books API for a specific genre and language.
+ * @param {string} genre - The genre/subject to search for.
+ * @param {string} language - The ISO 639-1 language code (e.g., 'en').
+ * @returns {Promise<Array|null>} An array of book items or null if error.
  */
-async function fetchWorksByGenreAndLanguage(genre, language = 'eng') {
+async function fetchBooksByGenreAndLanguage(genre, language = 'en') {
   if (!genre || typeof genre !== 'string' || genre.trim() === '') {
     console.error('[Util] Genre is required and must be a non-empty string to fetch books.');
-    return null; // Indicate an issue with input
+    return null;
   }
-  const langCode = (language || 'eng').trim().toLowerCase(); // Default to 'eng' if language is null or empty
+  const langCode = (language || 'en').trim().toLowerCase();
   const genreClean = genre.trim().toLowerCase();
 
-  const url = `https://openlibrary.org/subjects/${encodeURIComponent(genreClean)}.json?limit=50&language=${encodeURIComponent(langCode)}`;
-  console.log(`[Util/fetchWorks] Fetching books from URL: ${url}`);
+  // Google Books API endpoint
+  const url = `https://www.googleapis.com/books/v1/volumes?q=subject:${encodeURIComponent(genreClean)}&langRestrict=${encodeURIComponent(langCode)}&orderBy=newest&maxResults=20`;
+
+  console.log(`[Util/fetchBooks] Fetching books from URL: ${url}`);
 
   try {
-    const response = await axios.get(url); // Correct axios usage
+    const response = await axios.get(url);
     const data = response.data;
 
-    if (!data || !data.works || data.works.length === 0) {
-      console.warn(`[Util/fetchWorks] No books found for genre "${genreClean}" in language "${langCode}". URL: ${url}`);
-      return []; // Return empty array for "found nothing"
+    if (!data || !data.items || data.items.length === 0) {
+      console.warn(`[Util/fetchBooks] No books found for genre "${genreClean}" in language "${langCode}". URL: ${url}`);
+      return [];
     }
-    console.log(`[Util/fetchWorks] Found ${data.works.length} works for genre "${genreClean}", lang "${langCode}".`);
-    return data.works;
+    console.log(`[Util/fetchBooks] Found ${data.items.length} books for genre "${genreClean}", lang "${langCode}".`);
+    return data.items;
   } catch (err) {
-    console.error(`[Util/fetchWorks] Error fetching from Open Library for genre "${genreClean}", lang "${langCode}":`, err.message);
+    console.error(`[Util/fetchBooks] Error fetching from Google Books for genre "${genreClean}", lang "${langCode}":`, err.message);
     if (err.response) {
-      console.error('[Util/fetchWorks] API Response Status:', err.response.status);
-      // console.error('[Util/fetchWorks] API Response Data:', JSON.stringify(err.response.data)); // Can be very verbose
+      console.error('[Util/fetchBooks] API Response Status:', err.response.status);
     }
-    return null; // Indicate a fetch error
+    return null;
   }
 }
 
@@ -45,17 +45,17 @@ async function fetchWorksByGenreAndLanguage(genre, language = 'eng') {
  * @param {Object} prefs - User preferences object.
  * @param {string[]} prefs.genres - An array of preferred genres.
  * @param {string[]} prefs.languages - An array of preferred languages.
- * @param {string[]} [alreadySentBookKeys=[]] - Array of Open Library book keys that have already been sent.
- * @returns {Promise<Object|null>} A promise that resolves to a book object or null if no suitable book is found.
+ * @param {string[]} [alreadySentBookIds=[]] - Array of Google Book IDs already sent.
+ * @returns {Promise<Object|null>} A book object or null if no suitable book found.
  */
-async function fetchPreferredBook(prefs, alreadySentBookKeys = []) {
+async function fetchPreferredBook(prefs, alreadySentBookIds = []) {
   if (!prefs || typeof prefs !== 'object') {
     console.error('[Util/fetchPreferred] User preferences object is required.');
     return null;
   }
 
-  const preferredGenres = (prefs.genres && prefs.genres.length > 0) ? prefs.genres : ['fantasy'];
-  const preferredLanguages = (prefs.languages && prefs.languages.length > 0) ? prefs.languages : ['eng'];
+  const preferredGenres = (prefs.genres && prefs.genres.length > 0) ? prefs.genres : ['fiction'];
+  const preferredLanguages = (prefs.languages && prefs.languages.length > 0) ? prefs.languages : ['en'];
 
   // Shuffle genres and languages to try different combinations each time
   const genresToTry = [...preferredGenres].sort(() => 0.5 - Math.random());
@@ -64,43 +64,37 @@ async function fetchPreferredBook(prefs, alreadySentBookKeys = []) {
   for (const genre of genresToTry) {
     for (const language of languagesToTry) {
       console.log(`[Util/fetchPreferred] Attempting: Genre "${genre}", Language "${language}"`);
-      const works = await fetchWorksByGenreAndLanguage(genre, language);
+      const books = await fetchBooksByGenreAndLanguage(genre, language);
 
-      if (works === null) { // An error occurred during fetch for this combo
+      if (books === null) { // An error occurred during fetch for this combo
         console.log(`[Util/fetchPreferred] Fetch error for genre "${genre}", lang "${language}". Skipping to next combination.`);
-        continue; // Try next language or genre
+        continue;
       }
 
-      if (works.length > 0) {
-        const availableBooks = works.filter(work => work.key && !alreadySentBookKeys.includes(work.key));
+      if (books.length > 0) {
+        // Filter out already sent books
+        const availableBooks = books.filter(book => book.id && !alreadySentBookIds.includes(book.id));
 
         if (availableBooks.length > 0) {
           const randomBook = availableBooks[Math.floor(Math.random() * availableBooks.length)];
-          console.log(`[Util/fetchPreferred] Success! Selected new book: "${randomBook.title}" (Key: ${randomBook.key}) for genre "${genre}", lang "${language}".`);
+          const volumeInfo = randomBook.volumeInfo;
 
-          let descriptionText = "No description provided.";
-          if (randomBook.description) {
-            if (typeof randomBook.description === 'string') {
-              descriptionText = randomBook.description;
-            } else if (randomBook.description.value) {
-              descriptionText = randomBook.description.value;
-            }
-          }
-          // Truncate description if it's too long for Discord embeds
+          let descriptionText = volumeInfo.description || "No description provided.";
+          // Truncate description if it's too long
           if (descriptionText.length > 1000) {
             descriptionText = descriptionText.substring(0, 997) + "...";
           }
 
           return {
-            title: randomBook.title || "Unknown Title",
-            author: randomBook.authors && randomBook.authors.length ? randomBook.authors[0].name : "Unknown Author",
+            title: volumeInfo.title || "Unknown Title",
+            author: volumeInfo.authors && volumeInfo.authors.length ? volumeInfo.authors.join(', ') : "Unknown Author",
             description: descriptionText,
-            genre: genre, // The genre that yielded the result
-            language: language, // The language that yielded the result
-            link: `https://openlibrary.org${randomBook.key}`,
-            cover: randomBook.cover_id ? `https://covers.openlibrary.org/b/id/${randomBook.cover_id}-L.jpg` : null,
-            key: randomBook.key,
-            firstPublishYear: randomBook.first_publish_year || 'N/A'
+            genre: genre,
+            language: language,
+            link: volumeInfo.infoLink || `https://books.google.com/books?id=${randomBook.id}`,
+            cover: volumeInfo.imageLinks && volumeInfo.imageLinks.thumbnail ? volumeInfo.imageLinks.thumbnail.replace('http:', 'https:') : null,
+            id: randomBook.id,
+            publishedDate: volumeInfo.publishedDate || 'N/A'
           };
         } else {
           console.log(`[Util/fetchPreferred] No new books found for genre "${genre}", lang "${language}" (all candidates might have been sent or filtered).`);
@@ -113,8 +107,6 @@ async function fetchPreferredBook(prefs, alreadySentBookKeys = []) {
   return null;
 }
 
-// The old `getRandomBookByGenre` and `getRecommendationForUserPreferences` are now effectively replaced by the two functions above.
 module.exports = {
   fetchPreferredBook,
-  // fetchWorksByGenreAndLanguage, // You might not need to export this one if only fetchPreferredBook uses it
 };
