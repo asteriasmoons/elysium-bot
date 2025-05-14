@@ -8,21 +8,22 @@ module.exports = {
     // Embed 1: Command List
     const helpEmbed = new EmbedBuilder()
       .setTitle('<:xbuuke:1369320075126898748> Book Bot Help')
-      .setDescription('Welcome to BookBot Help Menu! In this menu you will find ALL the commands the bot has to offer. Click on a command to pull up the command in the commands center on mobile or if on desktop it will be placed in the channel where you can then hit send. Thank you so much for choosing BookBot!')
+      .setDescription('Welcome to Elysium bots help menu! In this menu you will find ALL the commands the bot has to offer. Click on a command to pull up the command in the commands center on mobile or if on desktop it will be placed in the channel where you can then hit send. Thank you so much for choosing Elysium!')
       .addFields(
         { name: '</help:1368067383742304302>', value: 'This shows you these help menus with their buttons. Use the buttons to navigate.' },
         { name: '</report:1368067384107339871>', value: 'Use this command to directly send me feedback or bug reports!' },
-        { name: '</giftlist:1371203722780344360>', value: 'A new command allowing you to announce your purchase off someones giftlist from their profile' }
+        { name: '</giftlist:1371203722780344360>', value: 'A new command allowing you to announce your purchase off someones giftlist from their profile' },
+        { name: '</donate:1372038436621520988>', value: 'The command to donate to Elysium bot to help with bot expenses.' }
       )
       .setColor('#69359c')
-      .setFooter({ text: 'BookBot Help Menus' });
+      .setFooter({ text: 'Elysium Help Menus' });
 
       // Embed 2: How Sprints Work
       const howEmbed = new EmbedBuilder()
       .setTitle('<:xbuuke:1369320075126898748> How Book Sprints Work')
       .setColor('#69359c')
       .setDescription('Book sprints are a fun way to read together and track your progress! When a sprint starts, join in by telling the bot what page youre currently on—this is your starting page. Once the sprint ends, submit the page you finished on. The bot will do the math and let you know how many pages you read during the sprint For example, if you start on page 25 and end on page 40, the bot will record that you read 15 pages. Its a great way to stay motivated and see how much you can read with friends!')
-      .setFooter({ text: 'BookBot Help Menus' });
+      .setFooter({ text: 'Elysium Help Menus' });
 
     // Embed 3: More Commands (Buddy Reads)
     const moreCmdsEmbed = new EmbedBuilder()
@@ -41,7 +42,7 @@ module.exports = {
         { name: '</buddyread pair:1368067383742304299>', value: 'Use the ID on the announcements command to pair with a reading buddy.' },
         { name: '</buddyread delete:1368067383742304299>', value: 'Delete your buddy read announcement if you change your mind about reading a book.' }
       )
-      .setFooter({ text: 'BookBot Help Menus' });
+      .setFooter({ text: 'Elysium Help Menus' });
 
       // Embed 4: Commands (Channel)
       const channelCmds = new EmbedBuilder()
@@ -53,7 +54,7 @@ module.exports = {
         { name: '</channel view:1368067383742304300>', value: 'View the channel that is set for doing reading sprints in with the sprints commands' },
         { name: '</channel reset:1368067383742304300>', value: 'Reset the channel settings for the bot in your server.' }
       )
-      .setFooter({ text: 'BookBot Help Menus' });
+      .setFooter({ text: 'Elysium Help Menus' });
 
       // Embed 5: Commands (Profile)
       const profileCmds = new EmbedBuilder()
@@ -64,7 +65,7 @@ module.exports = {
         { name: '</profile set:1368067383742304305>', value: 'Set up your book profile.' },
         { name: '</profile edit:1368067383742304305>', value: 'Edit any of the fields for your profile' }
       )
-      .setFooter({ text: 'BookBot Help Menus' });
+      .setFooter({ text: 'Elysium Help Menus' });
 
       // Embed 6: Commands (Progress)
       const progressCmds = new EmbedBuilder()
@@ -76,7 +77,7 @@ module.exports = {
         { name: '</progress history:1368067384107339869>', value: 'Show your progress history' },
         { name: '</progress leaderboard:1368067384107339869>', value: 'If multiple people have progress streaks and history you can also look at the streaks leaderboard with this command.' }
       )
-      .setFooter({ text: 'BookBot Help Menus' });
+      .setFooter({ text: 'Elysium Help Menus' });
 
       // Embed 7: Commands (Reminders) 
       const remindersCmds = new EmbedBuilder()
@@ -93,7 +94,7 @@ module.exports = {
         { name: '</reminders channel remove:1368067384107339870>', value: 'Remove a channel from the set reminders channel list' },
         { name: '</reminders channel list:1368067384107339870>', value: 'Get a list of all the channels set for reminders in your server' }
       )
-      .setFooter({ text: 'BookBot Help Menus' });
+      .setFooter({ text: 'Elysium Help Menus' });
 
       // Embed 8: Commands (Reviews)
       const reviewCmds = new EmbedBuilder()
@@ -108,7 +109,7 @@ module.exports = {
         { name: '</review view:1368067384107339872>', value: 'View a review someone else or yourself made' },
         { name: '</review list:1368067384107339872>', value: 'List all the reviews ever submitted to the bot' }
       )
-      .setFooter({ text: 'BookBot Help Menus' });
+      .setFooter({ text: 'Elysium Help Menus' });
 
       // Embed 9: Commands (Sprints)
       const sprintCmds = new EmbedBuilder()
@@ -123,7 +124,7 @@ module.exports = {
         { name: '</sprint leaderboard:1368067384107339874>', value: 'Use this to see the leaderboard at anytime to see where you are on the leaderboard' },
         { name: '</sprint set role:1368067384107339874>', value: 'Set the role to be pinged 5 minutes prior to sprint end and at sprint end!' }
       )
-      .setFooter({ text: 'BookBot Help Menus' });
+      .setFooter({ text: 'Elysium Help Menus' });
 
       // Embed 10: Commands (TBR)
       const tbrCmds = new EmbedBuilder()
@@ -134,7 +135,7 @@ module.exports = {
         { name: '</tbr remove:1368067384107339875>', value: 'Remove a book from your tbr list globally' },
         { name: '</tbr list:1368067384107339875>', value: 'See your tbr list with this command' }
       )
-      .setFooter({ text: 'BookBot Help Menus' });
+      .setFooter({ text: 'Elysium Help Menus' });
 
       // Embed 11: Commands (Inventory)
       const inventoryCmds = new EmbedBuilder()
@@ -145,7 +146,7 @@ module.exports = {
         { name: '</inventory listbooks:1368741890886860881>', value: 'View a list of the BookBots book inventory from across all of discord' },
         { name: '</inventory bookremove:1368741890886860881>', value: 'Admins and server owners only can remove books from the inventory' }
       )
-      .setFooter({ text: 'BookBot Help Menus' });
+      .setFooter({ text: 'Elysium Help Menus' });
 
       // Embed 12: Commands (Embeds)
       const embedCmds = new EmbedBuilder()
@@ -159,7 +160,7 @@ module.exports = {
         { name: '</embed view:1369010259745706015>', value: 'View your embed you created' },
         { name: '</embed list:1369010259745706015>', value: 'View a list of embeds by their unique names in your server' }
       )
-      .setFooter({ text: 'BookBot Help Menus' });
+      .setFooter({ text: 'Elysium Help Menus' });
 
       // Embed 13: Commands (Habit)
       const habitCmds = new EmbedBuilder()
@@ -170,7 +171,7 @@ module.exports = {
         { name: '</habit list:1371896824612388984>', value: 'View a list of your habits youve set.' },
         { name: '</habit remove:1371896824612388984>', value: 'Remove a habit you no longer need!' }
       )
-      .setFooter({ text: 'BookBot Help Menus' })
+      .setFooter({ text: 'Elysium Help Menus' })
 
       // Embed 14: Commands (Journal)
       const journalCmds = new EmbedBuilder()
@@ -183,7 +184,7 @@ module.exports = {
         { name: '</journal edit:1369327881213448365>', value: 'Edit a journal entry you submitted by its index number' },
         { name: '</journal delete:1369327881213448365>', value: 'Delete an entry by its index number if you no longer need or want it' }
       )
-      .setFooter({ text: 'BookBot Help Menus' });
+      .setFooter({ text: 'Elysium Help Menus' });
 
       // Embed 15: Commands (Mood)
       const moodCmds = new EmbedBuilder()
@@ -196,7 +197,7 @@ module.exports = {
         { name: '</mood remind status:1371296341208334448>', value: 'Check and see if your mood reminder is set and on' },
         { name: '</mood stats:1371296341208334448>', value: 'View your mood statistics.' }
       )
-      .setFooter({ text: 'BookBot Help Menus' });
+      .setFooter({ text: 'Elysium Help Menus' });
 
       // Embed 16: Commands (Recommendations)
       const recommendCmds = new EmbedBuilder()
@@ -211,7 +212,7 @@ module.exports = {
         { name: '</recommend language:1370056697678397610>', value: 'Set the preferred language youd like to receive book recommendations in' },
         { name: '</recommend get:1370056697678397610>', value: 'Get a book recommendation if you dont feel like waiting for the set interval' }
       )
-      .setFooter({ text: 'BookBot Help Menus' });
+      .setFooter({ text: 'Elysium Help Menus' });
 
       const embeds = [helpEmbed, howEmbed, moreCmdsEmbed, channelCmds, profileCmds, progressCmds, remindersCmds, reviewCmds, sprintCmds, tbrCmds, inventoryCmds, embedCmds, habitCmds, journalCmds, moodCmds, recommendCmds];
 
