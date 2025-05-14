@@ -258,7 +258,7 @@ module.exports = {
             // Filter to ensure only the original command user can interact
             // and that the customId matches your buttons
             filter: (i) => (i.customId === 'back' || i.customId === 'next') && i.user.id === interaction.user.id,
-            time: 180000 // 3 minutes (as in your original code)
+            time: 300000 // 5 minutes 
         });
 
         collector.on('collect', async i => {
