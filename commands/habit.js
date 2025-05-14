@@ -4,29 +4,26 @@ const Habit = require('../models/Habit');
 const HabitLog = require('../models/HabitLog');
 
 function calculateStats(habit, logs) {
-  // Group logs by date, keeping only the latest action per day
   const dateActions = {};
   logs.forEach(log => {
     const date = DateTime.fromJSDate(log.timestamp).toISODate();
     dateActions[date] = log.action; // latest wins
   });
 
-  // Date range
   const startDate = DateTime.fromJSDate(habit.createdAt).startOf('day');
   const today = DateTime.now().startOf('day');
   const days = Math.floor(today.diff(startDate, 'days').days) + 1;
 
-  // All dates in range
   let allDates = [];
   for (let i = 0; i < days; i++) {
     allDates.push(startDate.plus({ days: i }).toISODate());
   }
 
-  // Total completions
   const totalCompletions = Object.values(dateActions).filter(a => a === 'yes').length;
 
-  // Missed days = days with no action at all
-  const missedDays = allDates.filter(date => !dateActions[date]).length;
+  // Only count days before today as missed
+  const todayISO = today.toISODate();
+  const missedDays = allDates.filter(date => date < todayISO && !dateActions[date]).length;
 
   // Current streak: count back from today until first non-'yes'
   let currentStreak = 0;

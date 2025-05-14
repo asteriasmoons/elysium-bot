@@ -26,7 +26,7 @@ module.exports = {
     // --- BUTTON HANDLERS ---
     if (interaction.isButton()) {
 
-            // ======================
+      // ======================
       // JOURNAL PAGINATION BUTTON HANDLER
       // ======================
       if (interaction.customId.startsWith('journal_')) {
@@ -63,8 +63,7 @@ module.exports = {
           .setDescription(
             pageEntries.length
               ? pageEntries.map((e, i) =>
-                `**${start + i + 1}.** [${new Date(e.createdAt).toLocaleDateString
-()}] \`${e.entry.slice(0, 10)}\``
+                `**${start + i + 1}.** [${new Date(e.createdAt).toLocaleDateString()}] \`${e.entry.slice(0, 10)}\``
               ).join('\n')
               : 'No entries found.'
           );
@@ -96,6 +95,19 @@ module.exports = {
     // Parse the customId
     // Example: habit_dm_123456789_yes
     const [ , , habitId, action ] = interaction.customId.split('_');
+    // Save a log for each action
+    try {
+      await HabitLog.create({
+      userId: interaction.user.id,
+      habitId: habitId,
+      action: action, // 'yes', 'nottoday', or 'skip'
+      timestamp: new Date()
+    });
+    } catch (error) {
+    console.error('Failed to save HabitLog:', error);
+    await interaction.reply({ content: 'Failed to log your habit. Please try again.', ephemeral: true });
+    return;
+    }
 
     // You can now use habitId and action!
     if (action === 'yes') {
