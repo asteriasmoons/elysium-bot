@@ -1,5 +1,6 @@
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const Profile = require('../models/Profile');
+const { trusted } = require('mongoose');
 
 const customEmoji = '<:zts7:1343353133425885284>';
 
@@ -22,6 +23,8 @@ module.exports = {
       sub.setName('set')
         .setDescription('Create your book profile (overwrites existing)')
         .addStringOption(opt => opt.setName('bio').setDescription('A short bio about you').setRequired(true))
+        .addStringOption(opt => opt.setName('intention').setDescription('Display your current intention or goal for the month').setRequired(true))
+        .addStringOption(opt => opt.setName('affirmation').setDescription('Display your favorite affirmation').setRequired(true))
         .addStringOption(opt => opt.setName('current_read').setDescription('The book you are currently reading').setRequired(true))
         .addStringOption(opt => opt.setName('reading_goal').setDescription('Your reading goal for this year').setRequired(true))
         .addStringOption(opt => opt.setName('favorite_genre').setDescription('Your favorite book genre').setRequired(true))
@@ -34,6 +37,8 @@ module.exports = {
       sub.setName('edit')
         .setDescription('Edit your book profile')
         .addStringOption(opt => opt.setName('bio').setDescription('Edit your bio').setRequired(false))
+        .addStringOption(opt => opt.setName('intention').setDescription('Display your current intention or goal for the month').setRequired(false))
+        .addStringOption(opt => opt.setName('affirmation').setDescription('Display your favorite affirmation').setRequired(false))
         .addStringOption(opt => opt.setName('current_read').setDescription('Edit your current read').setRequired(false))
         .addStringOption(opt => opt.setName('reading_goal').setDescription('Edit your reading goal for this year').setRequired(false))
         .addStringOption(opt => opt.setName('favorite_genre').setDescription('Edit your favorite genre').setRequired(false))
@@ -64,6 +69,8 @@ module.exports = {
         .setThumbnail(user.displayAvatarURL())
         .addFields(
           { name: `${customEmoji} Bio`, value: profile.bio || 'Not set', inline: false },
+          { name: `${customEmoji} Intention`, value: profile.intention || 'Not set', inline: false },
+          { name: `${customEmoji} Affirmation`, value: profile.affirmation || 'Not set', inline: false },
           { name: `${customEmoji} Current Read`, value: profile.currentRead || 'Not set', inline: false },
           { name: `${customEmoji} Reading Goal`, value: profile.readingGoal ? profile.readingGoal.toString() : 'Not set', inline: false },
           { name: `${customEmoji} Favorite Genre`, value: profile.favoriteGenre || 'Not set', inline: false },
@@ -87,6 +94,8 @@ module.exports = {
     if (subcommand === 'set') {
       const userId = interaction.user.id;
       const bio = interaction.options.getString('bio');
+      const intention = interaction.options.getString('intention');
+      const affirmation = interaction.options.getString('affirmation');
       const currentRead = interaction.options.getString('current_read');
       const readingGoal = interaction.options.getString('reading_goal');
       const favoriteGenre = interaction.options.getString('favorite_genre');
@@ -99,6 +108,8 @@ module.exports = {
         profile = new Profile({ userId });
       }
       profile.bio = bio;
+      profile.intention = intention;
+      profile.affirmation = affirmation;
       profile.currentRead = currentRead;
       profile.readingGoal = readingGoal;
       profile.favoriteGenre = favoriteGenre;
@@ -130,6 +141,8 @@ module.exports = {
 
       // Only update fields that are provided
       const bio = interaction.options.getString('bio');
+      const intention = interaction.options.getString('intention');
+      const affirmation = interaction.options.getString('affirmation');
       const currentRead = interaction.options.getString('current_read');
       const readingGoal = interaction.options.getString('reading_goal');
       const favoriteGenre = interaction.options.getString('favorite_genre');
@@ -140,6 +153,8 @@ module.exports = {
       let updated = false;
 
       if (bio !== null) { profile.bio = bio; updated = true; }
+      if (intention !== null) { profile.intention = intention; updated = true; }
+      if (affirmation !== null) { profile.affirmation = affirmation; updated = true; }
       if (currentRead !== null) { profile.currentRead = currentRead; updated = true; }
       if (readingGoal !== null) { profile.readingGoal = readingGoal; updated = true; }
       if (favoriteGenre !== null) { profile.favoriteGenre = favoriteGenre; updated = true; }

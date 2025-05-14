@@ -3,6 +3,8 @@ const mongoose = require('mongoose');
 const profileSchema = new mongoose.Schema({
   userId: { type: String, required: true, unique: true },
   bio: { type: String, default: '' },
+  intention: { type: String, default: '' },
+  affirmation: { type: String, default: '' },
   currentRead: { type: String, default: '' },
   booksRead: { type: Number, default: 0 },
   favoriteGenre: { type: String, default: '' },
