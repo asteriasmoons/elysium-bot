@@ -3,6 +3,45 @@ const { DateTime } = require('luxon');
 const Habit = require('../models/Habit');
 const HabitLog = require('../models/HabitLog');
 
+function calculateStats(habit, logs) {
+  // Group logs by date, keeping only the latest action per day
+  const dateActions = {};
+  logs.forEach(log => {
+    const date = DateTime.fromJSDate(log.timestamp).toISODate();
+    dateActions[date] = log.action; // latest wins
+  });
+
+  // Date range
+  const startDate = DateTime.fromJSDate(habit.createdAt).startOf('day');
+  const today = DateTime.now().startOf('day');
+  const days = Math.floor(today.diff(startDate, 'days').days) + 1;
+
+  // All dates in range
+  let allDates = [];
+  for (let i = 0; i < days; i++) {
+    allDates.push(startDate.plus({ days: i }).toISODate());
+  }
+
+  // Total completions
+  const totalCompletions = Object.values(dateActions).filter(a => a === 'yes').length;
+
+  // Missed days = days with no action at all
+  const missedDays = allDates.filter(date => !dateActions[date]).length;
+
+  // Current streak: count back from today until first non-'yes'
+  let currentStreak = 0;
+  for (let i = allDates.length - 1; i >= 0; i--) {
+    const action = dateActions[allDates[i]];
+    if (action === 'yes') {
+      currentStreak++;
+    } else {
+      break;
+    }
+  }
+
+  return { totalCompletions, currentStreak, missedDays };
+}
+
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('habit')
@@ -23,16 +62,26 @@ module.exports = {
             .setDescription('The name of the habit to remove')
             .setRequired(true)
         )
+    )
+    .addSubcommand(sub =>
+      sub.setName('stats') 
+        .setDescription('View statistics for a habit')
+        .addStringOption(opt =>
+          opt.setName('name')
+            .setDescription('The name of the habit')
+            .setRequired(true)
+        )
     ),
 
-  async execute(interaction, agenda) { // Accept agenda as 2nd argument if needed
+  async execute(interaction, agenda) {
     const subcommand = interaction.options.getSubcommand();
-	const userId = interaction.user.id;
+    const userId = interaction.user.id;
+
     // === /habit add ===
     if (subcommand === 'add') {
       const embed = new EmbedBuilder()
         .setTitle('<:pcht1:1371879916383240263> Add a Habit Reminder <:pcht1:1371879916383240263>')
-        .setDescription(`Hey ${interaction.user.toString()} habits are great ways to build consistency in your life. Im super proud of you for wanting to build some routine in your life. Choose your habit frequency to get started:`)
+        .setDescription(`Hey ${interaction.user.toString()} habits are great ways to build consistency in your life. I'm super proud of you for wanting to build some routine in your life. Choose your habit frequency to get started:`)
         .setColor(0x663399);
 
       const row = new ActionRowBuilder().addComponents(
@@ -46,15 +95,15 @@ module.exports = {
           .setStyle(ButtonStyle.Secondary)
       );
 
-      await interaction.reply({
+      return interaction.reply({
         embeds: [embed],
         components: [row],
         ephemeral: false
       });
     }
 
-    // === /habit list ===
-    else if (subcommand === 'list') {
+    // ==== /habit list ====
+    if (subcommand === 'list') {
       const habits = await Habit.find({ userId: interaction.user.id });
       if (!habits.length) {
         return interaction.reply({
@@ -67,8 +116,8 @@ module.exports = {
         .setTitle('<:pcht1:1371879916383240263> Scheduled Habits')
         .setColor(0x663399)
         .setDescription(
-          habits.map((h, i) =>
-            `**${i + 1}. ${h.name}**\n${h.description || '_No description_'}\nFrequency: \`${h.frequency}\` at \`${h.hour}:${h.minute.toString().padStart(2, '0')}\``
+          habits.map((h) =>
+            `**${h.name}**\n${h.description || '_No description_'}\nFrequency: \`${h.frequency}\` at \`${h.hour}:${h.minute.toString().padStart(2, '0')}\``
           ).join('\n\n')
         );
 
@@ -79,7 +128,7 @@ module.exports = {
     }
 
     // === /habit remove ===
-    else if (subcommand === 'remove') {
+    if (subcommand === 'remove') {
       const name = interaction.options.getString('name').trim();
 
       // Find and delete the habit by name (case insensitive)
@@ -96,14 +145,53 @@ module.exports = {
       }
 
       // OPTIONAL: Cancel Agenda job if you're using Agenda
-      	if (agenda) {
-      	await agenda.cancel({ 'data.habitId': habit._id.toString() });
+      if (agenda) {
+        await agenda.cancel({ 'data.habitId': habit._id.toString() });
       }
 
       return interaction.reply({
         content: `Habit "${habit.name}" has been removed.`,
         ephemeral: false
       });
+    }
+
+    // === /habit stats ===
+    if (subcommand === 'stats') {
+      const name = interaction.options.getString('name').trim();
+      const habit = await Habit.findOne({
+        userId: userId,
+        name: new RegExp(`^${name}$`, 'i')
+      });
+
+      if (!habit) {
+        return interaction.reply({
+          content: `No habit found called "${name}".`,
+          ephemeral: false
+        });
+      }
+
+      // Fetch all logs for this habit (any action)
+      const logs = await HabitLog.find({
+        userId: userId,
+        habitId: habit._id
+      });
+
+      // Calculate statistics
+      const { totalCompletions, currentStreak, missedDays } = calculateStats(habit, logs);
+
+      // Format and send the embed
+      const embed = new EmbedBuilder()
+        .setTitle(`Habit Statistics ${habit.name}`)
+        .setColor(0x663399)
+        .setDescription(
+          `**Description:** ${habit.description || '_No description_'}\n` +
+          `**Frequency:** \`${habit.frequency}\` at \`${habit.hour}:${habit.minute.toString().padStart(2, '0')}\`\n\n` +
+          `**Total completions:** \`${totalCompletions}\`\n` +
+          `**Current streak:** \`${currentStreak} days\`\n` +
+          `**Missed days:** \`${missedDays}\``
+        );
+
+      return interaction.reply({ embeds: [embed], ephemeral: false });
     }
   }
 };
