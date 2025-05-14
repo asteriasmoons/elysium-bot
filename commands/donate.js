@@ -18,7 +18,7 @@ module.exports = {
     const donateButton = new ButtonBuilder()
       .setLabel('Donate')
       .setStyle(ButtonStyle.Link)
-      .setURL('buymeacoffee.com/asteriamoon');
+      .setURL('https://buymeacoffee.com/asteriamoon');
 
     const row = new ActionRowBuilder().addComponents(donateButton);
 
