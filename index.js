@@ -79,11 +79,6 @@ if (fs.existsSync(eventsPath)) {
 client.once('ready', async () => { // <<< Added 'async' here
     console.log(`Bot ${client.user.tag} is now ready!`);
 
-    client.user.setPresence({
-    activities: [{ name: 'With wellness and books', type: ActivityType.Playing }],
-    status: 'online'
-});
-
     client.agenda = agenda;
     reminders.init(client); // Assuming 'reminders' is defined
     require('./agendaJobs')(agenda, client); // Assuming 'agenda' is defined
