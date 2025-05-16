@@ -298,67 +298,61 @@ module.exports = function initAgendaJobs(agenda, client) {
         // For jobs scheduled with agenda.every() or job.repeatEvery(), Agenda handles the next run.
         // No need to manually reschedule from within the job definition itself.
     });
- // ==== HABIT TRACKING COMMANDS ====
-  agenda.define('send-habit-reminder', async job => {
-  try {
+    // ==== HABIT TRACKING COMMANDS ====
+    agenda.define('send-habit-reminder', { priority: 'normal', concurrency: 10 }, async job => {
     const { userId, habitId } = job.attrs.data;
-    if (!userId || !habitId) {
-      console.error('[send-habit-reminder] Missing userId or habitId in job data:', job.attrs.data);
-      return;
-    }
+    
+    try {
+        const user = await client.users.fetch(userId).catch(err => {
+            console.error('[send-habit-reminder] Failed to fetch user:', err);
+            return null;
+        });
+        if (!user) return;
 
-    const user = await client.users.fetch(userId).catch(err => {
-      console.error('[send-habit-reminder] Failed to fetch user:', err);
-      return null;
-    });
-    if (!user) return;
-
-    const habitDoc = await habit.findById(habitId);
-    if (!habitDoc) {
-      console.error(`[send-habit-reminder] Could not find habit with ID: ${habitId}`);
-      return;
-    }
-
-    const embed = new EmbedBuilder()
-      .setTitle(`<:pcht1:1371879916383240263> Habit Reminder: ${habitDoc.name}`)
-      .setDescription(habitDoc.description || 'No description provided.')
-      .setColor(0x663399);
-
-    await user.send({
-      embeds: [embed],
-      components: [
-        {
-          type: 1,
-          components: [
-            {
-              type: 2,
-              style: 1,
-              label: 'Yes',
-              custom_id: `habit_dm_${habitId}_yes`
-            },
-            {
-              type: 2,
-              style: 2,
-              label: 'Not Today',
-              custom_id: `habit_dm_${habitId}_nottoday`
-            },
-            {
-              type: 2,
-              style: 2,
-              label: 'Skip',
-              custom_id: `habit_dm_${habitId}_skip`
-            }
-          ]
+        const habitDoc = await Habit.findById(habitId);  // Make sure 'Habit' is your model name, not 'habit'
+        if (!habitDoc) {
+            console.error(`[send-habit-reminder] Could not find habit with ID: ${habitId}`);
+            return;
         }
-      ]
-    });
-    console.log(`[send-habit-reminder] Sent habit reminder to user ${userId} for habit ${habitDoc.name}`);
-  } catch (err) {
-    console.error('[send-habit-reminder] Error:', err);
-  }
+
+        const embed = new EmbedBuilder()
+            .setTitle(`<:pcht1:1371879916383240263> Habit Reminder: ${habitDoc.name}`)
+            .setDescription(habitDoc.description || 'No description provided.')
+            .setColor(0x663399);
+
+        await user.send({
+            embeds: [embed],
+            components: [
+                {
+                    type: 1,
+                    components: [
+                        {
+                            type: 2,
+                            style: 1,
+                            label: 'Yes',
+                            custom_id: `habit_dm_${habitId}_yes`
+                        },
+                        {
+                            type: 2,
+                            style: 2,
+                            label: 'Not Today',
+                            custom_id: `habit_dm_${habitId}_nottoday`
+                        },
+                        {
+                            type: 2,
+                            style: 2,
+                            label: 'Skip',
+                            custom_id: `habit_dm_${habitId}_skip`
+                        }
+                    ]
+                }
+            ]
+        });
+        console.log(`[send-habit-reminder] Sent habit reminder to user ${userId} for habit ${habitDoc.name}`);
+    } catch (error) {
+        console.error('[send-habit-reminder] Error:', error);
+    }
 });
 
-    // ==================================
-
-    console.log('[Agenda] All job definitions (including mood reminder) processed.');
-}; // End of initAgendaJobs function
+console.log('[Agenda] All job definitions (including mood reminder) processed.');
+}

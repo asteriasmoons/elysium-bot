@@ -13,7 +13,12 @@ mongoose.connect(process.env.MONGO_URI)
 .catch(err => console.error('MongoDB connection error:', err));
 
 // Agenda setup (use process.env.MONGO_URI, not mongoConnectionString)
-const agenda = new Agenda({ db: { address: process.env.MONGO_URI, collection: 'agendaJobs' } });
+const agenda = new Agenda({ 
+    db: { 
+        address: process.env.MONGO_URI, 
+        collection: 'agendaJobs' },
+        timezone: 'America/Chicago'
+     });
 
 // Sprint state (legacy, can be removed if not used elsewhere)
 const sprintState = {

@@ -3,6 +3,7 @@ const Habit = require('../models/Habit');
 const HabitLog = require('../models/HabitLog');
 const { EmbedBuilder } = require('discord.js');
 const axios = require('axios');
+const { DateTime } = require('luxon');
 
 // === Embed Editor Imports ===
 const EmbedModel = require('../models/Embed');
@@ -200,10 +201,23 @@ if (interaction.isModalSubmit()) {
     }
 
     // Schedule the job with Agenda (pass habit._id and userId)
-    await interaction.client.agenda.every(cron, 'send-habit-reminder', {
+    await interaction.client.agenda.every(
+  cron,
+  'send-habit-reminder',
+  {
     habitId: habit._id.toString(),
     userId: userId
-    });
+  },
+  {
+    unique: { habitId: habit._id.toString() }
+  }
+);
+
+
+    console.log(
+    `[Habit Scheduler] Scheduled job: send-habit-reminder-${habit._id} for user ${userId} at cron: ${cron} (frequency: ${frequency})`
+    );
+
 
     const embed = new EmbedBuilder()
     .setTitle('Habit Created!')

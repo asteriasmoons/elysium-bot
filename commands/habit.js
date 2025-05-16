@@ -143,7 +143,7 @@ module.exports = {
 
       // OPTIONAL: Cancel Agenda job if you're using Agenda
       if (agenda) {
-        await agenda.cancel({ 'data.habitId': habit._id.toString() });
+      await agenda.cancel({ name: `send-habit-reminder-${habit._id}` });
       }
 
       return interaction.reply({
