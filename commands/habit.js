@@ -74,6 +74,30 @@ module.exports = {
     .addSubcommand(sub =>
       sub.setName('points')
         .setDescription('See how much XP you have earned from habits.')
+    )
+    .addSubcommand(sub =>
+      sub.setName('reschedule')
+        .setDescription('Change the time or frequency of a scheduled habit')
+        .addStringOption(opt =>
+          opt.setName('name')
+            .setDescription('The name of the habit to reschedule')
+            .setRequired(true)
+        )
+        .addIntegerOption(opt =>
+          opt.setName('hour')
+            .setDescription('New hour (0-23)')
+            .setRequired(true)
+        )
+        .addIntegerOption(opt =>
+          opt.setName('minute')
+            .setDescription('New minute (0-59)')
+            .setRequired(true)
+        )
+        .addStringOption(opt =>
+          opt.setName('frequency')
+            .setDescription('New frequency (daily/weekly)')
+            .setRequired(false)
+        )
     ),
 
   async execute(interaction) {
@@ -209,6 +233,41 @@ module.exports = {
         .setFooter({ text: 'Keep up the good work!' });
 
       return interaction.reply({ embeds: [embed], ephemeral: true });
+    }
+
+    // === /habit reschedule ===
+    if (subcommand === 'reschedule') {
+      const name = interaction.options.getString('name').trim();
+      const newHour = interaction.options.getInteger('hour');
+      const newMinute = interaction.options.getInteger('minute');
+      const newFrequency = interaction.options.getString('frequency'); // optional
+
+      // Find the habit (case-insensitive)
+      const habit = await Habit.findOne({
+        userId: userId,
+        name: new RegExp(`^${name}$`, 'i')
+      });
+
+      if (!habit) {
+        return interaction.reply({
+          content: `No habit found called "${name}".`,
+          ephemeral: false
+        });
+      }
+
+      habit.hour = newHour;
+      habit.minute = newMinute;
+      if (newFrequency) habit.frequency = newFrequency;
+
+      await habit.save();
+
+      // Reschedule with new time/frequency
+      scheduleHabitReminder(interaction.client, habit);
+
+      return interaction.reply({
+        content: `Habit "${habit.name}" rescheduled to ${String(newHour).padStart(2,'0')}:${String(newMinute).padStart(2,'0')}${newFrequency ? ` (${newFrequency})` : ''}.`,
+        ephemeral: false
+      });
     }
   }
 };

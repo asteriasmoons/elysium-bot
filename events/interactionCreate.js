@@ -113,7 +113,7 @@ module.exports = {
       embed = new EmbedBuilder().setDescription('Marked as skipped today. That\'s perfectly fine. You can always try again tomorrow.');
       xpToAdd = 0;
       } else {
-      await interaction.reply({ content: 'Unknown action.', ephemeral: true });
+      await interaction.reply({ content: 'Unknown action.', ephemeral: false });
       return;
       }
 
@@ -128,7 +128,7 @@ module.exports = {
       });
     } catch (error) {
     console.error('Failed to save HabitLog:', error);
-    await interaction.reply({ content: 'Failed to log your habit. Please try again.', ephemeral: true });
+    await interaction.reply({ content: 'Failed to log your habit. Please try again.', ephemeral: false });
     return;
     }
 
@@ -350,7 +350,7 @@ module.exports = {
           console.log('Created habit:', habit);
         } catch (error) {
           console.error('Failed to create habit:', error);
-          await interaction.reply({ content: 'Failed to create habit. Please try again.', ephemeral: true });
+          await interaction.reply({ content: 'Failed to create habit. Please try again.', ephemeral: false });
           return;
         }
 

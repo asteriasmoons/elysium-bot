@@ -67,7 +67,7 @@ function scheduleHabitReminder(client, habit) {
       await user.send({
         embeds: [
           new EmbedBuilder()
-            .setTitle(`🔔 Habit Reminder: ${latestHabit.name}`)
+            .setTitle(`<:pcht1:1371879916383240263> Habit Reminder: ${latestHabit.name}`)
             .setDescription(latestHabit.description || 'No description provided.')
             .setColor(0x663399)
         ],
