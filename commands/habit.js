@@ -2,6 +2,7 @@ const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, Butt
 const { DateTime } = require('luxon');
 const Habit = require('../models/Habit');
 const HabitLog = require('../models/HabitLog');
+const { scheduleHabitReminder, cancelHabitReminder } = require('../habitScheduler'); // <-- NEW!
 
 function calculateStats(habit, logs) {
   const dateActions = {};
@@ -70,7 +71,7 @@ module.exports = {
         )
     ),
 
-  async execute(interaction, agenda) {
+  async execute(interaction) {
     const subcommand = interaction.options.getSubcommand();
     const userId = interaction.user.id;
 
@@ -141,13 +142,11 @@ module.exports = {
         });
       }
 
-      // OPTIONAL: Cancel Agenda job if you're using Agenda
-      if (agenda) {
-      await agenda.cancel({ name: `send-habit-reminder-${habit._id}` });
-      }
+      // Cancel the scheduled reminder using your new scheduler!
+      cancelHabitReminder(habit._id.toString());
 
       return interaction.reply({
-        content: `Habit "${habit.name}" has been removed.`,
+        content: `Habit "${habit.name}" has been removed and its reminder canceled.`,
         ephemeral: false
       });
     }

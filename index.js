@@ -5,7 +5,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { Client, Collection, GatewayIntentBits } = require('discord.js');
 const Agenda = require('agenda'); // <-- Make sure to import Agenda!
-
+const { scheduleAllHabits } = require('./habitScheduler');
 
 // MongoDB connection
 mongoose.connect(process.env.MONGO_URI)
@@ -31,6 +31,7 @@ const sprintState = {
 
 // Add reminders module
 const reminders = require('./commands/reminders.js');
+
 
 // Discord client with necessary intents
 const client = new Client({
@@ -86,6 +87,7 @@ client.once('ready', async () => { // <<< Added 'async' here
 
     client.agenda = agenda;
     reminders.init(client); // Assuming 'reminders' is defined
+    scheduleAllHabits(client);
     require('./agendaJobs')(agenda, client); // Assuming 'agenda' is defined
     agenda.start();
 
