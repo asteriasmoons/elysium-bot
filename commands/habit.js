@@ -2,7 +2,8 @@ const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, Butt
 const { DateTime } = require('luxon');
 const Habit = require('../models/Habit');
 const HabitLog = require('../models/HabitLog');
-const { scheduleHabitReminder, cancelHabitReminder } = require('../habitScheduler'); // <-- NEW!
+const { scheduleHabitReminder, cancelHabitReminder } = require('../habitScheduler');
+const User = require('../models/User');
 
 function calculateStats(habit, logs) {
   const dateActions = {};
@@ -69,6 +70,10 @@ module.exports = {
             .setDescription('The name of the habit')
             .setRequired(true)
         )
+    )
+    .addSubcommand(sub =>
+      sub.setName('points')
+        .setDescription('See how much XP you have earned from habits.')
     ),
 
   async execute(interaction) {
@@ -188,6 +193,22 @@ module.exports = {
         );
 
       return interaction.reply({ embeds: [embed], ephemeral: false });
+    }
+
+    // === /habit points ===
+    if (subcommand === 'points') {
+      // Fetch the user from the database
+      const user = await User.findOne({ discordId: userId });
+      let xp = 0;
+      if (user && user.xp) xp = user.xp;
+
+      const embed = new EmbedBuilder()
+        .setTitle('Your Habit XP')
+        .setDescription(`You have **${xp} XP** from completing habits!`)
+        .setColor(0x00ff99)
+        .setFooter({ text: 'Keep up the good work!' });
+
+      return interaction.reply({ embeds: [embed], ephemeral: true });
     }
   }
 };
