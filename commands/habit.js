@@ -229,10 +229,10 @@ module.exports = {
       const embed = new EmbedBuilder()
         .setTitle('Your Habit XP')
         .setDescription(`You have **${xp} XP** from completing habits!`)
-        .setColor(0x00ff99)
+        .setColor(0x663399)
         .setFooter({ text: 'Keep up the good work!' });
 
-      return interaction.reply({ embeds: [embed], ephemeral: true });
+      return interaction.reply({ embeds: [embed], ephemeral: false });
     }
 
     // === /habit reschedule ===

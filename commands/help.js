@@ -170,7 +170,9 @@ module.exports = {
         { name: '</habit add:1371896824612388984>', value: 'Add a habit to your habit tracker list.' },
         { name: '</habit list:1371896824612388984>', value: 'View a list of your habits youve set.' },
         { name: '</habit remove:1371896824612388984>', value: 'Remove a habit you no longer need!' },
-        { name: '</habit stats:1371896824612388984>', value: 'Look at your streaks and statistics.' }
+        { name: '</habit stats:1371896824612388984>', value: 'Look at your streaks and statistics.' },
+        { name: '</habit points:1371896824612388984>', value: 'Look at how many xp you have from completing habits.' },
+        { name: '</habit reschedule:1371896824612388984>', value: 'Reschedule the time for one of your habits to a new time.' }
       )
       .setFooter({ text: 'Elysium Help Menus' })
 
