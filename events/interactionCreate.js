@@ -90,40 +90,63 @@ module.exports = {
         });
       }
 
+      
       // ====== HABIT BUTTONS ======
+      const HabitLog = require('../models/HabitLog');
+      const User = require('../models/User');
+
       if (interaction.customId && interaction.customId.startsWith('habit_dm_')) {
-        // Example: habit_dm_123456789_yes
-        const [ , , habitId, action ] = interaction.customId.split('_');
+      // Example: habit_dm_123456789_yes
+      const [ , , habitId, action ] = interaction.customId.split('_');
 
-        // Save a log for each action
-        try {
-          await HabitLog.create({
-            userId: interaction.user.id,
-            habitId: habitId,
-            action: action, // 'yes', 'nottoday', or 'skip'
-            timestamp: new Date()
-          });
-        } catch (error) {
-          console.error('Failed to save HabitLog:', error);
-          await interaction.reply({ content: 'Failed to log your habit. Please try again.', ephemeral: true });
-          return;
-        }
+      let embed;
+      let xpToAdd = 0;
 
-        // Respond based on action
-        let embed;
-        if (action === 'yes') {
-          embed = new EmbedBuilder().setDescription('Marked as done for today! Good job!');
-        } else if (action === 'nottoday') {
-          embed = new EmbedBuilder().setDescription('Marked for not today. That\'s okay. Try again tomorrow!');
-        } else if (action === 'skip') {
-          embed = new EmbedBuilder().setDescription('Marked as skipped today. That\'s perfectly fine. You can always try again tomorrow.');
-        } else {
-          await interaction.reply({ content: 'Unknown action.', ephemeral: true });
-          return;
-        }
-        await interaction.reply({ embeds: [embed], ephemeral: true });
-        return;
+      // Respond based on action
+      if (action === 'yes') {
+      embed = new EmbedBuilder().setDescription('Marked as done for today! Good job!');
+      xpToAdd = 10;
+      } else if (action === 'nottoday') {
+      embed = new EmbedBuilder().setDescription('Marked for not today. That\'s okay. Try again tomorrow!');
+      xpToAdd = 2;
+      } else if (action === 'skip') {
+      embed = new EmbedBuilder().setDescription('Marked as skipped today. That\'s perfectly fine. You can always try again tomorrow.');
+      xpToAdd = 0;
+      } else {
+      await interaction.reply({ content: 'Unknown action.', ephemeral: true });
+      return;
       }
+
+      // Save a log for each action, with the correct XP
+    try {
+      await HabitLog.create({
+      userId: interaction.user.id,
+      habitId: habitId,
+      action: action,
+      timestamp: new Date(),
+      xp: xpToAdd,
+      });
+    } catch (error) {
+    console.error('Failed to save HabitLog:', error);
+    await interaction.reply({ content: 'Failed to log your habit. Please try again.', ephemeral: true });
+    return;
+    }
+
+    // Award XP to the user
+    if (xpToAdd !== 0) {
+    await User.updateOne(
+      { discordId: interaction.user.id },
+      { $inc: { xp: xpToAdd } },
+      { upsert: true }
+    );
+    }
+
+    // Optionally, you can show the user how much XP they earned
+    embed.setFooter({ text: `+${xpToAdd} XP` });
+
+    await interaction.reply({ embeds: [embed], ephemeral: true });
+    return;
+    }
 
       // ====== HABIT FREQUENCY BUTTONS ======
       if (interaction.customId === 'habit_frequency_daily' || interaction.customId === 'habit_frequency_weekly') {
