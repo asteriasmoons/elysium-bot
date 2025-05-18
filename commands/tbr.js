@@ -33,7 +33,7 @@ function buildTbrEmbed(user, books, page, totalPages, customEmoji) {
     .setAuthor({ name: user.username, iconURL: user.displayAvatarURL() })
     .setDescription(description || 'No books on this page.')
     .setFooter({ text: `Page ${page} of ${totalPages}` })
-    .setColor('#ff1493');
+    .setColor('#ff95f2');
 }
 
 // Helper: Build action row with buttons
@@ -128,7 +128,7 @@ module.exports = {
             new EmbedBuilder()
               .setTitle('Already on TBR')
               .setDescription(`"${title}" by ${author} is already on your TBR list!`)
-              .setColor('#ff1493')
+              .setColor('#ff95f2')
           ],
           ephemeral: true
         });
@@ -148,7 +148,7 @@ module.exports = {
           new EmbedBuilder()
             .setTitle('Book Added!')
             .setDescription(`"${title}" by ${author}\n${statusText}`)
-            .setColor('#ff1493')
+            .setColor('#ff95f2')
         ]
       });
     }
@@ -172,7 +172,7 @@ module.exports = {
             new EmbedBuilder()
               .setTitle('Book Not Found')
               .setDescription(`"${title}" by ${author} is not on your TBR list.`)
-              .setColor('#ff1493')
+              .setColor('#ff95f2')
           ],
           ephemeral: true
         });
@@ -186,7 +186,7 @@ module.exports = {
           new EmbedBuilder()
             .setTitle('Book Removed')
             .setDescription(`Removed "${title}" by ${author} from your TBR list.`)
-            .setColor('#ff1493')
+            .setColor('#ff95f2')
         ]
       });
     }
@@ -208,7 +208,7 @@ module.exports = {
                   ? 'Your TBR list is empty! Add books with `/tbr add`.'
                   : 'Their TBR list is empty!'
               )
-              .setColor('#ff1493')
+              .setColor('#ff95f2')
           ]
         });
       }
