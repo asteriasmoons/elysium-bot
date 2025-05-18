@@ -7,7 +7,7 @@ const {
 } = require('discord.js');
 const TBR = require('../models/TBR'); 
 
-const customEmoji = '<a:twirlystar2:1339802627810005042>';
+const customEmoji = '<a:twrly3:1369321311423434946>';
 const BOOKS_PER_PAGE = 4; // Change as desired
 
 // Helper: Paginate books

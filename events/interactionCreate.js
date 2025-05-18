@@ -11,7 +11,7 @@ const { buildEmbed } = require('../utils/embedEditorUI');
 const TBR = require('../models/TBR');
 const { scheduleHabitReminder } = require('../habitScheduler');
 
-const customEmoji = '<a:twirlystar2:1339802627810005042>';
+const customEmoji = '<a:twrly3:1369321311423434946>';
 const BOOKS_PER_PAGE = 4; // Should match your tbr.js setting
 
 function paginateBooks(books, page) {
