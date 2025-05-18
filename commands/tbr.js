@@ -163,6 +163,8 @@ module.exports = {
         });
       }
 
+      console.log(tbr.books); // See what's actually in your books array
+
       // Display list with title, author, and status
       return interaction.reply({
         embeds: [
@@ -175,6 +177,7 @@ module.exports = {
                 let statusLabel = '';
                 if (b.status === 'finished') statusLabel = ' *(Finished)*';
                 else if (b.status === 'dnf') statusLabel = ' *(DNF)*';
+                else statusLabel = ' *(TBR)*';
                 return `${emoji} ${i + 1}. **${b.title}** by *${b.author}*${statusLabel}`;
               }).join('\n')
             )
