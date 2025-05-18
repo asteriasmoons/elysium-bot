@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 
 const habitSchema = new mongoose.Schema({
-  _id: { type: String, required: true }, // <-- change this line!
+  _id: { type: String, required: true },
   userId: { type: String, required: true },     
   name: { type: String, required: true },        
   description: { type: String },               

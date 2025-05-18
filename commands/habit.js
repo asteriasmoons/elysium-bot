@@ -257,8 +257,7 @@ module.exports = {
 
       habit.hour = newHour;
       habit.minute = newMinute;
-      if (newFrequency) habit.frequency = newFrequency;
-
+      if (newFrequency) habit.frequency = newFrequency.toLowerCase();
       await habit.save();
 
       // Reschedule with new time/frequency
