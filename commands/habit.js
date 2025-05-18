@@ -140,13 +140,13 @@ module.exports = {
       }
 
       const embed = new EmbedBuilder()
-        .setTitle('<:pcht1:1371879916383240263> Scheduled Habits')
-        .setColor(0x663399)
-        .setDescription(
-          habits.map((h) =>
-            `**${h.name}**\n${h.description || '_No description_'}\nFrequency: \`${h.frequency}\` at \`${h.hour}:${h.minute.toString().padStart(2, '0')}\``
-          ).join('\n\n')
-        );
+      .setTitle('<:pcht1:1371879916383240263> Scheduled Habits')
+      .setColor(0x663399)
+      .setDescription(
+      habits.map((h) =>
+      `**${h.name}**\n${h.description || '_No description_'}\nFrequency: ${h.frequency} at ${h.hour}:${h.minute.toString().padStart(2, '0')}`
+      ).join('\n\n')
+  );
 
       return interaction.reply({
         embeds: [embed],
