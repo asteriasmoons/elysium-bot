@@ -35,7 +35,7 @@ function buildTbrEmbed(user, books, page, totalPages, customEmoji) {
     .setAuthor({ name: user.username, iconURL: user.displayAvatarURL() })
     .setDescription(description || 'No books on this page.')
     .setFooter({ text: `Page ${page} of ${totalPages}` })
-    .setColor('#4ac4d7');
+    .setColor('#ff1493');
 }
 
 function buildActionRow(page, totalPages, targetUserId) {
