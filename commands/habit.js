@@ -144,7 +144,7 @@ module.exports = {
       .setColor(0x663399)
       .setDescription(
       habits.map((h) =>
-      `**${h.name}**\n${h.description || '_No description_'}\nFrequency: ${h.frequency} at ${h.hour}:${h.minute.toString().padStart(2, '0')}`
+      `**${h.name}**\n${h.description || '_No description_'}\n**Frequency:** ${h.frequency} at ${h.hour}:${h.minute.toString().padStart(2, '0')}`
       ).join('\n\n')
   );
 
