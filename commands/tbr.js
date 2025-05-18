@@ -1,5 +1,5 @@
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
-const TBR = require('../models/TBR');
+const TBR = require('../models/TBR'); 
 
 const customEmoji = '<a:twirlystar2:1339802627810005042>';
 
@@ -19,6 +19,16 @@ module.exports = {
           opt.setName('author')
             .setDescription('Book author')
             .setRequired(true)
+        )
+        .addStringOption(opt =>
+          opt.setName('status')
+            .setDescription('Reading status')
+            .addChoices(
+              { name: 'To Be Read', value: 'tbr' },
+              { name: 'Finished', value: 'finished' },
+              { name: 'Did Not Finish', value: 'dnf' }
+            )
+            .setRequired(false)
         )
     )
     .addSubcommand(sub =>
@@ -53,6 +63,7 @@ module.exports = {
       const userId = interaction.user.id;
       const title = interaction.options.getString('title').trim();
       const author = interaction.options.getString('author').trim();
+      const status = interaction.options.getString('status') || 'tbr';
 
       let tbr = await TBR.findOne({ userId });
       if (!tbr) tbr = new TBR({ userId, books: [] });
@@ -73,14 +84,20 @@ module.exports = {
         });
       }
 
-      tbr.books.push({ title, author });
+      tbr.books.push({ title, author, status });
       await tbr.save();
+
+      // Status display text
+      let statusText = '';
+      if (status === 'tbr') statusText = 'Added to your TBR list.';
+      else if (status === 'finished') statusText = 'Marked as **Finished Reading**!';
+      else if (status === 'dnf') statusText = 'Marked as **Did Not Finish**.';
 
       return interaction.reply({
         embeds: [
           new EmbedBuilder()
             .setTitle('Book Added!')
-            .setDescription(`Added "${title}" by ${author} to your TBR list.`)
+            .setDescription(`"${title}" by ${author}\n${statusText}`)
             .setColor('#4ac4d7')
         ]
       });
@@ -146,14 +163,20 @@ module.exports = {
         });
       }
 
-      // Display list with both title and author
+      // Display list with title, author, and status
       return interaction.reply({
         embeds: [
           new EmbedBuilder()
             .setTitle(`${user.username}'s TBR List`)
             .setAuthor({ name: user.username, iconURL: user.displayAvatarURL() })
             .setDescription(
-              tbr.books.map((b, i) => `${customEmoji} ${i + 1}. **${b.title}** by *${b.author}*`).join('\n')
+              tbr.books.map((b, i) => {
+                let emoji = customEmoji;
+                let statusLabel = '';
+                if (b.status === 'finished') statusLabel = ' *(Finished)*';
+                else if (b.status === 'dnf') statusLabel = ' *(DNF)*';
+                return `${emoji} ${i + 1}. **${b.title}** by *${b.author}*${statusLabel}`;
+              }).join('\n')
             )
             .setColor('#4ac4d7')
         ]

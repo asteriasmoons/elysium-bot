@@ -5,6 +5,7 @@ const tbrSchema = new mongoose.Schema({
   books: [{
     title: { type: String, required: true },
     author: { type: String, required: true },
+    status: { type: String, default: 'tbr' },
     addedAt: { type: Date, default: Date.now }
   }]
 });
