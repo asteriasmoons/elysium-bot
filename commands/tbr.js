@@ -1,7 +1,57 @@
-const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const { 
+  SlashCommandBuilder, 
+  EmbedBuilder, 
+  ActionRowBuilder, 
+  ButtonBuilder, 
+  ButtonStyle 
+} = require('discord.js');
 const TBR = require('../models/TBR'); 
 
 const customEmoji = '<a:twirlystar2:1339802627810005042>';
+const BOOKS_PER_PAGE = 4; // Change as desired
+
+// Helper: Paginate books
+function paginateBooks(books, page) {
+  const start = (page - 1) * BOOKS_PER_PAGE;
+  const end = start + BOOKS_PER_PAGE;
+  return books.slice(start, end);
+}
+
+// Helper: Build paginated embed
+function buildTbrEmbed(user, books, page, totalPages, customEmoji) {
+  const paginated = paginateBooks(books, page);
+
+  const description = paginated.map((b, i) => {
+    let statusText = b.status === 'finished' ? 'Finished'
+      : b.status === 'dnf' ? 'Did Not Finish'
+      : 'To Be Read';
+    return `${customEmoji} ${(i + 1) + (BOOKS_PER_PAGE * (page - 1))}. **${b.title}**\n**Author:** *${b.author}*\n**Status:** ${statusText}`;
+  }).join('\n\n');
+
+  return new EmbedBuilder()
+    .setTitle(`${user.username}'s TBR List`)
+    .setAuthor({ name: user.username, iconURL: user.displayAvatarURL() })
+    .setDescription(description || 'No books on this page.')
+    .setFooter({ text: `Page ${page} of ${totalPages}` })
+    .setColor('#4ac4d7');
+}
+
+// Helper: Build action row with buttons
+function buildActionRow(page, totalPages, targetUserId) {
+  return new ActionRowBuilder()
+    .addComponents(
+      new ButtonBuilder()
+        .setCustomId(`tbr_prev_${targetUserId}_${page}`)
+        .setLabel('Previous')
+        .setStyle(ButtonStyle.Secondary)
+        .setDisabled(page === 1),
+      new ButtonBuilder()
+        .setCustomId(`tbr_next_${targetUserId}_${page}`)
+        .setLabel('Next')
+        .setStyle(ButtonStyle.Secondary)
+        .setDisabled(page === totalPages)
+    );
+}
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -163,26 +213,16 @@ module.exports = {
         });
       }
 
-      console.log(tbr.books); // See what's actually in your books array
+      const totalPages = Math.ceil(tbr.books.length / BOOKS_PER_PAGE);
+      const page = 1; // Always start at page 1
 
-      // Display list with title, author, and status
+      // Build embed and action row for first page
+      const embed = buildTbrEmbed(user, tbr.books, page, totalPages, customEmoji);
+      const row = buildActionRow(page, totalPages, user.id);
+
       return interaction.reply({
-        embeds: [
-          new EmbedBuilder()
-            .setTitle(`${user.username}'s TBR List`)
-            .setAuthor({ name: user.username, iconURL: user.displayAvatarURL() })
-            .setDescription(
-              tbr.books.map((b, i) => {
-                let emoji = customEmoji;
-                let statusLabel = '';
-                if (b.status === 'finished') statusLabel = ' *(Finished)*';
-                else if (b.status === 'dnf') statusLabel = ' *(DNF)*';
-                else statusLabel = ' *(TBR)*';
-                return `${emoji} ${i + 1}. **${b.title}** by *${b.author}*${statusLabel}`;
-              }).join('\n')
-            )
-            .setColor('#4ac4d7')
-        ]
+        embeds: [embed],
+        components: [row]
       });
     }
   }
