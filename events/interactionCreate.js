@@ -389,7 +389,7 @@ module.exports = {
       // --- End Button Handlers ---
     }
 
-    // ====== MODAL HANDLER ======
+    // ====== HABIT MODAL HANDLER ======
     if (interaction.isModalSubmit()) {
       // Habit Modal
       if (interaction.customId.startsWith('habit_modal_create_')) {

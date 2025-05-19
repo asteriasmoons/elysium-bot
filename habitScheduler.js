@@ -64,11 +64,12 @@ function scheduleHabitReminder(client, habit) {
         new ButtonBuilder().setCustomId(`habit_dm_${habit._id}_skip`).setLabel('Skip').setStyle(ButtonStyle.Secondary)
       );
 
+      const userId = user.id;
       await user.send({
         embeds: [
           new EmbedBuilder()
             .setTitle(`<:pcht1:1371879916383240263> Habit Reminder: ${latestHabit.name}`)
-            .setDescription(latestHabit.description || 'No description provided.')
+            .setDescription(`Hey <@${userId}>, this is your habit reminder! Don’t forget to click one of the three buttons below!\n\n**${latestHabit.description || 'No description provided.'}**`)
             .setColor(0x663399)
         ],
         components: [buttons]
