@@ -3,7 +3,7 @@ require('dotenv').config(); // Load environment variables
 const mongoose = require('mongoose');
 const fs = require('node:fs');
 const path = require('node:path');
-const { Client, Collection, GatewayIntentBits } = require('discord.js');
+const { Client, Collection, GatewayIntentBits, ActivityType } = require('discord.js');
 const Agenda = require('agenda'); // <-- Make sure to import Agenda!
 const { scheduleAllHabits } = require('./habitScheduler');
 
@@ -83,6 +83,11 @@ if (fs.existsSync(eventsPath)) {
 // Your existing client setup, requires, etc., would be above this
 
 client.once('ready', async () => { // <<< Added 'async' here
+    client.user.setPresence({
+        activities: [
+            { name: 'With magic 🔮', type: ActivityType.Streaming }
+        ],
+    });
     console.log(`Bot ${client.user.tag} is now ready!`);
 
     client.agenda = agenda;
