@@ -133,7 +133,7 @@ module.exports = {
         const pageEntries = entries.slice(start, start + ENTRIES_PER_PAGE);
 
         const embed = new EmbedBuilder()
-        .setTitle(`Your Journal Entries (Page ${page}/${totalPages})`)
+        .setTitle(`<:xbuuke:1369320075126898748> Your Journal Entries (Page ${page}/${totalPages})`)
         .setColor(0x9370db)
         .setDescription(pageEntries.length
       ? pageEntries.map((e, i) =>
