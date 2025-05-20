@@ -2,6 +2,7 @@ const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, Butt
 const JournalEntry = require('../models/JournalEntry');
 
 const ENTRIES_PER_PAGE = 3;
+const ownerIds = ['1202652142482231417']; // <-- Replace with your real Discord user ID
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -40,11 +41,36 @@ module.exports = {
 
     if (sub === 'add') {
       const entry = interaction.options.getString('entry');
-      await JournalEntry.create({ userId, entry });
+
+      // Owner/admin bypass: skip the entry limit
+      if (ownerIds.includes(userId)) {
+        await JournalEntry.create({ userId, entry });
+        const count = await JournalEntry.countDocuments({ userId });
+        const embed = new EmbedBuilder()
+          .setTitle('<a:zpyesno2:1368590432488915075> Entry Added')
+          .setDescription(`Your entry has been saved! (You now have **${count}** entries.)`)
+          .setColor(0x9370db);
+        return interaction.reply({ embeds: [embed], ephemeral: false });
+      }
+
+      // Normal user: enforce limit
       const count = await JournalEntry.countDocuments({ userId });
+      if (count >= 10) {
+        return interaction.reply({
+          embeds: [
+            new EmbedBuilder()
+              .setTitle('<:xbuuke:1369320075126898748> Entry Limit Reached')
+              .setDescription('You have reached the maximum of **10** journal entries. Please delete an old entry to add a new one.')
+              .setColor(0x9370db)
+          ],
+          ephemeral: false
+        });
+      }
+
+      await JournalEntry.create({ userId, entry });
       const embed = new EmbedBuilder()
         .setTitle('<a:zpyesno2:1368590432488915075> Entry Added')
-        .setDescription(`Your entry has been saved! You now have **${count}** entries.`)
+        .setDescription(`Your entry has been saved! You now have **${count + 1}** entries.`)
         .setColor(0x9370db);
       return interaction.reply({ embeds: [embed], ephemeral: false });
     }
@@ -90,20 +116,20 @@ module.exports = {
       try {
         await interaction.user.send({ embeds: [embed], components: [row] });
         return interaction.reply({
-			embeds: [
-				new EmbedBuilder()
-				.setDescription('<:xmail:1368803966304911371> Your journal entries have been sent to your DMs!')
-				.setColor(0x9370db)
-			],
+          embeds: [
+            new EmbedBuilder()
+              .setDescription('<:xmail:1368803966304911371> Your journal entries have been sent to your DMs!')
+              .setColor(0x9370db)
+          ],
           ephemeral: false
         });
       } catch (e) {
         return interaction.reply({
-			embeds: [
-				new EmbedBuilder()
-				.setDescription('<a:zpyesno1:1368590377887469598> I could not send you a DM. Please check your privacy settings.')
-				.setColor(0x9370db)
-			],
+          embeds: [
+            new EmbedBuilder()
+              .setDescription('<a:zpyesno1:1368590377887469598> I could not send you a DM. Please check your privacy settings.')
+              .setColor(0x9370db)
+          ],
           ephemeral: false
         });
       }
@@ -113,14 +139,14 @@ module.exports = {
       const number = interaction.options.getInteger('number');
       const entries = await JournalEntry.find({ userId }).sort({ createdAt: -1 });
       if (number < 1 || number > entries.length) {
-		return interaction.reply({
-			embeds: [
-			  new EmbedBuilder()
-                .setDescription('Invalid entry number.')
-				.setColor (0x9370db)
-		   ],
-		   ephemeral: false
-		});
+        return interaction.reply({
+          embeds: [
+            new EmbedBuilder()
+              .setDescription('Invalid entry number.')
+              .setColor(0x9370db)
+          ],
+          ephemeral: false
+        });
       }
       const entry = entries[number - 1];
       const embed = new EmbedBuilder()
@@ -129,26 +155,26 @@ module.exports = {
         .setFooter({ text: `Created at: ${entry.createdAt.toLocaleString()}` })
         .setColor(0x9370db);
 
-		try {
-			await interaction.user.send({ embeds: [embed] });
-			return interaction.reply({
-			  embeds: [
-				new EmbedBuilder()
-				  .setDescription(`<:xmail:1368803966304911371> Entry #${number} has been sent to your DMs!`)
-				  .setColor(0x9370db)
-			  ],
-			  ephemeral: false
-			});
-		  } catch (e) {
-			return interaction.reply({
-			  embeds: [
-				new EmbedBuilder()
-				  .setDescription('<a:zpyesno1:1368590377887469598> I could not send you a DM. Please check your privacy settings.')
-				  .setColor(0x9370db)
-			  ],
-			  ephemeral: false
-			});
-		  }		  
+      try {
+        await interaction.user.send({ embeds: [embed] });
+        return interaction.reply({
+          embeds: [
+            new EmbedBuilder()
+              .setDescription(`<:xmail:1368803966304911371> Entry #${number} has been sent to your DMs!`)
+              .setColor(0x9370db)
+          ],
+          ephemeral: false
+        });
+      } catch (e) {
+        return interaction.reply({
+          embeds: [
+            new EmbedBuilder()
+              .setDescription('<a:zpyesno1:1368590377887469598> I could not send you a DM. Please check your privacy settings.')
+              .setColor(0x9370db)
+          ],
+          ephemeral: false
+        });
+      }
     }
 
     if (sub === 'edit') {
