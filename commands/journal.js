@@ -1,5 +1,6 @@
 const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const JournalEntry = require('../models/JournalEntry');
+const User = require('../models/User'); // Add this line
 
 const ENTRIES_PER_PAGE = 3;
 const ownerIds = ['1202652142482231417']; // <-- Replace with your real Discord user ID
@@ -53,7 +54,8 @@ module.exports = {
         return interaction.reply({ embeds: [embed], ephemeral: false });
       }
 
-      // Normal user: enforce limit
+      // If user has unlimited journal, skip the entry limit
+      if (!user?.hasUnlimitedJournal) {
       const count = await JournalEntry.countDocuments({ userId });
       if (count >= 10) {
         return interaction.reply({
@@ -66,6 +68,7 @@ module.exports = {
           ephemeral: false
         });
       }
+    }
 
       await JournalEntry.create({ userId, entry });
       const embed = new EmbedBuilder()
