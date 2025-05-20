@@ -61,12 +61,12 @@ module.exports = {
       const pageEntries = entries.slice(start, start + ENTRIES_PER_PAGE);
 
       const embed = new EmbedBuilder()
-        .setTitle(`<a:zfcharts:1368590695446745099> Journal Entries (Page ${page}/${totalPages})`)
+        .setTitle(`<:xsbk1:1369375260624818338> Journal Entries (Page ${page}/${totalPages})`)
         .setColor(0x9370db)
         .setDescription(
           pageEntries.length
             ? pageEntries.map((e, i) =>
-                `**${start + i + 1}.** [${e.createdAt.toLocaleDateString()}] ${e.entry.slice(0, 25)}`
+                `**${start + i + 1}.** [${e.createdAt.toLocaleDateString()}] ${e.entry.slice(0, 35)}`
               ).join('\n')
             : 'No entries found.'
         );
