@@ -8,7 +8,7 @@ module.exports = {
     // Embed 1: Command List
     const helpEmbed = new EmbedBuilder()
       .setTitle('<:xbuuke:1369320075126898748> Elysium Bot Help')
-      .setDescription('Welcome to Elysium bots help menu! In this menu you will find ALL the commands the bot has to offer. Click on a command to pull up the command in the commands center on mobile or if on desktop it will be placed in the channel where you can then hit send. Thank you so much for choosing Elysium!\n\nCheck out the documentation [here](https://asterias-moons.gitbook.io/elysium)')
+      .setDescription('Welcome to Elysium bots help menu! In this menu you will find ALL the commands the bot has to offer. Click on a command to pull up the command in the commands center on mobile or if on desktop it will be placed in the channel where you can then hit send. Thank you so much for choosing Elysium!\n\nCheck out the documentation [here](https://asterias-moons.gitbook.io/elysium-bot/)')
       .addFields(
         { name: '</help:1368067383742304302>', value: 'This shows you these help menus with their buttons. Use the buttons to navigate.' },
         { name: '</report:1368067384107339871>', value: 'Use this command to directly send me feedback or bug reports!' },
