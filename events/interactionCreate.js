@@ -133,15 +133,15 @@ module.exports = {
         const pageEntries = entries.slice(start, start + ENTRIES_PER_PAGE);
 
         const embed = new EmbedBuilder()
-          .setTitle(`Your Journal Entries (Page ${page}/${totalPages})`)
-          .setColor(0x9370db)
-          .setDescription(
-            pageEntries.length
-              ? pageEntries.map((e, i) =>
-                `**${start + i + 1}.** [${new Date(e.createdAt).toLocaleDateString()}] \`${e.entry.slice(0, 10)}\``
-              ).join('\n')
-              : 'No entries found.'
-          );
+        .setTitle(`Your Journal Entries (Page ${page}/${totalPages})`)
+        .setColor(0x9370db)
+        .setDescription(pageEntries.length
+      ? pageEntries.map((e, i) =>
+          `**${start + i + 1}.** [${new Date(e.createdAt).toLocaleDateString()}] ${e.entry.slice(0, 35)}`
+        ).join('\n')
+      : 'No entries found.'
+      );
+
 
         const row = new ActionRowBuilder().addComponents(
           new ButtonBuilder()
