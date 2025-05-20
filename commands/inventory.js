@@ -28,7 +28,13 @@ module.exports = {
           opt.setName('title').setDescription('Title of the book').setRequired(true))
         .addStringOption(opt =>
           opt.setName('author').setDescription('Author of the book').setRequired(true))
-    ),
+    )
+    .addSubcommand(sub =>
+      sub.setName('search')
+        .setDescription('Search for books by title or author!')
+        .addStringOption(opt =>
+          opt.setName('query').setDescription('Title or author to search for').setRequired(true))
+),
 
   async execute(interaction) {
     const sub = interaction.options.getSubcommand();
@@ -160,6 +166,111 @@ module.exports = {
 
       await interaction.reply({ content: `Book **${title}** by **${author}** has been removed from the inventory.`, ephemeral: false });
     }
+  
+    else if (sub === 'search') {
+  const query = interaction.options.getString('query').trim();
+
+  // Use Atlas Search with fuzzy
+  const books = await BookInventory.aggregate([
+    {
+      $search: {
+        index: 'default', // or whatever you named your index
+        compound: {
+          should: [
+            {
+              text: {
+                query: query,
+                path: 'title',
+                fuzzy: { maxEdits: 2, prefixLength: 1 }
+              }
+            },
+            {
+              text: {
+                query: query,
+                path: 'author',
+                fuzzy: { maxEdits: 2, prefixLength: 1 }
+              }
+            }
+          ]
+        }
+      }
+    },
+    { $sort: { title: 1 } }
+  ]);
+
+  if (books.length === 0) {
+    await interaction.reply({ content: `No books found matching **${query}** (fuzzy search).`, ephemeral: true });
+    return;
+  }
+
+  // Pagination helpers (reuse your code)
+  function generateEmbed(page) {
+    const start = page * BOOKS_PER_PAGE;
+    const end = start + BOOKS_PER_PAGE;
+    const booksToShow = books.slice(start, end);
+
+    const embed = new EmbedBuilder()
+      .setTitle(`Fuzzy Search Results for "${query}"`)
+      .setColor('#572194')
+      .setFooter({ text: `Page ${page + 1} of ${Math.ceil(books.length / BOOKS_PER_PAGE)}` });
+
+    booksToShow.forEach((b, i) => {
+      embed.addFields({
+        name: `${start + i + 1}. ${b.title}`,
+        value:
+          `**Title:** ${b.title}\n` +
+          `**Author:** ${b.author}\n` +
+          `**Goodreads:** [Link](${b.goodreads})`
+      });
+    });
+
+    return embed;
+  }
+
+  function generateRow(page, maxPage) {
+    return new ActionRowBuilder().addComponents(
+      new ButtonBuilder()
+        .setCustomId('back')
+        .setLabel('Back')
+        .setStyle(ButtonStyle.Secondary)
+        .setDisabled(page === 0),
+      new ButtonBuilder()
+        .setCustomId('next')
+        .setLabel('Next')
+        .setStyle(ButtonStyle.Secondary)
+        .setDisabled(page === maxPage)
+    );
+  }
+
+  let page = 0;
+  const maxPage = Math.floor((books.length - 1) / BOOKS_PER_PAGE);
+
+  const embed = generateEmbed(page);
+  const row = generateRow(page, maxPage);
+
+  const reply = await interaction.reply({ embeds: [embed], components: [row], fetchReply: true });
+
+  const collector = reply.createMessageComponentCollector({
+    filter: i => i.user.id === interaction.user.id,
+    time: 300000 // 5 minutes
+  });
+
+  collector.on('collect', async i => {
+    if (i.customId === 'next' && page < maxPage) page++;
+    else if (i.customId === 'back' && page > 0) page--;
+
+    const newEmbed = generateEmbed(page);
+    const newRow = generateRow(page, maxPage);
+
+    await i.update({ embeds: [newEmbed], components: [newRow] });
+  });
+
+  collector.on('end', async () => {
+    const disabledRow = generateRow(page, maxPage);
+    disabledRow.components.forEach(btn => btn.setDisabled(true));
+    await reply.edit({ components: [disabledRow] });
+  });
+}
   }
 };
 
