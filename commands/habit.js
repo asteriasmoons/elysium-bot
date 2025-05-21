@@ -5,6 +5,9 @@ const HabitLog = require('../models/HabitLog');
 const { scheduleHabitReminder, cancelHabitReminder } = require('../habitScheduler');
 const User = require('../models/User');
 
+// Helper: converts Luxon's weekday (1=Monday...7=Sunday) to weekday string
+const daysOfWeek = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
 function calculateStats(habit, logs) {
   const dateActions = {};
   logs.forEach(log => {
@@ -14,16 +17,29 @@ function calculateStats(habit, logs) {
 
   const startDate = DateTime.fromJSDate(habit.createdAt).startOf('day');
   const today = DateTime.now().startOf('day');
-  const days = Math.floor(today.diff(startDate, 'days').days) + 1;
 
   let allDates = [];
-  for (let i = 0; i < days; i++) {
-    allDates.push(startDate.plus({ days: i }).toISODate());
+
+  if (habit.frequency === 'daily') {
+    const days = Math.floor(today.diff(startDate, 'days').days) + 1;
+    for (let i = 0; i < days; i++) {
+      allDates.push(startDate.plus({ days: i }).toISODate());
+    }
+  } else if (habit.frequency === 'weekly' && habit.dayOfWeek) {
+    // Only consider the scheduled weekday
+    let current = startDate;
+    const targetIndex = daysOfWeek.indexOf(habit.dayOfWeek);
+    // Move to first occurrence of the scheduled day
+    while (current.weekday % 7 !== targetIndex) {
+      current = current.plus({ days: 1 });
+    }
+    while (current <= today) {
+      allDates.push(current.toISODate());
+      current = current.plus({ days: 7 });
+    }
   }
 
   const totalCompletions = Object.values(dateActions).filter(a => a === 'yes').length;
-
-  // Only count days before today as missed
   const todayISO = today.toISODate();
   const missedDays = allDates.filter(date => date < todayISO && !dateActions[date]).length;
 
@@ -98,6 +114,11 @@ module.exports = {
             .setDescription('New frequency (daily/weekly)')
             .setRequired(false)
         )
+        .addStringOption(opt =>
+          opt.setName('dayofweek')
+            .setDescription('New day of week (e.g., Monday)')
+            .setRequired(false)
+        )
     ),
 
   async execute(interaction) {
@@ -140,13 +161,15 @@ module.exports = {
       }
 
       const embed = new EmbedBuilder()
-      .setTitle('<:pcht1:1371879916383240263> Scheduled Habits')
-      .setColor(0x663399)
-      .setDescription(
-      habits.map((h) =>
-      `**${h.name}**\n${h.description || '_No description_'}\n**Frequency:** ${h.frequency} at ${h.hour}:${h.minute.toString().padStart(2, '0')}`
-      ).join('\n\n')
-  );
+        .setTitle('<:pcht1:1371879916383240263> Scheduled Habits')
+        .setColor(0x663399)
+        .setDescription(
+          habits.map((h) =>
+            `**${h.name}**\n${h.description || '_No description_'}\n**Frequency:** ${h.frequency}` +
+            (h.frequency === 'weekly' && h.dayOfWeek ? ` on ${h.dayOfWeek}` : '') +
+            ` at ${h.hour}:${h.minute.toString().padStart(2, '0')}`
+          ).join('\n\n')
+        );
 
       return interaction.reply({
         embeds: [embed],
@@ -210,10 +233,12 @@ module.exports = {
         .setColor(0x663399)
         .setDescription(
           `**Description:** ${habit.description || '_No description_'}\n` +
-          `**Frequency:** \`${habit.frequency}\` at \`${habit.hour}:${habit.minute.toString().padStart(2, '0')}\`\n\n` +
+          `**Frequency:** \`${habit.frequency}\`` +
+          (habit.frequency === 'weekly' && habit.dayOfWeek ? ` on \`${habit.dayOfWeek}\`` : '') +
+          ` at \`${habit.hour}:${habit.minute.toString().padStart(2, '0')}\`\n\n` +
           `**Total completions:** \`${totalCompletions}\`\n` +
-          `**Current streak:** \`${currentStreak} days\`\n` +
-          `**Missed days:** \`${missedDays}\``
+          `**Current streak:** \`${currentStreak} ${habit.frequency === 'weekly' ? 'weeks' : 'days'}\`\n` +
+          `**Missed ${habit.frequency === 'weekly' ? 'weeks' : 'days'}:** \`${missedDays}\``
         );
 
       return interaction.reply({ embeds: [embed], ephemeral: false });
@@ -241,6 +266,7 @@ module.exports = {
       const newHour = interaction.options.getInteger('hour');
       const newMinute = interaction.options.getInteger('minute');
       const newFrequency = interaction.options.getString('frequency'); // optional
+      const newDayOfWeek = interaction.options.getString('dayofweek'); // optional
 
       // Find the habit (case-insensitive)
       const habit = await Habit.findOne({
@@ -258,13 +284,14 @@ module.exports = {
       habit.hour = newHour;
       habit.minute = newMinute;
       if (newFrequency) habit.frequency = newFrequency.toLowerCase();
+      if (newDayOfWeek) habit.dayOfWeek = newDayOfWeek;
       await habit.save();
 
       // Reschedule with new time/frequency
       scheduleHabitReminder(interaction.client, habit);
 
       return interaction.reply({
-        content: `Habit "${habit.name}" rescheduled to ${String(newHour).padStart(2,'0')}:${String(newMinute).padStart(2,'0')}${newFrequency ? ` (${newFrequency})` : ''}.`,
+        content: `Habit "${habit.name}" rescheduled to ${String(newHour).padStart(2, '0')}:${String(newMinute).padStart(2, '0')}${newFrequency ? ` (${newFrequency})` : ''}${newDayOfWeek ? ` on ${newDayOfWeek}` : ''}.`,
         ephemeral: false
       });
     }

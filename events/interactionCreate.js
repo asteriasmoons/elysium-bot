@@ -253,7 +253,16 @@ module.exports = {
                 .setLabel('Minute (0-59)')
                 .setStyle(TextInputStyle.Short)
                 .setRequired(true)
+            ),
+            ...(frequency === 'weekly' ? [
+            new ActionRowBuilder().addComponents(
+              new TextInputBuilder()
+                .setCustomId('habit_day')
+                .setLabel('Day of the Week (e.g., Monday)')
+                .setStyle(TextInputStyle.Short)
+                .setRequired(true)
             )
+          ] : [])
           );
 
         return interaction.showModal(modal);
@@ -400,6 +409,18 @@ module.exports = {
         const hour = parseInt(interaction.fields.getTextInputValue('habit_hour'), 10);
         const minute = parseInt(interaction.fields.getTextInputValue('habit_minute'), 10);
 
+        let dayOfWeek = null;
+        if (frequency === 'weekly') {
+        dayOfWeek = interaction.fields.getTextInputValue('habit_day').trim();
+        // Optional: Validate dayOfWeek here (see below)
+        }
+
+        const validDays = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+        if (frequency === 'weekly' && !validDays.includes(dayOfWeek)) {
+        await interaction.reply({ content: 'Invalid day of week! Please enter a valid day, e.g., "Monday".', ephemeral: true });
+        return;
+        }
+
         // Save Habit to DB
         const habitId = `${userId}-${Date.now()}`;
         let habit;
@@ -411,7 +432,8 @@ module.exports = {
             description,
             frequency,
             hour,
-            minute
+            minute,
+            ...(frequency === 'weekly' && { dayOfWeek })
           });
           scheduleHabitReminder(client, habit);
           console.log('Created habit:', habit);
@@ -423,7 +445,7 @@ module.exports = {
 
         const embed = new EmbedBuilder()
           .setTitle('Habit Created!')
-          .setDescription(`Habit "**${name}**" created! You'll get **${frequency}** reminders at **${hour}:${minute.toString().padStart(2, '0')}**.`)
+          .setDescription(`Habit "**${name}**" created! You'll get **${frequency}** reminders at **${hour}:${minute.toString().padStart(2, '0')}**${frequency === 'weekly' ? ` every **${dayOfWeek}**` : ''}.`)
           .setColor(0x663399);
 
         return interaction.reply({

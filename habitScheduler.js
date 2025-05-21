@@ -25,19 +25,39 @@ function scheduleHabitReminder(client, habit) {
   const zone = habit.timezone || 'America/Chicago';
   const now = DateTime.now().setZone(zone);
 
-  let next = now.set({
-    hour: habit.hour,
-    minute: habit.minute,
-    second: 0,
-    millisecond: 0
-  });
+  let next;
 
-  // If the time has passed today, schedule for next day/week
-  if (next <= now) {
-    next = next.plus({ days: habit.frequency === 'daily' ? 1 : 7 });
+  if (habit.frequency === 'daily') {
+    next = now.set({
+      hour: habit.hour,
+      minute: habit.minute,
+      second: 0,
+      millisecond: 0
+    });
+    if (next <= now) {
+      next = next.plus({ days: 1 });
+    }
   } else if (habit.frequency === 'weekly') {
-    // For weekly, only schedule for the next week if today is past the time
-    next = next.plus({ days: 7 * (next <= now ? 1 : 0) });
+    // Find next occurrence of the specified dayOfWeek
+    const daysOfWeek = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+    const targetDay = daysOfWeek.indexOf(habit.dayOfWeek);
+    if (targetDay === -1) {
+      console.error(`[HabitScheduler] Invalid dayOfWeek: ${habit.dayOfWeek}`);
+      return;
+    }
+    // Luxon: .weekday (1 = Monday, 7 = Sunday) so we map accordingly
+    // We'll use JavaScript's 0 (Sunday) - 6 (Saturday) for easier math
+    const nowJS = now.set({ hour: habit.hour, minute: habit.minute, second: 0, millisecond: 0 });
+    const currentDay = now.weekday % 7; // Sunday (7 % 7 = 0), Monday (1 % 7 = 1), etc.
+    let daysToAdd = (targetDay - currentDay + 7) % 7;
+    // If today is the target day but time has passed, schedule for next week
+    if (daysToAdd === 0 && nowJS <= now) {
+      daysToAdd = 7;
+    }
+    next = nowJS.plus({ days: daysToAdd });
+  } else {
+    console.error(`[HabitScheduler] Invalid frequency: ${habit.frequency}`);
+    return;
   }
 
   const msUntil = next.diff(now).as('milliseconds');
