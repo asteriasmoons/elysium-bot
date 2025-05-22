@@ -12,8 +12,17 @@ module.exports = {
     .addSubcommand(sub =>
       sub.setName('add')
         .setDescription('Add a new journal entry')
-        .addStringOption(opt => opt.setName('entry').setDescription('Your journal text').setRequired(true))
+        .addStringOption(opt => 
+      opt.setName('title')
+         .setDescription('Title for your journal entry')
+         .setRequired(true)
     )
+    .addStringOption(opt => 
+      opt.setName('entry')
+         .setDescription('Your journal text')
+         .setRequired(true)
+    )
+)
     .addSubcommand(sub =>
       sub.setName('list')
         .setDescription('List your journal entries')
@@ -28,12 +37,17 @@ module.exports = {
       sub.setName('edit')
         .setDescription('Edit a journal entry')
         .addIntegerOption(opt => opt.setName('number').setDescription('Entry number (from /journal list)').setRequired(true))
+        .addStringOption(opt => opt.setName('title').setDescription('New title for your entry').setRequired(true))
         .addStringOption(opt => opt.setName('entry').setDescription('New journal text').setRequired(true))
     )
     .addSubcommand(sub =>
       sub.setName('delete')
         .setDescription('Delete a journal entry')
         .addIntegerOption(opt => opt.setName('number').setDescription('Entry number (from /journal list)').setRequired(true))
+    )
+        .addSubcommand(sub =>
+      sub.setName('reset')
+        .setDescription('Delete all your journal entries')
     ),
 
   async execute(interaction) {
@@ -41,15 +55,16 @@ module.exports = {
     const userId = interaction.user.id;
 
     if (sub === 'add') {
+      const title = interaction.options.getString('title');
       const entry = interaction.options.getString('entry');
 
       // Owner/admin bypass: skip the entry limit
       if (ownerIds.includes(userId)) {
-        await JournalEntry.create({ userId, entry });
+        await JournalEntry.create({ userId, title, entry });
         const count = await JournalEntry.countDocuments({ userId });
         const embed = new EmbedBuilder()
           .setTitle('<a:zpyesno2:1368590432488915075> Entry Added')
-          .setDescription(`Your entry has been saved! (You now have **${count}** entries.)`)
+          .setDescription(`Your entry "${title}" has been saved! (You now have **${count}** entries.)`) 
           .setColor(0x9370db);
         return interaction.reply({ embeds: [embed], ephemeral: false });
       }
@@ -70,10 +85,10 @@ module.exports = {
       }
     }
 
-      await JournalEntry.create({ userId, entry });
+      await JournalEntry.create({ userId, title, entry });
       const embed = new EmbedBuilder()
         .setTitle('<a:zpyesno2:1368590432488915075> Entry Added')
-        .setDescription(`Your entry has been saved! You now have **${count + 1}** entries.`)
+        .setDescription(`Your entry "${title}" has been saved! You now have **${count + 1}** entries.`)
         .setColor(0x9370db);
       return interaction.reply({ embeds: [embed], ephemeral: false });
     }
@@ -95,7 +110,7 @@ module.exports = {
         .setDescription(
           pageEntries.length
             ? pageEntries.map((e, i) =>
-                `**${start + i + 1}.** [${e.createdAt.toLocaleDateString()}] ${e.entry.slice(0, 35)}`
+                `**${start + i + 1}.** [${e.createdAt.toLocaleDateString()}] __${e.title || 'Untitled'}__: ${e.entry.slice(0, 35)}`
               ).join('\n')
             : 'No entries found.'
         );
@@ -153,10 +168,10 @@ module.exports = {
       }
       const entry = entries[number - 1];
       const embed = new EmbedBuilder()
-        .setTitle(`<a:xspncl:1368617574002069605> Entry #${number}`)
-        .setDescription(entry.entry)
-        .setFooter({ text: `Created at: ${entry.createdAt.toLocaleString()}` })
-        .setColor(0x9370db);
+      .setTitle(`<a:xspncl:1368617574002069605> ${entry.title || `Entry #${number}`}`)
+      .setDescription(entry.entry)
+      .setFooter({ text: `Created at: ${entry.createdAt.toLocaleString()}` })
+      .setColor(0x9370db);
 
       try {
         await interaction.user.send({ embeds: [embed] });
@@ -182,6 +197,7 @@ module.exports = {
 
     if (sub === 'edit') {
       const number = interaction.options.getInteger('number');
+      const newTitle = interaction.options.getString('title');
       const newText = interaction.options.getString('entry');
       const entries = await JournalEntry.find({ userId }).sort({ createdAt: -1 });
       if (number < 1 || number > entries.length) {
@@ -189,13 +205,14 @@ module.exports = {
       }
       const entry = entries[number - 1];
       entry.entry = newText;
+      if (newTitle !== null) entry.title = newTitle;
       await entry.save();
       const embed = new EmbedBuilder()
-        .setTitle(`<a:xspncl:1368617574002069605> Entry #${number} Edited`)
-        .setDescription(newText)
-        .setFooter({ text: `Edited at: ${new Date().toLocaleString()}` })
-        .setColor(0x9370db);
-      return interaction.reply({ embeds: [embed], ephemeral: false });
+      .setTitle(`<a:xspncl:1368617574002069605> ${entry.title || `Entry #${number}`} Edited`)
+      .setDescription(newText)
+      .setFooter({ text: `Edited at: ${new Date().toLocaleString()}` })
+      .setColor(0x9370db);
+     return interaction.reply({ embeds: [embed], ephemeral: false });
     }
 
     if (sub === 'delete') {
@@ -208,8 +225,31 @@ module.exports = {
       await entry.deleteOne();
       const embed = new EmbedBuilder()
         .setTitle(`<a:zpyesno2:1368590432488915075> Entry #${number} Deleted`)
-        .setDescription('Your entry has been deleted.')
+        .setDescription(`Entry **${number}** (${entry.title || 'Untitled'}) has been deleted.`)
         .setColor(0x9370db);
+      return interaction.reply({ embeds: [embed], ephemeral: false });
+    }
+        if (sub === 'reset') {
+      const entries = await JournalEntry.find({ userId });
+      if (entries.length === 0) {
+        return interaction.reply({
+          embeds: [
+            new EmbedBuilder()
+              .setTitle('<:xbuuke:1369320075126898748> No Entries')
+              .setDescription('You have no journal entries to delete.')
+              .setColor(0x9370db)
+          ],
+          ephemeral: false
+        });
+      }
+
+      await JournalEntry.deleteMany({ userId });
+
+      const embed = new EmbedBuilder()
+        .setTitle('<a:zpyesno2:1368590432488915075> Journal Reset')
+        .setDescription('All your journal entries have been deleted.')
+        .setColor(0x9370db);
+
       return interaction.reply({ embeds: [embed], ephemeral: false });
     }
   }
