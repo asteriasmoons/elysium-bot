@@ -5,11 +5,11 @@ const User = require('../models/User');
 const { EmbedBuilder, ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const axios = require('axios');
 const { DateTime } = require('luxon');
-const index = require('../index');
 const EmbedModel = require('../models/Embed');
 const { buildEmbed } = require('../utils/embedEditorUI');
 const TBR = require('../models/TBR');
 const { scheduleHabitReminder } = require('../habitScheduler');
+const { agenda } = require('../index');
 
 const customEmoji = '<a:twrly3:1369321311423434946>';
 const BOOKS_PER_PAGE = 4; // Should match your tbr.js setting
@@ -519,7 +519,7 @@ module.exports = {
       const command = interaction.client.commands.get(interaction.commandName);
       if (!command) return;
       try {
-        await command.execute(interaction);
+        await command.execute(interaction, agenda);
       } catch (error) {
         console.error(error);
         // Prevent double reply/edit and avoid "Unknown interaction" error

@@ -19,6 +19,7 @@ const agenda = new Agenda({
         collection: 'agendaJobs' },
         timezone: 'America/Chicago'
      });
+     module.exports.agenda = agenda;
 
 // Sprint state (legacy, can be removed if not used elsewhere)
 const sprintState = {

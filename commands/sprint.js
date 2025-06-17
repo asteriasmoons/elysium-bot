@@ -198,12 +198,14 @@ module.exports = {
       // Schedule warning and finish using Agenda
       const sprintId = sprint._id.toString();
       if (durationMinutes > 5) {
+       console.log('DEBUG schedule function:', typeof agenda.schedule);
         await agenda.schedule(
           new Date(Date.now() + (durationMinutes - 5) * 60 * 1000),
           'sprint-5min-warning',
           { sprintId, guildId: interaction.guild?.id, channelId: interaction.channel.id }
         );
       }
+      
       await agenda.schedule(
         new Date(Date.now() + durationMinutes * 60 * 1000),
         'sprint-end',
