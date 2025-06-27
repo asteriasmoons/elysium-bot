@@ -165,72 +165,78 @@ module.exports = {
       }
 
       // --- HABIT BUTTONS ---
-      if (interaction.customId && interaction.customId.startsWith('habit_dm_')) {
-      // Example customId: habit_dm_<habitId>_<date>_<action>
-      const [ , , habitId, sentDate, action ] = interaction.customId.split('_');
+    if (interaction.customId && interaction.customId.startsWith('habit_dm_')) {
+    // Example customId: habit_dm_<habitId>_<date>_<action>
+    const [ , , habitId, sentDate, action ] = interaction.customId.split('_');
 
-      // Use Luxon for safe date handling
-      const { DateTime } = require('luxon');
-      const userZone = 'America/Chicago'; // Or get from user/habit
+    // Use Luxon for safe date handling
+    const { DateTime } = require('luxon');
+    const userZone = 'America/Chicago'; // Or get from user/habit
 
-      // Get today in the same zone as the habit
-      const today = DateTime.now().setZone(userZone).toISODate();
+    // Get today in the same zone as the habit
+    const today = DateTime.now().setZone(userZone).toISODate();
 
-        if (sentDate !== today) {
-        await interaction.reply({
-        content: "⏳ You cannot mark off a habit from a previous day!",
+    // === LOCKOUT CHECK ===
+    if (sentDate !== today) {
+    const embed = new EmbedBuilder()
+      .setDescription("⏳ You cannot mark off a habit from a previous day!")
+      .setColor(0x663399);
+
+      await interaction.reply({
+        embeds: [embed],
         ephemeral: true
-       });
+      });
       return;
-      }
-        let embed;
-        let xpToAdd = 0;
+     }
 
-        // Respond based on action
-        if (action === 'yes') {
-          embed = new EmbedBuilder().setDescription('Marked as done for today! Good job!');
-          xpToAdd = 10;
-        } else if (action === 'nottoday') {
-          embed = new EmbedBuilder().setDescription('Marked for not today. That\'s okay. Try again tomorrow!');
-          xpToAdd = 2;
-        } else if (action === 'skip') {
-          embed = new EmbedBuilder().setDescription('Marked as skipped today. That\'s perfectly fine. You can always try again tomorrow.');
-          xpToAdd = 0;
-        } else {
-          await interaction.reply({ content: 'Unknown action.', ephemeral: false });
-          return;
-        }
+      let embed;
+      let xpToAdd = 0;
 
-        // Save a log for each action, with the correct XP
-        try {
-          await HabitLog.create({
-            userId: interaction.user.id,
-            habitId: habitId,
-            action: action,
-            timestamp: new Date(),
-            xp: xpToAdd,
-          });
-        } catch (error) {
-          console.error('Failed to save HabitLog:', error);
-          await interaction.reply({ content: 'Failed to log your habit. Please try again.', ephemeral: false });
-          return;
-        }
+    // Respond based on action
+    if (action === 'yes') {
+    embed = new EmbedBuilder().setDescription('Marked as done for today! Good job!');
+    xpToAdd = 10;
+  } else if (action === 'nottoday') {
+    embed = new EmbedBuilder().setDescription('Marked for not today. That\'s okay. Try again tomorrow!');
+    xpToAdd = 2;
+  } else if (action === 'skip') {
+    embed = new EmbedBuilder().setDescription('Marked as skipped today. That\'s perfectly fine. You can always try again tomorrow.');
+    xpToAdd = 0;
+  } else {
+    await interaction.reply({ content: 'Unknown action.', ephemeral: false });
+    return;
+  }
 
-        // Award XP to the user
-        if (xpToAdd !== 0) {
-          await User.updateOne(
-            { discordId: interaction.user.id },
-            { $inc: { xp: xpToAdd } },
-            { upsert: true }
-          );
-        }
+   // Save a log for each action, with the correct XP
+    try {
+      await HabitLog.create({
+        userId: interaction.user.id,
+        habitId: habitId,
+        action: action,
+        timestamp: new Date(),
+        xp: xpToAdd,
+    });
+  } catch (error) {
+    console.error('Failed to save HabitLog:', error);
+    await interaction.reply({ content: 'Failed to log your habit. Please try again.', ephemeral: false });
+    return;
+  }
 
-        // Optionally, you can show the user how much XP they earned
-        embed.setFooter({ text: `+${xpToAdd} XP` });
+   // Award XP to the user
+   if (xpToAdd !== 0) {
+    await User.updateOne(
+      { discordId: interaction.user.id },
+      { $inc: { xp: xpToAdd } },
+      { upsert: true }
+    );
+  }
 
-        await interaction.reply({ embeds: [embed], ephemeral: true });
-        return;
-      }
+   // Optionally, you can show the user how much XP they earned
+    embed.setFooter({ text: `+${xpToAdd} XP` });
+
+    await interaction.reply({ embeds: [embed], ephemeral: true });
+    return;
+}
 
       // --- HABIT FREQUENCY BUTTONS ---
       if (interaction.customId === 'habit_frequency_daily' || interaction.customId === 'habit_frequency_weekly') {
