@@ -166,9 +166,23 @@ module.exports = {
 
       // --- HABIT BUTTONS ---
       if (interaction.customId && interaction.customId.startsWith('habit_dm_')) {
-        // Example: habit_dm_123456789_yes
-        const [ , , habitId, action ] = interaction.customId.split('_');
+      // Example customId: habit_dm_<habitId>_<date>_<action>
+      const [ , , habitId, sentDate, action ] = interaction.customId.split('_');
 
+      // Use Luxon for safe date handling
+      const { DateTime } = require('luxon');
+      const userZone = 'America/Chicago'; // Or get from user/habit
+
+      // Get today in the same zone as the habit
+      const today = DateTime.now().setZone(userZone).toISODate();
+
+        if (sentDate !== today) {
+        await interaction.reply({
+        content: "⏳ You cannot mark off a habit from a previous day!",
+        ephemeral: true
+       });
+      return;
+      }
         let embed;
         let xpToAdd = 0;
 

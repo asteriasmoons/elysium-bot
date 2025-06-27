@@ -78,11 +78,14 @@ function scheduleHabitReminder(client, habit) {
     try {
       const user = await client.users.fetch(latestHabit.userId);
 
-      const buttons = new ActionRowBuilder().addComponents(
-        new ButtonBuilder().setCustomId(`habit_dm_${habit._id}_yes`).setLabel('Yes').setStyle(ButtonStyle.Primary),
-        new ButtonBuilder().setCustomId(`habit_dm_${habit._id}_nottoday`).setLabel('Not Today').setStyle(ButtonStyle.Secondary),
-        new ButtonBuilder().setCustomId(`habit_dm_${habit._id}_skip`).setLabel('Skip').setStyle(ButtonStyle.Secondary)
-      );
+      // In habitScheduler.js, inside scheduleHabitReminder where you create the buttons:
+      const todayISO = DateTime.now().setZone(zone).toISODate();
+
+    const buttons = new ActionRowBuilder().addComponents(
+    new ButtonBuilder().setCustomId(`habit_dm_${habit._id}_${todayISO}_yes`).setLabel('Yes').setStyle(ButtonStyle.Primary),
+    new ButtonBuilder().setCustomId(`habit_dm_${habit._id}_${todayISO}_nottoday`).setLabel('Not Today').setStyle(ButtonStyle.Secondary),
+    new ButtonBuilder().setCustomId(`habit_dm_${habit._id}_${todayISO}_skip`).setLabel('Skip').setStyle(ButtonStyle.Secondary)
+  );
 
       const userId = user.id;
       await user.send({
