@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
 const ProgressEntrySchema = new mongoose.Schema({
   userId: { type: String, required: true, index: true },
@@ -6,7 +6,7 @@ const ProgressEntrySchema = new mongoose.Schema({
   book: { type: String, required: true },
   progress: { type: String, required: true },
   note: { type: String },
-  timestamp: { type: Date, default: Date.now }
+  timestamp: { type: Date, default: Date.now },
 });
 
-module.exports = mongoose.model('ProgressEntry', ProgressEntrySchema);
+module.exports = mongoose.model("ProgressEntry", ProgressEntrySchema);

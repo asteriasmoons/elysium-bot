@@ -1,4 +1,4 @@
-const { Schema, model } = require('mongoose');
+const { Schema, model } = require("mongoose");
 
 const ParticipantSchema = new Schema({
   userId: { type: String, required: true },
@@ -14,7 +14,7 @@ const SprintSchema = new Schema({
   duration: { type: Number, required: true }, // minutes
   endTime: { type: Date, required: true },
   participants: [ParticipantSchema],
-  createdAt: { type: Date, default: Date.now }
+  createdAt: { type: Date, default: Date.now },
 });
 
-module.exports = model('Sprint', SprintSchema);
+module.exports = model("Sprint", SprintSchema);

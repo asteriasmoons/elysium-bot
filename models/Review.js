@@ -1,4 +1,4 @@
-const { Schema, model } = require('mongoose');
+const { Schema, model } = require("mongoose");
 
 const ReviewSchema = new Schema({
   userId: { type: String, required: true },
@@ -7,7 +7,7 @@ const ReviewSchema = new Schema({
   author: { type: String, required: true },
   review: { type: String, required: true },
   rating: { type: Number, required: true, min: 1, max: 5 },
-  timestamp: { type: Date, default: Date.now }
+  timestamp: { type: Date, default: Date.now },
 });
 
-module.exports = model('Review', ReviewSchema);
+module.exports = model("Review", ReviewSchema);

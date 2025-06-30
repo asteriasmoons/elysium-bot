@@ -1,13 +1,15 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
 const tbrSchema = new mongoose.Schema({
   userId: { type: String, required: true, unique: true },
-  books: [{
-    title: { type: String, required: true },
-    author: { type: String, required: true },
-    status: { type: String, default: 'tbr' },
-    addedAt: { type: Date, default: Date.now }
-  }]
+  books: [
+    {
+      title: { type: String, required: true },
+      author: { type: String, required: true },
+      status: { type: String, default: "tbr" },
+      addedAt: { type: Date, default: Date.now },
+    },
+  ],
 });
 
-module.exports = mongoose.model('TBR', tbrSchema);
+module.exports = mongoose.model("TBR", tbrSchema);

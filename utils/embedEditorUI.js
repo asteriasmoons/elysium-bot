@@ -1,9 +1,13 @@
 // utils/embedEditorUI.js
-const { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder } = require('discord.js');
+const {
+  ActionRowBuilder,
+  ButtonBuilder,
+  ButtonStyle,
+  EmbedBuilder,
+} = require("discord.js");
 
 function buildEmbed(doc) {
-  const embed = new EmbedBuilder()
-    .setColor(doc.color || '#5865F2');
+  const embed = new EmbedBuilder().setColor(doc.color || "#5865F2");
 
   // Ensure at least one of title or description is set
   const hasTitle = doc.title && doc.title.trim().length > 0;
@@ -19,20 +23,20 @@ function buildEmbed(doc) {
 
   // Discord requires at least one of title or description
   if (!hasTitle && !hasDescription) {
-    embed.setDescription('_ _'); // invisible placeholder
+    embed.setDescription("_ _"); // invisible placeholder
   }
 
   if (doc.author?.name) {
-    embed.setAuthor({ 
-      name: doc.author.name, 
-      iconURL: doc.author.icon_url || undefined
+    embed.setAuthor({
+      name: doc.author.name,
+      iconURL: doc.author.icon_url || undefined,
     });
   }
 
   if (doc.footer?.text) {
-    embed.setFooter({ 
-      text: doc.footer.text, 
-      iconURL: doc.footer.icon_url || undefined
+    embed.setFooter({
+      text: doc.footer.text,
+      iconURL: doc.footer.icon_url || undefined,
     });
   }
 
@@ -54,20 +58,20 @@ function buildEmbed(doc) {
 async function sendEmbedEditor(interaction, doc, isNew) {
   const row1 = new ActionRowBuilder().addComponents(
     new ButtonBuilder()
-	.setCustomId(`embed_edit_basic_${doc._id}`)
-      .setLabel('Edit Basic Info')
+      .setCustomId(`embed_edit_basic_${doc._id}`)
+      .setLabel("Edit Basic Info")
       .setStyle(ButtonStyle.Secondary),
     new ButtonBuilder()
       .setCustomId(`embed_edit_author_${doc._id}`)
-      .setLabel('Edit Author')
+      .setLabel("Edit Author")
       .setStyle(ButtonStyle.Secondary),
     new ButtonBuilder()
       .setCustomId(`embed_edit_footer_${doc._id}`)
-      .setLabel('Edit Footer')
+      .setLabel("Edit Footer")
       .setStyle(ButtonStyle.Secondary),
     new ButtonBuilder()
       .setCustomId(`embed_edit_images_${doc._id}`)
-      .setLabel('Edit Images')
+      .setLabel("Edit Images")
       .setStyle(ButtonStyle.Secondary)
   );
 
@@ -78,14 +82,14 @@ async function sendEmbedEditor(interaction, doc, isNew) {
       content: `**Embed Editor:** \`${doc.name}\``,
       embeds: [embed],
       components: [row1],
-      ephemeral: false
+      ephemeral: false,
     });
   } else {
     return interaction.reply({
       content: `**Editing Embed:** \`${doc.name}\``,
       embeds: [embed],
       components: [row1],
-      ephemeral: false
+      ephemeral: false,
     });
   }
 }
