@@ -1,57 +1,94 @@
-const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
-const BookInventory = require('../models/BookInventory'); // Adjust path as needed
+const {
+  SlashCommandBuilder,
+  EmbedBuilder,
+  ActionRowBuilder,
+  ButtonBuilder,
+  ButtonStyle,
+} = require("discord.js");
+const BookInventory = require("../models/BookInventory"); // Adjust path as needed
 
 const BOOKS_PER_PAGE = 3;
 
 module.exports = {
   data: new SlashCommandBuilder()
-    .setName('inventory')
-    .setDescription('Manage the global book inventory.')
-    .addSubcommand(sub =>
-      sub.setName('addbook')
-        .setDescription('Add a book to the global inventory!')
-        .addStringOption(opt =>
-          opt.setName('title').setDescription('Title of the book').setRequired(true))
-        .addStringOption(opt =>
-          opt.setName('author').setDescription('Author of the book').setRequired(true))
-        .addStringOption(opt =>
-          opt.setName('goodreads').setDescription('Goodreads link (required)').setRequired(true))
+    .setName("inventory")
+    .setDescription("Manage the global book inventory.")
+    .addSubcommand((sub) =>
+      sub
+        .setName("addbook")
+        .setDescription("Add a book to the global inventory!")
+        .addStringOption((opt) =>
+          opt
+            .setName("title")
+            .setDescription("Title of the book")
+            .setRequired(true)
+        )
+        .addStringOption((opt) =>
+          opt
+            .setName("author")
+            .setDescription("Author of the book")
+            .setRequired(true)
+        )
+        .addStringOption((opt) =>
+          opt
+            .setName("goodreads")
+            .setDescription("Goodreads link (required)")
+            .setRequired(true)
+        )
     )
-    .addSubcommand(sub =>
-      sub.setName('listbooks')
-        .setDescription('List all books in the global inventory!')
+    .addSubcommand((sub) =>
+      sub
+        .setName("listbooks")
+        .setDescription("List all books in the global inventory!")
     )
-    .addSubcommand(sub =>
-      sub.setName('bookremove')
-        .setDescription('Remove a book from the global inventory!')
-        .addStringOption(opt =>
-          opt.setName('title').setDescription('Title of the book').setRequired(true))
-        .addStringOption(opt =>
-          opt.setName('author').setDescription('Author of the book').setRequired(true))
+    .addSubcommand((sub) =>
+      sub
+        .setName("bookremove")
+        .setDescription("Remove a book from the global inventory!")
+        .addStringOption((opt) =>
+          opt
+            .setName("title")
+            .setDescription("Title of the book")
+            .setRequired(true)
+        )
+        .addStringOption((opt) =>
+          opt
+            .setName("author")
+            .setDescription("Author of the book")
+            .setRequired(true)
+        )
     )
-    .addSubcommand(sub =>
-      sub.setName('search')
-        .setDescription('Search for books by title or author!')
-        .addStringOption(opt =>
-          opt.setName('query').setDescription('Title or author to search for').setRequired(true))
-),
+    .addSubcommand((sub) =>
+      sub
+        .setName("search")
+        .setDescription("Search for books by title or author!")
+        .addStringOption((opt) =>
+          opt
+            .setName("query")
+            .setDescription("Title or author to search for")
+            .setRequired(true)
+        )
+    ),
 
   async execute(interaction) {
     const sub = interaction.options.getSubcommand();
 
-    if (sub === 'addbook') {
+    if (sub === "addbook") {
       // ADD BOOK SUBCOMMAND
-      const title = interaction.options.getString('title').trim();
-      const author = interaction.options.getString('author').trim();
-      const goodreads = interaction.options.getString('goodreads').trim();
+      const title = interaction.options.getString("title").trim();
+      const author = interaction.options.getString("author").trim();
+      const goodreads = interaction.options.getString("goodreads").trim();
 
       // Check for duplicates (case-insensitive)
       const exists = await BookInventory.findOne({
-        title: { $regex: new RegExp(`^${title}$`, 'i') },
-        author: { $regex: new RegExp(`^${author}$`, 'i') }
+        title: { $regex: new RegExp(`^${title}$`, "i") },
+        author: { $regex: new RegExp(`^${author}$`, "i") },
       });
       if (exists) {
-        await interaction.reply({ content: 'That book is already in the inventory!', ephemeral: true });
+        await interaction.reply({
+          content: "That book is already in the inventory!",
+          ephemeral: true,
+        });
         return;
       }
 
@@ -60,19 +97,20 @@ module.exports = {
         title,
         author,
         goodreads,
-        addedBy: interaction.user.id // tracks who added it
+        addedBy: interaction.user.id, // tracks who added it
       });
 
-      await interaction.reply({ content: `Book **${title}** by **${author}** added to the inventory!`, ephemeral: false });
-    }
-
-    else if (sub === 'listbooks') {
+      await interaction.reply({
+        content: `Book **${title}** by **${author}** added to the inventory!`,
+        ephemeral: false,
+      });
+    } else if (sub === "listbooks") {
       // LIST BOOKS SUBCOMMAND
 
       // Fetch all books, sorted by title
       const books = await BookInventory.find().sort({ title: 1 });
       if (books.length === 0) {
-        await interaction.reply('No books have been added yet!');
+        await interaction.reply("No books have been added yet!");
         return;
       }
 
@@ -83,9 +121,13 @@ module.exports = {
         const booksToShow = books.slice(start, end);
 
         const embed = new EmbedBuilder()
-          .setTitle('Books Inventory')
-          .setColor('#572194')
-          .setFooter({ text: `Page ${page + 1} of ${Math.ceil(books.length / BOOKS_PER_PAGE)}` });
+          .setTitle("Books Inventory")
+          .setColor("#572194")
+          .setFooter({
+            text: `Page ${page + 1} of ${Math.ceil(
+              books.length / BOOKS_PER_PAGE
+            )}`,
+          });
 
         booksToShow.forEach((b, i) => {
           embed.addFields({
@@ -93,7 +135,7 @@ module.exports = {
             value:
               `**Title:** ${b.title}\n` +
               `**Author:** ${b.author}\n` +
-              `**Goodreads:** [Link](${b.goodreads})`
+              `**Goodreads:** [Link](${b.goodreads})`,
           });
         });
 
@@ -104,13 +146,13 @@ module.exports = {
       function generateRow(page, maxPage) {
         return new ActionRowBuilder().addComponents(
           new ButtonBuilder()
-            .setCustomId('back')
-            .setLabel('Back')
+            .setCustomId("back")
+            .setLabel("Back")
             .setStyle(ButtonStyle.Secondary)
             .setDisabled(page === 0),
           new ButtonBuilder()
-            .setCustomId('next')
-            .setLabel('Next')
+            .setCustomId("next")
+            .setLabel("Next")
             .setStyle(ButtonStyle.Secondary)
             .setDisabled(page === maxPage)
         );
@@ -122,17 +164,21 @@ module.exports = {
       const embed = generateEmbed(page);
       const row = generateRow(page, maxPage);
 
-      const reply = await interaction.reply({ embeds: [embed], components: [row], fetchReply: true });
+      const reply = await interaction.reply({
+        embeds: [embed],
+        components: [row],
+        fetchReply: true,
+      });
 
       // Set up a collector for pagination buttons
       const collector = reply.createMessageComponentCollector({
-        filter: i => i.user.id === interaction.user.id,
-        time: 300000 // 5 minutes
+        filter: (i) => i.user.id === interaction.user.id,
+        time: 300000, // 5 minutes
       });
 
-      collector.on('collect', async i => {
-        if (i.customId === 'next' && page < maxPage) page++;
-        else if (i.customId === 'back' && page > 0) page--;
+      collector.on("collect", async (i) => {
+        if (i.customId === "next" && page < maxPage) page++;
+        else if (i.customId === "back" && page > 0) page--;
 
         const newEmbed = generateEmbed(page);
         const newRow = generateRow(page, maxPage);
@@ -140,138 +186,151 @@ module.exports = {
         await i.update({ embeds: [newEmbed], components: [newRow] });
       });
 
-      collector.on('end', async () => {
+      collector.on("end", async () => {
         // Disable buttons after collector ends
         const disabledRow = generateRow(page, maxPage);
-        disabledRow.components.forEach(btn => btn.setDisabled(true));
+        disabledRow.components.forEach((btn) => btn.setDisabled(true));
         await reply.edit({ components: [disabledRow] });
       });
-    }
-
-    else if (sub === 'bookremove') {
+    } else if (sub === "bookremove") {
       // REMOVE BOOK SUBCOMMAND
-      const title = interaction.options.getString('title').trim();
-      const author = interaction.options.getString('author').trim();
+      const title = interaction.options.getString("title").trim();
+      const author = interaction.options.getString("author").trim();
 
       // Try to find and delete the book
       const result = await BookInventory.findOneAndDelete({
-        title: { $regex: new RegExp(`^${title}$`, 'i') },
-        author: { $regex: new RegExp(`^${author}$`, 'i') }
+        title: { $regex: new RegExp(`^${title}$`, "i") },
+        author: { $regex: new RegExp(`^${author}$`, "i") },
       });
 
       if (!result) {
-        await interaction.reply({ content: `That book was not found in the inventory.`, ephemeral: true });
+        await interaction.reply({
+          content: `That book was not found in the inventory.`,
+          ephemeral: true,
+        });
         return;
       }
 
-      await interaction.reply({ content: `Book **${title}** by **${author}** has been removed from the inventory.`, ephemeral: false });
-    }
-  
-    else if (sub === 'search') {
-  const query = interaction.options.getString('query').trim();
-
-  // Use Atlas Search with fuzzy
-  const books = await BookInventory.aggregate([
-    {
-      $search: {
-        index: 'default', // or whatever you named your index
-        compound: {
-          should: [
-            {
-              text: {
-                query: query,
-                path: 'title',
-                fuzzy: { maxEdits: 2, prefixLength: 1 }
-              }
-            },
-            {
-              text: {
-                query: query,
-                path: 'author',
-                fuzzy: { maxEdits: 2, prefixLength: 1 }
-              }
-            }
-          ]
-        }
-      }
-    },
-    { $sort: { title: 1 } }
-  ]);
-
-  if (books.length === 0) {
-    await interaction.reply({ content: `No books found matching **${query}** (fuzzy search).`, ephemeral: true });
-    return;
-  }
-
-  // Pagination helpers (reuse your code)
-  function generateEmbed(page) {
-    const start = page * BOOKS_PER_PAGE;
-    const end = start + BOOKS_PER_PAGE;
-    const booksToShow = books.slice(start, end);
-
-    const embed = new EmbedBuilder()
-      .setTitle(`Fuzzy Search Results for "${query}"`)
-      .setColor('#572194')
-      .setFooter({ text: `Page ${page + 1} of ${Math.ceil(books.length / BOOKS_PER_PAGE)}` });
-
-    booksToShow.forEach((b, i) => {
-      embed.addFields({
-        name: `${start + i + 1}. ${b.title}`,
-        value:
-          `**Title:** ${b.title}\n` +
-          `**Author:** ${b.author}\n` +
-          `**Goodreads:** [Link](${b.goodreads})`
+      await interaction.reply({
+        content: `Book **${title}** by **${author}** has been removed from the inventory.`,
+        ephemeral: false,
       });
-    });
+    } else if (sub === "search") {
+      const query = interaction.options.getString("query").trim();
 
-    return embed;
-  }
+      // Use Atlas Search with fuzzy
+      const books = await BookInventory.aggregate([
+        {
+          $search: {
+            index: "default", // or whatever you named your index
+            compound: {
+              should: [
+                {
+                  text: {
+                    query: query,
+                    path: "title",
+                    fuzzy: { maxEdits: 2, prefixLength: 1 },
+                  },
+                },
+                {
+                  text: {
+                    query: query,
+                    path: "author",
+                    fuzzy: { maxEdits: 2, prefixLength: 1 },
+                  },
+                },
+              ],
+            },
+          },
+        },
+        { $sort: { title: 1 } },
+      ]);
 
-  function generateRow(page, maxPage) {
-    return new ActionRowBuilder().addComponents(
-      new ButtonBuilder()
-        .setCustomId('back')
-        .setLabel('Back')
-        .setStyle(ButtonStyle.Secondary)
-        .setDisabled(page === 0),
-      new ButtonBuilder()
-        .setCustomId('next')
-        .setLabel('Next')
-        .setStyle(ButtonStyle.Secondary)
-        .setDisabled(page === maxPage)
-    );
-  }
+      if (books.length === 0) {
+        await interaction.reply({
+          content: `No books found matching **${query}** (fuzzy search).`,
+          ephemeral: true,
+        });
+        return;
+      }
 
-  let page = 0;
-  const maxPage = Math.floor((books.length - 1) / BOOKS_PER_PAGE);
+      // Pagination helpers (reuse your code)
+      function generateEmbed(page) {
+        const start = page * BOOKS_PER_PAGE;
+        const end = start + BOOKS_PER_PAGE;
+        const booksToShow = books.slice(start, end);
 
-  const embed = generateEmbed(page);
-  const row = generateRow(page, maxPage);
+        const embed = new EmbedBuilder()
+          .setTitle(`Fuzzy Search Results for "${query}"`)
+          .setColor("#572194")
+          .setFooter({
+            text: `Page ${page + 1} of ${Math.ceil(
+              books.length / BOOKS_PER_PAGE
+            )}`,
+          });
 
-  const reply = await interaction.reply({ embeds: [embed], components: [row], fetchReply: true });
+        booksToShow.forEach((b, i) => {
+          embed.addFields({
+            name: `${start + i + 1}. ${b.title}`,
+            value:
+              `**Title:** ${b.title}\n` +
+              `**Author:** ${b.author}\n` +
+              `**Goodreads:** [Link](${b.goodreads})`,
+          });
+        });
 
-  const collector = reply.createMessageComponentCollector({
-    filter: i => i.user.id === interaction.user.id,
-    time: 300000 // 5 minutes
-  });
+        return embed;
+      }
 
-  collector.on('collect', async i => {
-    if (i.customId === 'next' && page < maxPage) page++;
-    else if (i.customId === 'back' && page > 0) page--;
+      function generateRow(page, maxPage) {
+        return new ActionRowBuilder().addComponents(
+          new ButtonBuilder()
+            .setCustomId("back")
+            .setLabel("Back")
+            .setStyle(ButtonStyle.Secondary)
+            .setDisabled(page === 0),
+          new ButtonBuilder()
+            .setCustomId("next")
+            .setLabel("Next")
+            .setStyle(ButtonStyle.Secondary)
+            .setDisabled(page === maxPage)
+        );
+      }
 
-    const newEmbed = generateEmbed(page);
-    const newRow = generateRow(page, maxPage);
+      let page = 0;
+      const maxPage = Math.floor((books.length - 1) / BOOKS_PER_PAGE);
 
-    await i.update({ embeds: [newEmbed], components: [newRow] });
-  });
+      const embed = generateEmbed(page);
+      const row = generateRow(page, maxPage);
 
-  collector.on('end', async () => {
-    const disabledRow = generateRow(page, maxPage);
-    disabledRow.components.forEach(btn => btn.setDisabled(true));
-    await reply.edit({ components: [disabledRow] });
-  });
-}
-  }
+      const reply = await interaction.reply({
+        embeds: [embed],
+        components: [row],
+        fetchReply: true,
+      });
+
+      const collector = reply.createMessageComponentCollector({
+        filter: (i) => i.user.id === interaction.user.id,
+        time: 300000, // 5 minutes
+      });
+
+      collector.on("collect", async (i) => {
+        if (i.customId === "next" && page < maxPage) page++;
+        else if (i.customId === "back" && page > 0) page--;
+
+        const newEmbed = generateEmbed(page);
+        const newRow = generateRow(page, maxPage);
+
+        await i.update({ embeds: [newEmbed], components: [newRow] });
+      });
+
+      collector.on("end", async () => {
+        const disabledRow = generateRow(page, maxPage);
+        disabledRow.components.forEach((btn) => btn.setDisabled(true));
+        await reply.edit({ components: [disabledRow] });
+      });
+    }
+  },
 };
 
 /*
