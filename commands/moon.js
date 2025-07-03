@@ -1,7 +1,5 @@
 // commands/moon.js
-
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
-const fetch = require('node-fetch');
 
 // Customize this with your own phase descriptions!
 const moonCorrespondences = {
