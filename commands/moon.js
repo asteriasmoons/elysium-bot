@@ -1,7 +1,5 @@
-// commands/moon.js
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 
-// Your magical correspondences for each phase
 const moonCorrespondences = {
   "New Moon": {
     keywords: "Beginnings, intention-setting, rest",
@@ -37,6 +35,14 @@ const moonCorrespondences = {
   },
 };
 
+function formatPhaseName(apiPhase) {
+  // "FIRST_QUARTER" -> "First Quarter"
+  return apiPhase
+    .split('_')
+    .map(word => word.charAt(0) + word.slice(1).toLowerCase())
+    .join(' ');
+}
+
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('moon')
@@ -44,18 +50,20 @@ module.exports = {
   async execute(interaction) {
     await interaction.deferReply();
 
-    // Insert your API key here!
     const API_KEY = '4d77e67a4ba44616b9e8e6d1109d8824';
-    const location = 'Chicago'; // Change or make dynamic if you want
-
+    const location = 'Chicago';
     const url = `https://api.ipgeolocation.io/astronomy?apiKey=${API_KEY}&location=${encodeURIComponent(location)}`;
 
-    let phase, illumination, sign;
+    let apiPhase, phase, illumination, sign;
     try {
       const res = await fetch(url);
       const data = await res.json();
 
-      phase = data.moon_phase || "Unknown Phase";
+      // Log the data for debugging!
+      // console.log(data);
+
+      apiPhase = data.moon_phase || "Unknown Phase";
+      phase = formatPhaseName(apiPhase); // Fix phase name
       illumination = data.moon_illumination || null;
       sign = data.moon_zodiac_sign || null;
     } catch (err) {
@@ -63,7 +71,6 @@ module.exports = {
       return interaction.editReply("Sorry, I couldn't fetch the moon phase right now.");
     }
 
-    // Build fields array safely
     const corr = moonCorrespondences[phase] || { keywords: "N/A", description: "No info available yet." };
     const fields = [
       { name: "Keywords", value: corr.keywords, inline: true }
@@ -76,7 +83,7 @@ module.exports = {
     }
 
     const embed = new EmbedBuilder()
-      .setTitle(`🌙 ${phase}`)
+      .setTitle(`${phase}`)
       .setDescription(corr.description)
       .addFields(fields)
       .setColor(0x6a0dad)
