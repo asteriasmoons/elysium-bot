@@ -3,7 +3,7 @@ const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const moonCorrespondences = {
   "New Moon": {
     keywords: "Beginnings, intention-setting, rest",
-    description: "A time for reflection, rest, and planting seeds for new projects."
+    description: "This is the beginning of the lunar cycle—a time to set intentions, dream, and plant new seeds. The energy is quiet and receptive, making it ideal for introspection, goal-setting, and fresh starts."
   },
   "Waxing Crescent": {
     keywords: "Growth, hope, motivation",
