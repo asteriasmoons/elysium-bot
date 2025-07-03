@@ -1,7 +1,7 @@
 // commands/moon.js
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 
-// Customize this with your own phase descriptions!
+// Your magical correspondences for each phase
 const moonCorrespondences = {
   "New Moon": {
     keywords: "Beginnings, intention-setting, rest",
@@ -44,8 +44,10 @@ module.exports = {
   async execute(interaction) {
     await interaction.deferReply();
 
-    const API_KEY = '4d77e67a4ba44616b9e8e6d1109d8824'; // Paste your key here!
-    const location = 'Chicago'; // You can let users choose later if you want
+    // Insert your API key here!
+    const API_KEY = '4d77e67a4ba44616b9e8e6d1109d8824';
+    const location = 'Chicago'; // Change or make dynamic if you want
+
     const url = `https://api.ipgeolocation.io/astronomy?apiKey=${API_KEY}&location=${encodeURIComponent(location)}`;
 
     let phase, illumination, sign;
@@ -61,16 +63,22 @@ module.exports = {
       return interaction.editReply("Sorry, I couldn't fetch the moon phase right now.");
     }
 
+    // Build fields array safely
     const corr = moonCorrespondences[phase] || { keywords: "N/A", description: "No info available yet." };
+    const fields = [
+      { name: "Keywords", value: corr.keywords, inline: true }
+    ];
+    if (illumination) {
+      fields.push({ name: "Illumination", value: `${illumination}%`, inline: true });
+    }
+    if (sign) {
+      fields.push({ name: "Zodiac Sign", value: sign, inline: true });
+    }
 
     const embed = new EmbedBuilder()
-      .setTitle(`${phase}`)
+      .setTitle(`🌙 ${phase}`)
       .setDescription(corr.description)
-      .addFields(
-        { name: "Keywords", value: corr.keywords, inline: false },
-        illumination ? { name: "Illumination", value: `${illumination}%`, inline: false } : null,
-        sign ? { name: "Zodiac Sign", value: sign, inline: false } : null
-      )
+      .addFields(fields)
       .setColor(0x6a0dad)
       .setFooter({ text: "Magical Moon Insights by Elysium" });
 
