@@ -123,7 +123,7 @@ function scheduleHabitReminder(client, habit) {
         embeds: [
           new EmbedBuilder()
             .setTitle(
-              `<:pcht1:1371879916383240263> Habit Reminder: ${latestHabit.name}`
+              `<:pcht2:1391606107885277275> Habit Reminder: ${latestHabit.name}`
             )
             .setDescription(
               `Hey <@${userId}>, this is your habit reminder! Don’t forget to click one of the three buttons below!\n\n**${

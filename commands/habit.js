@@ -195,7 +195,7 @@ module.exports = {
       }
 
       const embed = new EmbedBuilder()
-        .setTitle("<:pcht1:1371879916383240263> Scheduled Habits")
+        .setTitle("<:pcht2:1391606107885277275> Scheduled Habits")
         .setColor(0x663399)
         .setDescription(
           habits
