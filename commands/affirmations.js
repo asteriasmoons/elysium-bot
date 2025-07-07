@@ -1,6 +1,6 @@
 // commands/affirmation.js
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
-const affirmations = require('..utils/affirmations.js'); // Adjust path if needed!
+const affirmations = require('../utils/affirmations'); // Adjust path if needed!
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -9,7 +9,7 @@ module.exports = {
   async execute(interaction) {
     const affirmation = affirmations[Math.floor(Math.random() * affirmations.length)];
     const embed = new EmbedBuilder()
-      .setColor(0xB8B3E9) // Pretty lavender. Change if you want!
+      .setColor(0x993399) // Pretty lavender. Change if you want!
       .setTitle('✨ Affirmation ✨')
       .setDescription(affirmation);
     await interaction.reply({ embeds: [embed] }); // Public by default; set ephemeral: true if you want
