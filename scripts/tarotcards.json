@@ -1,0 +1,474 @@
+[
+  {
+    "name": "The Fool",
+    "suit": "Major Arcana",
+    "upright": "A fresh journey awaits; embrace it with innocence, trust, and a spirit open to adventure.",
+    "reversed": "You may be holding back out of fear or recklessly ignoring the consequences of your actions."
+  },
+  {
+    "name": "The Magician",
+    "suit": "Major Arcana",
+    "upright": "You have all the tools you need to manifest your goals—focus your will and make things happen.",
+    "reversed": "Your talents are untapped or you may be using your skills for deception or manipulation."
+  },
+  {
+    "name": "The High Priestess",
+    "suit": "Major Arcana",
+    "upright": "Trust your intuition; answers lie within and mysteries are waiting to be discovered.",
+    "reversed": "You are disconnected from your intuition, or secrets may be keeping you from clarity."
+  },
+  {
+    "name": "The Empress",
+    "suit": "Major Arcana",
+    "upright": "Nurturing energy surrounds you, bringing abundance, creativity, and a sense of comfort.",
+    "reversed": "You may be feeling blocked creatively or smothered by overprotectiveness and dependence."
+  },
+  {
+    "name": "The Emperor",
+    "suit": "Major Arcana",
+    "upright": "Establish order and stability in your life by using discipline and clear boundaries.",
+    "reversed": "Rigid control or inflexibility may be causing issues, or you could be struggling with authority."
+  },
+  {
+    "name": "The Hierophant",
+    "suit": "Major Arcana",
+    "upright": "Tradition and spiritual wisdom offer guidance; seek knowledge from trusted sources.",
+    "reversed": "You may feel restricted by conventions, or it’s time to embrace your own unique path."
+  },
+  {
+    "name": "The Lovers",
+    "suit": "Major Arcana",
+    "upright": "Love and partnership are at the forefront, and important choices must be made with integrity.",
+    "reversed": "Imbalance or disharmony in relationships requires honest reflection and decisive action."
+  },
+  {
+    "name": "The Chariot",
+    "suit": "Major Arcana",
+    "upright": "Success is within reach if you harness your willpower and move forward with determination.",
+    "reversed": "A lack of direction or self-discipline is causing setbacks, or you may be facing inner conflict."
+  },
+  {
+    "name": "Strength",
+    "suit": "Major Arcana",
+    "upright": "You possess inner courage and compassion—use gentle strength to overcome obstacles.",
+    "reversed": "Doubts or low confidence are holding you back; it's time to nurture your inner resilience."
+  },
+  {
+    "name": "The Hermit",
+    "suit": "Major Arcana",
+    "upright": "Introspection and solitude lead to wisdom; take time for reflection and self-discovery.",
+    "reversed": "Isolation or withdrawal has become unhealthy, or you may be avoiding necessary soul-searching."
+  },
+  {
+    "name": "Wheel of Fortune",
+    "suit": "Major Arcana",
+    "upright": "Change is coming—trust in the cycles of fate, luck, and destiny as life turns in your favor.",
+    "reversed": "You may feel stuck in a rut or resisting inevitable change; fortune may not be on your side just yet."
+  },
+  {
+    "name": "Justice",
+    "suit": "Major Arcana",
+    "upright": "Fairness and truth are key; make decisions with honesty and take responsibility for your actions.",
+    "reversed": "Injustice or dishonesty is present, and accountability may be lacking in your situation."
+  },
+  {
+    "name": "The Hanged Man",
+    "suit": "Major Arcana",
+    "upright": "A pause is needed for new perspectives; surrender control and embrace a different viewpoint.",
+    "reversed": "Stagnation or an inability to let go is blocking your growth; it's time to release old patterns."
+  },
+  {
+    "name": "Death",
+    "suit": "Major Arcana",
+    "upright": "Transformation is inevitable; let go of what no longer serves you to allow rebirth and renewal.",
+    "reversed": "Resistance to change is causing stagnation, and you may be clinging to the past."
+  },
+  {
+    "name": "Temperance",
+    "suit": "Major Arcana",
+    "upright": "Balance and moderation will bring harmony; blend different aspects of your life with patience.",
+    "reversed": "Extremes and lack of balance are disrupting your peace; adjust your approach to find equilibrium."
+  },
+  {
+    "name": "The Devil",
+    "suit": "Major Arcana",
+    "upright": "Temptation, materialism, or unhealthy attachments may be holding you back—acknowledge your shadows.",
+    "reversed": "You are breaking free from negative patterns or reclaiming your power from unhealthy influences."
+  },
+  {
+    "name": "The Tower",
+    "suit": "Major Arcana",
+    "upright": "Sudden upheaval or revelation shakes your foundations, but ultimately leads to liberation.",
+    "reversed": "You may be trying to avoid necessary change, or the impact of a shake-up is lessened."
+  },
+  {
+    "name": "The Star",
+    "suit": "Major Arcana",
+    "upright": "Hope and inspiration are yours; healing and renewed faith light your way forward.",
+    "reversed": "A lack of faith or discouragement clouds your vision, but the promise of renewal remains."
+  },
+  {
+    "name": "The Moon",
+    "suit": "Major Arcana",
+    "upright": "Uncertainty and illusions surround you; trust your intuition and navigate through the unknown.",
+    "reversed": "Confusion and deception may be giving way, or hidden truths are coming to light."
+  },
+  {
+    "name": "The Sun",
+    "suit": "Major Arcana",
+    "upright": "Joy, success, and clarity shine upon you—embrace happiness and share your light with others.",
+    "reversed": "Temporary setbacks or unrealistic expectations dim your enthusiasm, but the light will return."
+  },
+  {
+    "name": "Judgement",
+    "suit": "Major Arcana",
+    "upright": "A time of reflection and reckoning; accept your past and embrace the call to transformation.",
+    "reversed": "Self-doubt or fear of change may be holding you back from embracing your true path."
+  },
+  {
+    "name": "The World",
+    "suit": "Major Arcana",
+    "upright": "Fulfillment and completion are at hand; celebrate your achievements and embrace new journeys.",
+    "reversed": "A lack of closure or unfinished business may be preventing you from moving forward."
+  },
+
+  {
+    "name": "Ace of Wands",
+    "suit": "Wands",
+    "upright": "A surge of inspiration and new beginnings sparks your passion for a fresh venture.",
+    "reversed": "Delays or lack of motivation may stall your progress toward something new."
+  },
+  {
+    "name": "Two of Wands",
+    "suit": "Wands",
+    "upright": "You are planning for the future and considering bold possibilities beyond your comfort zone.",
+    "reversed": "Fear of the unknown or indecision is preventing you from moving forward."
+  },
+  {
+    "name": "Three of Wands",
+    "suit": "Wands",
+    "upright": "Your efforts are beginning to pay off; expansion and progress are on the horizon.",
+    "reversed": "Obstacles or a lack of foresight may be hindering your long-term plans."
+  },
+  {
+    "name": "Four of Wands",
+    "suit": "Wands",
+    "upright": "Celebrate your achievements and enjoy a period of harmony and joyful stability.",
+    "reversed": "Tension or disruptions at home may be preventing you from fully enjoying your successes."
+  },
+  {
+    "name": "Five of Wands",
+    "suit": "Wands",
+    "upright": "Competition and differing opinions are creating tension, but friendly rivalry can lead to growth.",
+    "reversed": "Avoiding conflict or refusing to engage may be holding back necessary resolution."
+  },
+  {
+    "name": "Six of Wands",
+    "suit": "Wands",
+    "upright": "Recognition and victory are yours—your hard work is being celebrated by others.",
+    "reversed": "Self-doubt or lack of recognition may dampen your sense of accomplishment."
+  },
+  {
+    "name": "Seven of Wands",
+    "suit": "Wands",
+    "upright": "Stand your ground and defend your position, even in the face of opposition.",
+    "reversed": "Overwhelm or a lack of confidence is making it difficult to maintain your stance."
+  },
+  {
+    "name": "Eight of Wands",
+    "suit": "Wands",
+    "upright": "Swift movement and rapid developments bring your plans to fruition quickly.",
+    "reversed": "Delays or miscommunication are causing frustration and slowing progress."
+  },
+  {
+    "name": "Nine of Wands",
+    "suit": "Wands",
+    "upright": "Resilience and perseverance are required; you are close to achieving your goal, so don’t give up.",
+    "reversed": "Exhaustion or defensiveness may be preventing you from moving forward with confidence."
+  },
+  {
+    "name": "Ten of Wands",
+    "suit": "Wands",
+    "upright": "Heavy responsibilities are weighing on you; seek support and delegate when possible.",
+    "reversed": "Burnout and stress are taking their toll, reminding you to lighten your load."
+  },
+  {
+    "name": "Page of Wands",
+    "suit": "Wands",
+    "upright": "Curiosity and enthusiasm spark a desire for exploration and creative expression.",
+    "reversed": "Restlessness or lack of direction may be hindering your ability to channel your energy."
+  },
+  {
+    "name": "Knight of Wands",
+    "suit": "Wands",
+    "upright": "Bold action and adventurous spirit propel you toward your goals with confidence.",
+    "reversed": "Impulsiveness or recklessness may lead to setbacks if you don’t think things through."
+  },
+  {
+    "name": "Queen of Wands",
+    "suit": "Wands",
+    "upright": "Charisma and determination empower you to inspire and lead others creatively.",
+    "reversed": "Insecurity or jealousy may be undermining your natural confidence and passion."
+  },
+  {
+    "name": "King of Wands",
+    "suit": "Wands",
+    "upright": "Visionary leadership and bold decisions bring you success and inspire those around you.",
+    "reversed": "Impulsiveness or arrogance may cause you to overlook important details or others’ input."
+  },
+
+  {
+    "name": "Ace of Cups",
+    "suit": "Cups",
+    "upright": "A new emotional beginning fills your heart with love, compassion, and creative inspiration.",
+    "reversed": "Emotional blockages or repressed feelings may prevent you from embracing new connections."
+  },
+  {
+    "name": "Two of Cups",
+    "suit": "Cups",
+    "upright": "A meaningful partnership or harmonious union is forming, bringing balance and mutual respect.",
+    "reversed": "Misunderstandings or imbalance can create tension in relationships that need healing."
+  },
+  {
+    "name": "Three of Cups",
+    "suit": "Cups",
+    "upright": "Joyful gatherings and friendship bring you happiness and a sense of belonging.",
+    "reversed": "Overindulgence or gossip could disrupt group harmony and cause rifts among friends."
+  },
+  {
+    "name": "Four of Cups",
+    "suit": "Cups",
+    "upright": "Discontent or apathy may be clouding your ability to see new opportunities right in front of you.",
+    "reversed": "A fresh outlook helps you move past stagnation and embrace life’s possibilities once again."
+  },
+  {
+    "name": "Five of Cups",
+    "suit": "Cups",
+    "upright": "Loss or disappointment weighs heavily on your heart, but hope remains if you look forward.",
+    "reversed": "Acceptance and forgiveness help you to heal and move beyond past regrets."
+  },
+  {
+    "name": "Six of Cups",
+    "suit": "Cups",
+    "upright": "Nostalgia and happy memories bring comfort, or someone from your past may reappear.",
+    "reversed": "Clinging to the past may be holding you back from enjoying the present or growing."
+  },
+  {
+    "name": "Seven of Cups",
+    "suit": "Cups",
+    "upright": "Many choices and fantasies swirl around you—clarity comes when you focus on what truly matters.",
+    "reversed": "Distraction and illusion fall away, allowing you to make more grounded decisions."
+  },
+  {
+    "name": "Eight of Cups",
+    "suit": "Cups",
+    "upright": "You are ready to leave behind what no longer fulfills you in search of deeper meaning.",
+    "reversed": "Fear of change may cause you to remain in an unsatisfying situation."
+  },
+  {
+    "name": "Nine of Cups",
+    "suit": "Cups",
+    "upright": "Contentment and emotional satisfaction are yours; your wishes are coming true.",
+    "reversed": "Overindulgence or complacency could undermine lasting happiness."
+  },
+  {
+    "name": "Ten of Cups",
+    "suit": "Cups",
+    "upright": "Emotional harmony and deep fulfillment bless your family or community.",
+    "reversed": "Disconnection or hidden tensions may be affecting your sense of togetherness."
+  },
+  {
+    "name": "Page of Cups",
+    "suit": "Cups",
+    "upright": "A message of love or creative opportunity appears, inviting you to open your heart.",
+    "reversed": "Immaturity or emotional insecurity could cause misunderstandings or missed chances."
+  },
+  {
+    "name": "Knight of Cups",
+    "suit": "Cups",
+    "upright": "Romantic gestures or heartfelt offers move you to pursue your dreams with passion.",
+    "reversed": "Unrealistic expectations or moodiness may lead to disappointment or inconsistency."
+  },
+  {
+    "name": "Queen of Cups",
+    "suit": "Cups",
+    "upright": "Empathy and intuition guide you in nurturing yourself and those around you.",
+    "reversed": "Emotional overwhelm or codependency may blur your boundaries or cloud your judgment."
+  },
+  {
+    "name": "King of Cups",
+    "suit": "Cups",
+    "upright": "Emotional balance and compassion allow you to lead with wisdom and calm.",
+    "reversed": "Suppressed emotions or manipulation may create turbulence beneath a calm exterior."
+  },
+
+  {
+    "name": "Ace of Swords",
+    "suit": "Swords",
+    "upright": "A surge of clarity or a breakthrough brings truth, new ideas, and mental focus.",
+    "reversed": "Confusion or misinformation clouds your judgment and blocks clear thinking."
+  },
+  {
+    "name": "Two of Swords",
+    "suit": "Swords",
+    "upright": "You face a difficult decision and must find balance before you can move forward.",
+    "reversed": "Indecision or avoidance is prolonging conflict and preventing resolution."
+  },
+  {
+    "name": "Three of Swords",
+    "suit": "Swords",
+    "upright": "Heartbreak, loss, or betrayal brings emotional pain and the need for healing.",
+    "reversed": "Recovery begins as you release old wounds and open yourself to forgiveness."
+  },
+  {
+    "name": "Four of Swords",
+    "suit": "Swords",
+    "upright": "Rest and reflection are essential now; take a break to restore your mind and spirit.",
+    "reversed": "Restlessness or burnout may be warning you to slow down and recover."
+  },
+  {
+    "name": "Five of Swords",
+    "suit": "Swords",
+    "upright": "Conflict or discord leads to hollow victory; be mindful of the cost of winning.",
+    "reversed": "Resolution and reconciliation are possible if you let go of resentment and pride."
+  },
+  {
+    "name": "Six of Swords",
+    "suit": "Swords",
+    "upright": "Transition and moving on from difficulties lead you toward calmer times ahead.",
+    "reversed": "Difficulty letting go or unresolved issues may be hindering your progress."
+  },
+  {
+    "name": "Seven of Swords",
+    "suit": "Swords",
+    "upright": "Cleverness or secrecy may be needed, but be wary of deceit or underhanded tactics.",
+    "reversed": "Guilt or exposure brings consequences for dishonesty, or you may be coming clean."
+  },
+  {
+    "name": "Eight of Swords",
+    "suit": "Swords",
+    "upright": "Feelings of restriction or limitation may be self-imposed; look for ways to free yourself.",
+    "reversed": "You are finding the courage to break free from mental constraints and negative thinking."
+  },
+  {
+    "name": "Nine of Swords",
+    "suit": "Swords",
+    "upright": "Anxiety or sleepless nights point to worries that may be weighing heavily on your mind.",
+    "reversed": "You are beginning to release fears and see hope beyond your troubles."
+  },
+  {
+    "name": "Ten of Swords",
+    "suit": "Swords",
+    "upright": "A painful ending or betrayal marks a low point, but recovery and renewal are possible.",
+    "reversed": "Regeneration and release help you rise from hardship and embrace new possibilities."
+  },
+  {
+    "name": "Page of Swords",
+    "suit": "Swords",
+    "upright": "Curiosity and a thirst for knowledge drive you to seek the truth and express new ideas.",
+    "reversed": "Impulsiveness or haste in communication may cause misunderstandings or conflict."
+  },
+  {
+    "name": "Knight of Swords",
+    "suit": "Swords",
+    "upright": "Bold action and determination push you to pursue your goals with speed and confidence.",
+    "reversed": "Recklessness or impatience may lead to rash decisions or harsh words."
+  },
+  {
+    "name": "Queen of Swords",
+    "suit": "Swords",
+    "upright": "Clarity, honesty, and discernment help you see situations objectively and speak your truth.",
+    "reversed": "Coldness or bitterness may cloud your judgment and distance you from others."
+  },
+  {
+    "name": "King of Swords",
+    "suit": "Swords",
+    "upright": "Intellectual power and authority enable you to lead with integrity and wise judgment.",
+    "reversed": "Manipulation or misuse of power may lead to unfairness or a lack of compassion."
+  },
+
+  {
+    "name": "Ace of Pentacles",
+    "suit": "Pentacles",
+    "upright": "A new opportunity for prosperity and growth appears, promising stability and abundance.",
+    "reversed": "Missed chances or financial delays may block your path to security."
+  },
+  {
+    "name": "Two of Pentacles",
+    "suit": "Pentacles",
+    "upright": "Balance and adaptability are key as you juggle multiple responsibilities or priorities.",
+    "reversed": "Overwhelm or poor time management could result in things slipping out of control."
+  },
+  {
+    "name": "Three of Pentacles",
+    "suit": "Pentacles",
+    "upright": "Collaboration and teamwork lead to tangible results and the building of solid foundations.",
+    "reversed": "Miscommunication or lack of cooperation may be undermining your progress."
+  },
+  {
+    "name": "Four of Pentacles",
+    "suit": "Pentacles",
+    "upright": "Security and stability are valued, but beware of holding on too tightly to material things.",
+    "reversed": "Letting go of control or loosening your grip can free you from financial or emotional constraints."
+  },
+  {
+    "name": "Five of Pentacles",
+    "suit": "Pentacles",
+    "upright": "Hardship or financial struggle tests your resilience, but support is available if you reach out.",
+    "reversed": "Recovery and renewed hope are emerging after a period of adversity."
+  },
+  {
+    "name": "Six of Pentacles",
+    "suit": "Pentacles",
+    "upright": "Generosity and sharing resources bring balance and harmony to your relationships.",
+    "reversed": "Unequal give-and-take or strings attached may be creating resentment or imbalance."
+  },
+  {
+    "name": "Seven of Pentacles",
+    "suit": "Pentacles",
+    "upright": "Patience and careful planning are required; your efforts will yield results in due time.",
+    "reversed": "Impatience or lack of progress may cause frustration and a desire to give up."
+  },
+  {
+    "name": "Eight of Pentacles",
+    "suit": "Pentacles",
+    "upright": "Dedication and hard work help you master your craft and steadily improve your situation.",
+    "reversed": "Boredom or perfectionism could be stalling your growth or making work feel unfulfilling."
+  },
+  {
+    "name": "Nine of Pentacles",
+    "suit": "Pentacles",
+    "upright": "Self-sufficiency and financial independence allow you to enjoy the fruits of your labor.",
+    "reversed": "Overdependence or setbacks may be interfering with your sense of accomplishment."
+  },
+  {
+    "name": "Ten of Pentacles",
+    "suit": "Pentacles",
+    "upright": "Long-term security, family legacy, and abundance are yours to enjoy and pass on.",
+    "reversed": "Instability or disputes over wealth and inheritance may disrupt family harmony."
+  },
+  {
+    "name": "Page of Pentacles",
+    "suit": "Pentacles",
+    "upright": "Curiosity and practicality help you pursue new opportunities for learning and growth.",
+    "reversed": "Procrastination or lack of focus could keep you from achieving your goals."
+  },
+  {
+    "name": "Knight of Pentacles",
+    "suit": "Pentacles",
+    "upright": "Reliability and steady effort lead to success, even if progress seems slow.",
+    "reversed": "Stubbornness or laziness may cause delays or missed opportunities."
+  },
+  {
+    "name": "Queen of Pentacles",
+    "suit": "Pentacles",
+    "upright": "Nurturing and resourceful energy help you create comfort, security, and well-being.",
+    "reversed": "Neglect of self-care or overcommitment may drain your energy or create imbalance."
+  },
+  {
+    "name": "King of Pentacles",
+    "suit": "Pentacles",
+    "upright": "Leadership and wise investment bring wealth, stability, and respect from others.",
+    "reversed": "Greed or mismanagement of resources can undermine your achievements."
+  }
+]
