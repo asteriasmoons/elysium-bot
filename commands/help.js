@@ -42,7 +42,27 @@ module.exports = {
       .setColor("#69359c")
       .setFooter({ text: "Elysium Help Menus" });
 
-    // Embed 2: How Sprints Work
+    // Embed 2: Easter Egg Commands
+    const eggCmds = new EmbedBuilder()
+      .setTitle("<:xbuuke:1369320075126898748> Easter Egg Commands")
+      .setColor("#69359c")
+      .addFields(
+        {
+          name: "</moon:1390427211835642038>",
+          value: "Check out the current moon phase and what it means",
+        },
+        {
+          name: "</affirmation:1391918879592419389>",
+          value: "Get a lovely affirmation to motivate you",
+        },
+        {
+          name: "</tarot:1392174996012400732>",
+          value: "Get either a one or three card tarot reading from the bot.",
+        }
+      )
+      .setFooter({ text: "Elysium Help Menus" });
+
+    // Embed 3: How Sprints Work
     const howEmbed = new EmbedBuilder()
       .setTitle("<:xbuuke:1369320075126898748> How Book Sprints Work")
       .setColor("#69359c")
@@ -51,7 +71,7 @@ module.exports = {
       )
       .setFooter({ text: "Elysium Help Menus" });
 
-    // Embed 3: More Commands (Buddy Reads)
+    // Embed 4: More Commands (Buddy Reads)
     const moreCmdsEmbed = new EmbedBuilder()
       .setTitle("<:xbuuke:1369320075126898748> Buddy Reads Commands")
       .setColor("#69359c")
@@ -112,7 +132,7 @@ module.exports = {
       )
       .setFooter({ text: "Elysium Help Menus" });
 
-    // Embed 4: Commands (Channel)
+    // Embed 5: Commands (Channel)
     const channelCmds = new EmbedBuilder()
       .setTitle("<:xbuuke:1369320075126898748> Channel Commands")
       .setColor("#69359c")
@@ -137,7 +157,7 @@ module.exports = {
       )
       .setFooter({ text: "Elysium Help Menus" });
 
-    // Embed 5: Commands (Profile)
+    // Embed 6: Commands (Profile)
     const profileCmds = new EmbedBuilder()
       .setTitle("<:xbuuke:1369320075126898748> Profile Commands")
       .setColor("#69359c")
@@ -157,7 +177,7 @@ module.exports = {
       )
       .setFooter({ text: "Elysium Help Menus" });
 
-    // Embed 6: Commands (Progress)
+    // Embed 7: Commands (Progress)
     const progressCmds = new EmbedBuilder()
       .setTitle("<:xbuuke:1369320075126898748> Progress Commands")
       .setColor("#69359c")
@@ -183,7 +203,7 @@ module.exports = {
       )
       .setFooter({ text: "Elysium Help Menus" });
 
-    // Embed 7: Commands (Reminders)
+    // Embed 8: Commands (Reminders)
     const remindersCmds = new EmbedBuilder()
       .setTitle("<:xbuuke:1369320075126898748> Reminders Commands")
       .setColor("#69359c")
@@ -232,7 +252,7 @@ module.exports = {
       )
       .setFooter({ text: "Elysium Help Menus" });
 
-    // Embed 8: Commands (Reviews)
+    // Embed 9: Commands (Reviews)
     const reviewCmds = new EmbedBuilder()
       .setTitle("<:xbuuke:1369320075126898748> Review Commands")
       .setColor("#69359c")
@@ -268,7 +288,7 @@ module.exports = {
       )
       .setFooter({ text: "Elysium Help Menus" });
 
-    // Embed 9: Commands (Sprints)
+    // Embed 10: Commands (Sprints)
     const sprintCmds = new EmbedBuilder()
       .setTitle("<:xbuuke:1369320075126898748> Sprint Commands")
       .setColor("#69359c")
@@ -311,7 +331,7 @@ module.exports = {
       )
       .setFooter({ text: "Elysium Help Menus" });
 
-    // Embed 10: Commands (TBR)
+    // Embed 11: Commands (TBR)
     const tbrCmds = new EmbedBuilder()
       .setTitle("<:xbuuke:1369320075126898748> TBR (To Be Read) Commands")
       .setColor("#69359c")
@@ -331,7 +351,7 @@ module.exports = {
       )
       .setFooter({ text: "Elysium Help Menus" });
 
-    // Embed 11: Commands (Inventory)
+    // Embed 12: Commands (Inventory)
     const inventoryCmds = new EmbedBuilder()
       .setTitle("<:xbuuke:1369320075126898748> Inventory Commands")
       .setColor("#69359c")
@@ -353,7 +373,7 @@ module.exports = {
       )
       .setFooter({ text: "Elysium Help Menus" });
 
-    // Embed 12: Commands (Embeds)
+    // Embed 13: Commands (Embeds)
     const embedCmds = new EmbedBuilder()
       .setTitle("<:xbuuke:1369320075126898748> Embed Commands")
       .setColor("#69359c")
@@ -385,7 +405,7 @@ module.exports = {
       )
       .setFooter({ text: "Elysium Help Menus" });
 
-    // Embed 13: Commands (Habit)
+    // Embed 14: Commands (Habit)
     const habitCmds = new EmbedBuilder()
       .setTitle("<:xbuuke:1369320075126898748> Habit Commands")
       .setColor("#69359c")
@@ -417,7 +437,7 @@ module.exports = {
       )
       .setFooter({ text: "Elysium Help Menus" });
 
-    // Embed 14: Commands (Journal)
+    // Embed 15: Commands (Journal)
     const journalCmds = new EmbedBuilder()
       .setTitle("<:xbuuke:1369320075126898748> Journal Commands")
       .setColor("#69359c")
@@ -448,7 +468,7 @@ module.exports = {
       )
       .setFooter({ text: "Elysium Help Menus" });
 
-    // Embed 15: Commands (Mood)
+    // Embed 16: Commands (Mood)
     const moodCmds = new EmbedBuilder()
       .setTitle("<:xbuuke:1369320075126898748> Mood Commands")
       .setColor("#69359c")
@@ -477,7 +497,7 @@ module.exports = {
       )
       .setFooter({ text: "Elysium Help Menus" });
 
-    // Embed 16: Commands (Recommendations)
+    // Embed 17: Commands (Recommendations)
     const recommendCmds = new EmbedBuilder()
       .setTitle("<:xbuuke:1369320075126898748> Recommendation Commands")
       .setColor("#69359c")
@@ -517,8 +537,41 @@ module.exports = {
       )
       .setFooter({ text: "Elysium Help Menus" });
 
+    // Embed 18: Shop Commands
+    const shopCmds = new EmbedBuilder()
+      .setTitle("<:xbuuke:1369320075126898748> Shop Commands")
+      .setColor("#69359c")
+      .addFields(
+        {
+          name: "</shop view:1374533396432293888>",
+          value: "View the Elysium shop",
+        },
+        {
+          name: "</shop buy:1374533396432293888>",
+          value: "Buy an item from the Elysium shop",
+        },
+        {
+          name: "</shop add:1374533396432293888>",
+          value: "For the owner of the bot to add items to the Elysium shop",
+        },
+        {
+          name: "</shop remove:1374533396432293888>",
+          value: "For the owner of Elysium to remove items from the shop",
+        },
+        {
+          name: "</shop edit:1374533396432293888>",
+          value: "For the owner of Elysium to edit shop items",
+        },
+        {
+          name: "</shop inventory:1374533396432293888>",
+          value: "View your inventory that you bought from the Elysium shop",
+        }
+      )
+      .setFooter({ text: "Elysium Help Menus" });
+
     const embeds = [
       helpEmbed,
+      eggCmds,
       howEmbed,
       moreCmdsEmbed,
       channelCmds,
@@ -534,6 +587,7 @@ module.exports = {
       journalCmds,
       moodCmds,
       recommendCmds,
+      shopCmds,
     ];
 
     // Embed navigation logic
