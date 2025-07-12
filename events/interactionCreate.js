@@ -164,7 +164,7 @@ module.exports = {
 
         const embed = new EmbedBuilder()
           .setTitle(
-            `<:xbuuke:1369320075126898748> Your Journal Entries (Page ${page}/${totalPages})`
+            `<:lebuk:1393628610169933824> Your Journal Entries (Page ${page}/${totalPages})`
           )
           .setColor(0x9370db)
           .setDescription(

@@ -117,7 +117,7 @@ module.exports = {
           return interaction.reply({
             embeds: [
               new EmbedBuilder()
-                .setTitle("<:xbuuke:1369320075126898748> Entry Limit Reached")
+                .setTitle("<:lebuk:1393628610169933824> Entry Limit Reached")
                 .setDescription(
                   "You have reached the maximum of **10** journal entries. Please delete an old entry to add a new one."
                 )
@@ -158,7 +158,7 @@ module.exports = {
 
       const embed = new EmbedBuilder()
         .setTitle(
-          `<:xbuuke:1369320075126898748> Journal Entries (Page ${page}/${totalPages})`
+          `<:lebuk:1393628610169933824> Journal Entries (Page ${page}/${totalPages})`
         )
         .setColor(0x9370db)
         .setDescription(
@@ -324,7 +324,7 @@ module.exports = {
         return interaction.reply({
           embeds: [
             new EmbedBuilder()
-              .setTitle("<:xbuuke:1369320075126898748> No Entries")
+              .setTitle("<:lebuk:1393628610169933824> No Entries")
               .setDescription("You have no journal entries to delete.")
               .setColor(0x9370db),
           ],

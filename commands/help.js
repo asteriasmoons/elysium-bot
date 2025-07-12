@@ -13,7 +13,7 @@ module.exports = {
   async execute(interaction) {
     // Embed 1: Command List
     const helpEmbed = new EmbedBuilder()
-      .setTitle("<:xbuuke:1369320075126898748> Elysium Bot Help")
+      .setTitle("<:lebuk:1393628610169933824> Elysium Bot Help")
       .setDescription(
         "Welcome to Elysium bots help menu! In this menu you will find ALL the commands the bot has to offer. Click on a command to pull up the command in the commands center on mobile or if on desktop it will be placed in the channel where you can then hit send. Thank you so much for choosing Elysium!\n\nCheck out the documentation [here](https://asterias-moons.gitbook.io/elysium-bot/)"
       )
@@ -37,6 +37,11 @@ module.exports = {
           name: "</donate:1372038436621520988>",
           value:
             "The command to donate to Elysium bot to help with bot expenses.",
+        },
+        {
+          name: "</booksummary:1393386146754461816>",
+          value:
+            "Get a summary of a book that you're thinking about reading."
         }
       )
       .setColor("#69359c")
@@ -44,7 +49,7 @@ module.exports = {
 
     // Embed 2: Easter Egg Commands
     const eggCmds = new EmbedBuilder()
-      .setTitle("<:xbuuke:1369320075126898748> Easter Egg Commands")
+      .setTitle("<:lebuk:1393628610169933824> Easter Egg Commands")
       .setColor("#69359c")
       .addFields(
         {
@@ -64,7 +69,7 @@ module.exports = {
 
     // Embed 3: How Sprints Work
     const howEmbed = new EmbedBuilder()
-      .setTitle("<:xbuuke:1369320075126898748> How Book Sprints Work")
+      .setTitle("<:lebuk:1393628610169933824> How Book Sprints Work")
       .setColor("#69359c")
       .setDescription(
         "Book sprints are a fun way to read together and track your progress! When a sprint starts, join in by telling the bot what page youre currently on—this is your starting page. Once the sprint ends, submit the page you finished on. The bot will do the math and let you know how many pages you read during the sprint For example, if you start on page 25 and end on page 40, the bot will record that you read 15 pages. Its a great way to stay motivated and see how much you can read with friends!"
@@ -73,7 +78,7 @@ module.exports = {
 
     // Embed 4: More Commands (Buddy Reads)
     const moreCmdsEmbed = new EmbedBuilder()
-      .setTitle("<:xbuuke:1369320075126898748> Buddy Reads Commands")
+      .setTitle("<:lebuk:1393628610169933824> Buddy Reads Commands")
       .setColor("#69359c")
       .addFields(
         {
@@ -134,7 +139,7 @@ module.exports = {
 
     // Embed 5: Commands (Channel)
     const channelCmds = new EmbedBuilder()
-      .setTitle("<:xbuuke:1369320075126898748> Channel Commands")
+      .setTitle("<:lebuk:1393628610169933824> Channel Commands")
       .setColor("#69359c")
       .addFields(
         {
@@ -159,7 +164,7 @@ module.exports = {
 
     // Embed 6: Commands (Profile)
     const profileCmds = new EmbedBuilder()
-      .setTitle("<:xbuuke:1369320075126898748> Profile Commands")
+      .setTitle("<:lebuk:1393628610169933824> Profile Commands")
       .setColor("#69359c")
       .addFields(
         {
@@ -179,7 +184,7 @@ module.exports = {
 
     // Embed 7: Commands (Progress)
     const progressCmds = new EmbedBuilder()
-      .setTitle("<:xbuuke:1369320075126898748> Progress Commands")
+      .setTitle("<:lebuk:1393628610169933824> Progress Commands")
       .setColor("#69359c")
       .addFields(
         {
@@ -205,7 +210,7 @@ module.exports = {
 
     // Embed 8: Commands (Reminders)
     const remindersCmds = new EmbedBuilder()
-      .setTitle("<:xbuuke:1369320075126898748> Reminders Commands")
+      .setTitle("<:lebuk:1393628610169933824> Reminders Commands")
       .setColor("#69359c")
       .addFields(
         {
@@ -254,7 +259,7 @@ module.exports = {
 
     // Embed 9: Commands (Reviews)
     const reviewCmds = new EmbedBuilder()
-      .setTitle("<:xbuuke:1369320075126898748> Review Commands")
+      .setTitle("<:lebuk:1393628610169933824> Review Commands")
       .setColor("#69359c")
       .addFields(
         {
@@ -290,7 +295,7 @@ module.exports = {
 
     // Embed 10: Commands (Sprints)
     const sprintCmds = new EmbedBuilder()
-      .setTitle("<:xbuuke:1369320075126898748> Sprint Commands")
+      .setTitle("<:lebuk:1393628610169933824> Sprint Commands")
       .setColor("#69359c")
       .addFields(
         {
@@ -333,7 +338,7 @@ module.exports = {
 
     // Embed 11: Commands (TBR)
     const tbrCmds = new EmbedBuilder()
-      .setTitle("<:xbuuke:1369320075126898748> TBR (To Be Read) Commands")
+      .setTitle("<:lebuk:1393628610169933824> TBR (To Be Read) Commands")
       .setColor("#69359c")
       .addFields(
         {
@@ -353,7 +358,7 @@ module.exports = {
 
     // Embed 12: Commands (Inventory)
     const inventoryCmds = new EmbedBuilder()
-      .setTitle("<:xbuuke:1369320075126898748> Inventory Commands")
+      .setTitle("<:lebuk:1393628610169933824> Inventory Commands")
       .setColor("#69359c")
       .addFields(
         {
@@ -375,7 +380,7 @@ module.exports = {
 
     // Embed 13: Commands (Embeds)
     const embedCmds = new EmbedBuilder()
-      .setTitle("<:xbuuke:1369320075126898748> Embed Commands")
+      .setTitle("<:lebuk:1393628610169933824> Embed Commands")
       .setColor("#69359c")
       .addFields(
         {
@@ -407,7 +412,7 @@ module.exports = {
 
     // Embed 14: Commands (Habit)
     const habitCmds = new EmbedBuilder()
-      .setTitle("<:xbuuke:1369320075126898748> Habit Commands")
+      .setTitle("<:lebuk:1393628610169933824> Habit Commands")
       .setColor("#69359c")
       .addFields(
         {
@@ -439,7 +444,7 @@ module.exports = {
 
     // Embed 15: Commands (Journal)
     const journalCmds = new EmbedBuilder()
-      .setTitle("<:xbuuke:1369320075126898748> Journal Commands")
+      .setTitle("<:lebuk:1393628610169933824> Journal Commands")
       .setColor("#69359c")
       .addFields(
         {
@@ -470,7 +475,7 @@ module.exports = {
 
     // Embed 16: Commands (Mood)
     const moodCmds = new EmbedBuilder()
-      .setTitle("<:xbuuke:1369320075126898748> Mood Commands")
+      .setTitle("<:lebuk:1393628610169933824> Mood Commands")
       .setColor("#69359c")
       .addFields(
         {
@@ -499,7 +504,7 @@ module.exports = {
 
     // Embed 17: Commands (Recommendations)
     const recommendCmds = new EmbedBuilder()
-      .setTitle("<:xbuuke:1369320075126898748> Recommendation Commands")
+      .setTitle("<:lebuk:1393628610169933824> Recommendation Commands")
       .setColor("#69359c")
       .addFields(
         {
@@ -539,7 +544,7 @@ module.exports = {
 
     // Embed 18: Shop Commands
     const shopCmds = new EmbedBuilder()
-      .setTitle("<:xbuuke:1369320075126898748> Shop Commands")
+      .setTitle("<:lebuk:1393628610169933824> Shop Commands")
       .setColor("#69359c")
       .addFields(
         {

@@ -223,7 +223,7 @@ module.exports = {
       await announcement.save();
       return interaction.reply(
         buildEmbed({
-          title: "<:xbuuke:1369320075126898748> New BuddyRead Announcement!",
+          title: "<:lebuk:1393628610169933824> New BuddyRead Announcement!",
           description: `**${username}** is looking for a buddy to read **${book}**!\n**Audience:** ${audience}${
             note ? `\n**Note:** ${note}` : ""
           }`,
@@ -328,7 +328,7 @@ module.exports = {
       const embed = new EmbedBuilder()
         .setAuthor({ name: authorTag, iconURL: authorIcon })
         .setTitle(
-          `<:xbuuke:1369320075126898748> Buddy Read Announcements for "${book}"`
+          `<:lebuk:1393628610169933824> Buddy Read Announcements for "${book}"`
         )
         .setColor(0xb399ff)
         .setDescription(
@@ -366,7 +366,7 @@ module.exports = {
       if (!announcements.length)
         return interaction.reply(
           buildEmbed({
-            title: "<:xbuuke:1369320075126898748> No Announcements Found",
+            title: "<:lebuk:1393628610169933824> No Announcements Found",
             description: "No BuddyRead announcements are currently posted!",
             footer: "Be the first to announce!",
           })
@@ -375,7 +375,7 @@ module.exports = {
       const embed = new EmbedBuilder()
         .setAuthor({ name: authorTag, iconURL: authorIcon })
         .setTitle(
-          "<:xbuuke:1369320075126898748> Recent BuddyRead Announcements"
+          "<:lebuk:1393628610169933824> Recent BuddyRead Announcements"
         )
         .setColor(0xb399ff)
         .setDescription(
@@ -427,7 +427,7 @@ module.exports = {
         if (!bookTitle)
           return interaction.reply(
             buildEmbed({
-              title: "<:xbuuke:1369320075126898748> Multiple Sessions Found",
+              title: "<:lebuk:1393628610169933824> Multiple Sessions Found",
               description: `You are in multiple buddyread sessions. Please specify the book with the \`book\` option.\n\n${sessions
                 .map((s) => `• ${s.book}`)
                 .join("\n")}`,
@@ -523,7 +523,7 @@ module.exports = {
         if (!bookTitle)
           return interaction.reply(
             buildEmbed({
-              title: "<:xbuuke:1369320075126898748> Multiple Sessions Found",
+              title: "<:lebuk:1393628610169933824> Multiple Sessions Found",
               description: `You are in multiple buddyread sessions. Please specify the book with the \`book\` option.\n\n${sessions
                 .map((s) => `• ${s.book}`)
                 .join("\n")}`,
@@ -580,7 +580,7 @@ module.exports = {
       if (!sessions.length)
         return interaction.reply(
           buildEmbed({
-            title: "<:xbuuke:1369320075126898748> No Sessions Found",
+            title: "<:lebuk:1393628610169933824> No Sessions Found",
             description: "You are not in any BuddyRead sessions yet!",
             footer: "Start a new session to begin!",
           })
@@ -588,7 +588,7 @@ module.exports = {
 
       const embed = new EmbedBuilder()
         .setAuthor({ name: authorTag, iconURL: authorIcon })
-        .setTitle("<:xbuuke:1369320075126898748> Your BuddyRead Sessions")
+        .setTitle("<:lebuk:1393628610169933824> Your BuddyRead Sessions")
         .setColor(0xb399ff)
         .setDescription(
           sessions
@@ -620,7 +620,7 @@ module.exports = {
       if (!sessions.length)
         return interaction.reply(
           buildEmbed({
-            title: "<:xbuuke:1369320075126898748> No Active Sessions",
+            title: "<:lebuk:1393628610169933824> No Active Sessions",
             description: book
               ? `You have no active BuddyRead session for **${book}**.`
               : "You have no active BuddyRead sessions.",
@@ -632,7 +632,7 @@ module.exports = {
         const buddy = session.participants.find((p) => p.userId !== userId);
         return new EmbedBuilder()
           .setAuthor({ name: authorTag, iconURL: authorIcon })
-          .setTitle(`<:xbuuke:1369320075126898748> BuddyRead: ${session.book}`)
+          .setTitle(`<:lebuk:1393628610169933824> BuddyRead: ${session.book}`)
           .setColor(0xb399ff)
           .addFields(
             {
@@ -675,7 +675,7 @@ module.exports = {
       if (!session)
         return interaction.reply(
           buildEmbed({
-            title: "<:xbuuke:1369320075126898748> Session Not Found",
+            title: "<:lebuk:1393628610169933824> Session Not Found",
             description: `No active BuddyRead session found for **${book}**.`,
             footer: "Check your active sessions!",
           })
@@ -715,7 +715,7 @@ module.exports = {
       if (!session)
         return interaction.reply(
           buildEmbed({
-            title: "<:xbuuke:1369320075126898748> Session Not Found",
+            title: "<:lebuk:1393628610169933824> Session Not Found",
             description: `No active BuddyRead session found for **${book}**.`,
             footer: "Check your active sessions!",
           })
@@ -829,7 +829,7 @@ module.exports = {
           const announcerEmbed = new EmbedBuilder()
             .setColor(0xb399ff)
             .setTitle(
-              "<:xbuuke:1369320075126898748> You have been paired for a buddy read!"
+              "<:lebuk:1393628610169933824> You have been paired for a buddy read!"
             )
             .addFields(
               { name: "Book", value: announcement.book, inline: false },
@@ -848,7 +848,7 @@ module.exports = {
           const userEmbed = new EmbedBuilder()
             .setColor(0xb399ff)
             .setTitle(
-              "<:xbuuke:1369320075126898748> You have been paired for a buddy read!"
+              "<:lebuk:1393628610169933824> You have been paired for a buddy read!"
             )
             .addFields(
               { name: "Book", value: announcement.book, inline: false },
@@ -872,7 +872,7 @@ module.exports = {
         // Confirm to the user WITH EMBED
         const confirmEmbed = new EmbedBuilder()
           .setColor(0xb399ff)
-          .setTitle("<:xbuuke:1369320075126898748> Paired Successfully!")
+          .setTitle("<:lebuk:1393628610169933824> Paired Successfully!")
           .setDescription(
             `You are now paired with **${announcement.username}** for **${announcement.book}**!\n\nBoth of you have been notified.`
           )
