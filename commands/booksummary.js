@@ -32,7 +32,7 @@ module.exports = {
         .setDescription(
           "❌ Sorry, I couldn’t find a summary for that book.\n\nTry using a simpler title, checking the spelling, or leaving the author field blank for a broader search."
         )
-        .setColor(0xe74c3c);
+        .setColor(0x7500eb);
       return await interaction.reply({ embeds: [errorEmbed] });
     }
 
@@ -53,7 +53,7 @@ module.exports = {
       .setDescription(
         summary.length > 4000 ? summary.slice(0, 3997) + "..." : summary
       )
-      .setColor(0x6c3483)
+      .setColor(0x7500eb)
       .setFooter({ text: "Book summary provided by Google Books API" });
 
     if (infoLink) embed.setURL(infoLink);
