@@ -159,7 +159,7 @@ module.exports = {
     if (subcommand === "add") {
       const embed = new EmbedBuilder()
         .setTitle(
-          "<:pcht1:1371879916383240263> Add a Habit Reminder <:pcht1:1371879916383240263>"
+          "<:pcht2:1391606107885277275> Add a Habit Reminder <:pcht2:1391606107885277275>"
         )
         .setDescription(
           `Hey ${interaction.user.toString()} habits are great ways to build consistency in your life. I'm super proud of you for wanting to build some routine in your life. Choose your habit frequency to get started:`
