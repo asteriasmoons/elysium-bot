@@ -282,11 +282,6 @@ function scheduleReminder(client, reminder) {
       }
     }, msUntil);
 
-    // Storing the timeout ID on the in-memory reminder object
-    // This helps if this specific object instance is passed again to scheduleReminder for an update
-    reminder._timeout = reminder._timeout; // This line seems to be a typo: reminder._timeout = setTimeout(...); is above.
-    // The actual assignment of the timeout ID to reminder._timeout is already done.
-
     // Your existing logic to track timeouts by userId (in-memory, clears on restart)
     scheduled[reminder.userId] = scheduled[reminder.userId] || [];
     if (reminder._timeout) {
