@@ -137,7 +137,8 @@ function scheduleReminder(client, reminder) {
       console.error(
         `[SCHEDULE ERROR] Calculated negative msUntil for reminder ID ${
           reminder._id
-        }. Scheduling for 5 seconds from now to prevent immediate loop. Next: ${next.toISO()}, Now: ${now.toISO()}`
+        }. Scheduling for 5 seconds from now to prevent immediate loop. Next: ${next.toISO()}, 
+Now: ${now.toISO()}`
       );
       // msUntil = 5000; // Fallback, or investigate further why this happened
     }
@@ -170,6 +171,25 @@ function scheduleReminder(client, reminder) {
         }
         // Use refreshed state for sending, especially text and active status (if you add one)
         const activeReminder = currentReminderState;
+
+        // ----- HERE'S THE DUPLICATE SEND PREVENTION -----
+        const now = DateTime.now().setZone(
+          activeReminder.zone || "America/Chicago"
+        );
+        const lastSent = activeReminder.reminderSentAt
+          ? DateTime.fromJSDate(activeReminder.reminderSentAt).setZone(
+              activeReminder.zone
+            )
+          : null;
+
+        if (lastSent && lastSent.hasSame(now, "day")) {
+          console.log(
+            `[SKIP] Reminder ${activeReminder._id} already sent today.`
+          );
+          scheduleReminder(client, activeReminder);
+          return;
+        }
+        // -------------------------------------------------
 
         const embed = new EmbedBuilder()
           .setColor(0x993377)
@@ -256,6 +276,13 @@ function scheduleReminder(client, reminder) {
             }
           }
         }
+
+        // --- Mark as sent for this day if successful ---
+        if (sent) {
+          activeReminder.reminderSentAt = new Date();
+          await activeReminder.save();
+        }
+        // -------------------------------------------------
 
         // Reschedule for the next day (applies to both guild and DM daily reminders)
         // Pass the 'activeReminder' which is the latest state from DB

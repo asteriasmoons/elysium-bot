@@ -7,6 +7,7 @@ const ReminderSchema = new mongoose.Schema({
   minute: { type: Number, required: true },
   text: { type: String, default: "This is your reminder!" },
   zone: { type: String, default: "America/Chicago" },
+  reminderSentAt: { type: Date, default: null },
 });
 
 module.exports =
