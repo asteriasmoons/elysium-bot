@@ -236,7 +236,8 @@ function scheduleReminder(client, reminder) {
           );
           try {
             const user = await client.users.fetch(activeReminder.userId);
-            await user.send({ embeds: [embed] });
+            const dmChannel = await user.createDM();
+            await dmChannel.send({ embeds: [embed] });
             console.log(
               `[SEND SUCCESS] DM Reminder ID: ${activeReminder._id} | Sent to user ${activeReminder.userId}`
             );
