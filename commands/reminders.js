@@ -8,7 +8,7 @@ const scheduled = {}; // In-memory store for active timeouts (clears on bot rest
 // --- Helper Functions for Channels ---
 
 async function getReminderChannels(guildId) {
-  if (!guildId) return []; // Should not happen if called for a guild reminder
+  if (!guildId) return [];
   try {
     const config = await ReminderConfig.findOne({ guildId });
     return config ? config.channelIds : [];
@@ -27,7 +27,7 @@ async function addReminderChannel(guildId, channelId) {
     await ReminderConfig.findOneAndUpdate(
       { guildId },
       { $addToSet: { channelIds: channelId } },
-      { upsert: true, new: true } // Added new:true to return updated doc
+      { upsert: true, new: true }
     );
   } catch (error) {
     console.error(
@@ -58,16 +58,10 @@ async function getUserReminders(userId, guildId) {
   try {
     if (guildId) {
       // Fetching reminders for a specific guild
-      console.log(
-        `[getUserReminders] Fetching guild reminders for userId ${userId}, guildId ${guildId}.`
-      );
       return await Reminder.find({ userId: userId, guildId: guildId });
     } else {
       // Fetching DM reminders (guildId is null or undefined)
-      console.log(
-        `[getUserReminders] Fetching DM reminders for userId ${userId}.`
-      );
-      return await Reminder.find({ userId: userId, guildId: null }); // Explicitly look for guildId: null
+      return await Reminder.find({ userId: userId, guildId: null });
     }
   } catch (error) {
     console.error(
@@ -81,10 +75,8 @@ async function getUserReminders(userId, guildId) {
 }
 
 async function scheduleAllReminders(client) {
-  console.log("[INIT] Scheduling all reminders from database...");
   try {
-    const reminders = await Reminder.find({}); // Fetches ALL reminders
-    console.log(`[INIT] Found ${reminders.length} total reminders to process.`);
+    const reminders = await Reminder.find({});
     for (const reminder of reminders) {
       scheduleReminder(client, reminder);
     }
@@ -101,12 +93,8 @@ function scheduleReminder(client, reminder) {
     );
     return;
   }
-  // Clear existing timeout if any FOR THIS SPECIFIC REMINDER OBJECT (if it was rescheduled directly)
   if (reminder._timeout) {
     clearTimeout(reminder._timeout);
-    console.log(
-      `[SCHEDULE] Cleared existing timeout for reminder ID ${reminder._id}`
-    );
   }
 
   try {
@@ -118,61 +106,21 @@ function scheduleReminder(client, reminder) {
       millisecond: 0,
     });
 
-    console.log(
-      `[SCHEDULE PRE-CHECK] User: ${reminder.userId} | ID: ${
-        reminder._id
-      } | Zone: ${
-        reminder.zone
-      } | Next (initial for today): ${next.toISO()} | Now: ${now.toISO()}`
-    );
-
     if (next <= now) {
       next = next.plus({ days: 1 });
     }
 
     const msUntil = next.diff(now).as("milliseconds");
 
-    if (msUntil < 0) {
-      // Should ideally not happen if logic above is correct
-      console.error(
-        `[SCHEDULE ERROR] Calculated negative msUntil for reminder ID ${
-          reminder._id
-        }. Scheduling for 5 seconds from now to prevent immediate loop. Next: ${next.toISO()}, 
-Now: ${now.toISO()}`
-      );
-      // msUntil = 5000; // Fallback, or investigate further why this happened
-    }
-
-    console.log(
-      `[SCHEDULE] Reminder ID: ${reminder._id} | User: ${
-        reminder.userId
-      } | Guild: ${reminder.guildId || "DM"} | Zone: ${
-        reminder.zone
-      } | Now: ${now.toISO()} | Scheduled Next: ${next.toISO()} | msUntil: ${msUntil}`
-    );
-
     reminder._timeout = setTimeout(async () => {
-      console.log(
-        `[TRIGGER] Reminder ID: ${reminder._id} | User: ${
-          reminder.userId
-        } triggered at ${DateTime.now()
-          .setZone(reminder.zone)
-          .toISO()} (should be ${reminder.hour}:${reminder.minute} in ${
-          reminder.zone
-        })`
-      );
       try {
-        const currentReminderState = await Reminder.findById(reminder._id); // Re-fetch to ensure it wasn't deleted
+        const currentReminderState = await Reminder.findById(reminder._id);
         if (!currentReminderState) {
-          console.log(
-            `[TRIGGER ABORT] Reminder ID: ${reminder._id} for user ${reminder.userId} no longer exists in DB. Not sending or rescheduling.`
-          );
           return;
         }
-        // Use refreshed state for sending, especially text and active status (if you add one)
         const activeReminder = currentReminderState;
 
-        // ----- HERE'S THE DUPLICATE SEND PREVENTION -----
+        // Prevent sending more than once per day
         const now = DateTime.now().setZone(
           activeReminder.zone || "America/Chicago"
         );
@@ -183,13 +131,9 @@ Now: ${now.toISO()}`
           : null;
 
         if (lastSent && lastSent.hasSame(now, "day")) {
-          console.log(
-            `[SKIP] Reminder ${activeReminder._id} already sent today.`
-          );
           scheduleReminder(client, activeReminder);
           return;
         }
-        // -------------------------------------------------
 
         const embed = new EmbedBuilder()
           .setColor(0x993377)
@@ -200,119 +144,58 @@ Now: ${now.toISO()}`
 
         let sent = false;
         if (activeReminder.guildId) {
-          // Guild-based reminder
           const channelIds = await getReminderChannels(activeReminder.guildId);
           if (!channelIds || !channelIds.length) {
-            console.log(
-              `[SEND ABORT] Guild Reminder ID: ${activeReminder._id} | User ${activeReminder.userId} in Guild ${activeReminder.guildId}: No reminder channels configured.`
-            );
+            // No channels configured
           } else {
-            console.log(
-              `[SEND] Guild Reminder ID: ${activeReminder._id} | Attempting for user ${activeReminder.userId} in channels:`,
-              channelIds
-            );
             for (const channelId of channelIds) {
               try {
                 const channel = await client.channels.fetch(channelId);
                 if (channel && channel.isTextBased()) {
-                  const permissions = channel.permissionsFor(client.user); // Bot's permissions
-                  if (!permissions || !permissions.has("SendMessages")) {
-                    console.error(
-                      `[SEND ERROR] Guild Reminder ID: ${activeReminder._id} | Missing SendMessages permission in channel ${channelId} (${channel.name}).`
-                    );
+                  const permissions = channel.permissionsFor(client.user);
+                  if (!permissions || !permissions.has("SendMessages"))
                     continue;
-                  }
-                  if (!permissions.has("EmbedLinks")) {
-                    console.error(
-                      `[SEND ERROR] Guild Reminder ID: ${activeReminder._id} | Missing EmbedLinks permission in channel ${channelId} (${channel.name}).`
-                    );
-                    continue;
-                  }
+                  if (!permissions.has("EmbedLinks")) continue;
                   await channel.send({
                     content: `<@${activeReminder.userId}>`,
                     embeds: [embed],
                   });
-                  console.log(
-                    `[SEND SUCCESS] Guild Reminder ID: ${activeReminder._id} | Sent to channel ${channelId}`
-                  );
-                  sent = true; // Assuming one successful send is enough to mark as sent
-                } else {
-                  console.error(
-                    `[SEND ERROR] Guild Reminder ID: ${activeReminder._id} | Channel ${channelId} is not text-based or inaccessible.`
-                  );
+                  sent = true;
                 }
               } catch (e) {
-                console.error(
-                  `[SEND ERROR] Guild Reminder ID: ${activeReminder._id} | Could not send to channel ${channelId}:`,
-                  e
-                );
+                // channel send error
               }
             }
           }
         } else {
-          // DM reminder (guildId is null)
-          console.log(
-            `[SEND] DM Reminder ID: ${activeReminder._id} | Attempting for user ${activeReminder.userId}`
-          );
+          // DM reminder
           try {
             const user = await client.users.fetch(activeReminder.userId);
             const dmChannel = await user.createDM();
             await dmChannel.send({ embeds: [embed] });
-            console.log(
-              `[SEND SUCCESS] DM Reminder ID: ${activeReminder._id} | Sent to user ${activeReminder.userId}`
-            );
             sent = true;
           } catch (dmError) {
-            console.error(
-              `[SEND ERROR] DM Reminder ID: ${activeReminder._id} | Could not send DM to user ${activeReminder.userId}:`,
-              dmError
-            );
-            if (dmError.code === 50007) {
-              // Cannot send messages to this user
-              console.warn(
-                `[DM SEND FAIL] User ${activeReminder.userId} may have DMs disabled or blocked the bot for reminder ${activeReminder._id}.`
-              );
-              // Future: Consider logic here to stop rescheduling DM reminders after X failures.
-            }
+            // DM send error
           }
         }
 
-        // --- Mark as sent for this day if successful ---
+        // Mark as sent after successful send
         if (sent) {
           activeReminder.reminderSentAt = new Date();
           await activeReminder.save();
         }
-        // -------------------------------------------------
 
-        // Reschedule for the next day (applies to both guild and DM daily reminders)
-        // Pass the 'activeReminder' which is the latest state from DB
         scheduleReminder(client, activeReminder);
       } catch (err) {
-        console.error(
-          `[Error] Failed to process reminder trigger for ID ${reminder._id} (User: ${reminder.userId}):`,
-          err
-        );
-        // Attempt to reschedule even if sending failed, to maintain the cycle,
-        // but use the original reminder object as currentReminderState might be null if DB fetch failed.
-        // It's important to re-fetch reminder from DB before rescheduling if its properties could change.
-        // For simplicity here, we pass the original 'reminder' object to keep the cycle,
-        // but ideally, you'd fetch fresh data before rescheduling.
-        // However, if the reminder was deleted, it won't be rescheduled due to the check at the start of this try block.
         const stillExists = await Reminder.findById(reminder._id);
         if (stillExists) {
           scheduleReminder(client, stillExists);
-        } else {
-          console.log(
-            `[RESCHEDULE ABORT] Reminder ID ${reminder._id} no longer exists, not rescheduling after error.`
-          );
         }
       }
     }, msUntil);
 
-    // Your existing logic to track timeouts by userId (in-memory, clears on restart)
     scheduled[reminder.userId] = scheduled[reminder.userId] || [];
     if (reminder._timeout) {
-      // Ensure _timeout is actually set
       scheduled[reminder.userId].push(reminder._timeout);
     }
   } catch (error) {
@@ -624,8 +507,6 @@ module.exports = {
 
       if (sub === "remove") {
         if (reminderToModify._timeout) clearTimeout(reminderToModify._timeout);
-        // Also clear from the `scheduled` object if you implement more robust tracking by reminder._id
-        // For now, this just clears the timeout if the object instance had one.
         await Reminder.deleteOne({ _id: reminderToModify._id });
         await interaction.reply({
           content: `Reminder #${index + 1} ("${reminderToModify.text.substring(
@@ -638,7 +519,7 @@ module.exports = {
         const newText = interaction.options.getString("text");
         reminderToModify.text = newText;
         await reminderToModify.save();
-        scheduleReminder(client, reminderToModify); // Reschedule with new text
+        scheduleReminder(client, reminderToModify);
         await interaction.reply({
           content: `Reminder #${index + 1} message updated to "${newText}".`,
           ephemeral: false,
@@ -649,7 +530,7 @@ module.exports = {
         reminderToModify.hour = newHour;
         reminderToModify.minute = newMinute;
         await reminderToModify.save();
-        scheduleReminder(client, reminderToModify); // Reschedule with new time
+        scheduleReminder(client, reminderToModify);
         await interaction.reply({
           content: `Reminder #${index + 1} rescheduled to ${String(
             newHour
@@ -660,7 +541,7 @@ module.exports = {
     } else if (sub === "timezone") {
       const newZone = interaction.options.getString("zone");
       try {
-        DateTime.now().setZone(newZone); // Validate zone
+        DateTime.now().setZone(newZone);
       } catch (e) {
         await interaction.reply({
           content:
@@ -670,7 +551,6 @@ module.exports = {
         return;
       }
 
-      // Update timezone for reminders in the current context (guild or DM)
       let remindersToUpdate = await getUserReminders(userId, guildId);
       if (!remindersToUpdate.length) {
         const location = guildId ? "in this server" : "for your DMs";
@@ -683,7 +563,7 @@ module.exports = {
       for (const r of remindersToUpdate) {
         r.zone = newZone;
         await r.save();
-        scheduleReminder(client, r); // Reschedule with new zone
+        scheduleReminder(client, r);
       }
       const contextMessage = guildId
         ? "for this server's reminders"
@@ -696,8 +576,6 @@ module.exports = {
   },
 
   async init(client) {
-    // This will schedule all reminders from the DB on bot start,
-    // and the modified scheduleReminder will handle DM vs Guild sending.
     await scheduleAllReminders(client);
   },
 };
