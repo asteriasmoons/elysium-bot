@@ -4,6 +4,9 @@ const {
   PermissionFlagsBits,
   EmbedBuilder,
   ChannelType,
+  ActionRowBuilder,
+  ButtonBuilder,
+  ButtonStyle,
 } = require("discord.js");
 
 const EPHEMERAL = true;
@@ -30,7 +33,6 @@ module.exports = {
   data: new SlashCommandBuilder()
     .setName("embedquick")
     .setDescription("Create an embed quickly with minimal options.")
-    // Adjust permission as you like
     .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages)
 
     // Required
@@ -58,12 +60,27 @@ module.exports = {
         .addChannelTypes(ChannelType.GuildText, ChannelType.GuildAnnouncement)
         .setRequired(false)
     )
-    .addBooleanOption((o) =>
+
+    // Mention pickers (up to 3)
+    .addMentionableOption((o) =>
       o
-        .setName("mentions")
-        .setDescription("Allow user/role mentions in the embed content")
+        .setName("mention1")
+        .setDescription("Optional mention (user or role)")
         .setRequired(false)
     )
+    .addMentionableOption((o) =>
+      o
+        .setName("mention2")
+        .setDescription("Optional mention (user or role)")
+        .setRequired(false)
+    )
+    .addMentionableOption((o) =>
+      o
+        .setName("mention3")
+        .setDescription("Optional mention (user or role)")
+        .setRequired(false)
+    )
+
     .addStringOption((o) =>
       o.setName("author_name").setDescription("Author name")
     )
@@ -89,7 +106,7 @@ module.exports = {
     .addBooleanOption((o) =>
       o
         .setName("preview")
-        .setDescription("Preview instead of sending")
+        .setDescription("Preview with a Send button")
         .setRequired(false)
     ),
 
@@ -110,9 +127,15 @@ module.exports = {
     const targetChannel =
       interaction.options.getChannel("channel") || interaction.channel;
 
-    // Default: no pings unless mentions:true explicitly
-    const mentions = interaction.options.getBoolean("mentions") ?? false;
-    const allowedMentions = mentions ? undefined : { parse: [] };
+    const mention1 = interaction.options.getMentionable("mention1");
+    const mention2 = interaction.options.getMentionable("mention2");
+    const mention3 = interaction.options.getMentionable("mention3");
+
+    // Build content string from chosen mentions (can be empty)
+    const mentionsArr = [mention1, mention2, mention3].filter(Boolean);
+    const content = mentionsArr.length
+      ? mentionsArr.map((m) => m.toString()).join(" ")
+      : null;
 
     const authorName = interaction.options.getString("author_name");
     const authorIcon = interaction.options.getString("author_icon");
@@ -134,7 +157,6 @@ module.exports = {
         allowedMentions: { parse: [] },
       });
     }
-
     if (footerIcon && !isValidHttpUrl(footerIcon)) {
       return interaction.reply({
         content: "Invalid footer_icon URL. Must start with http:// or https://",
@@ -142,7 +164,6 @@ module.exports = {
         allowedMentions: { parse: [] },
       });
     }
-
     if (thumbnail && !isValidHttpUrl(thumbnail)) {
       return interaction.reply({
         content: "Invalid thumbnail URL. Must start with http:// or https://",
@@ -150,7 +171,6 @@ module.exports = {
         allowedMentions: { parse: [] },
       });
     }
-
     if (image && !isValidHttpUrl(image)) {
       return interaction.reply({
         content: "Invalid image URL. Must start with http:// or https://",
@@ -182,16 +202,36 @@ module.exports = {
     if (image) embed.setImage(image);
     if (timestamp) embed.setTimestamp(new Date());
 
-    // Preview: reply with the embed only (ephemeral)
+    // If preview: show embed ephemerally + Send/Cancel buttons
     if (preview) {
+      const sendId = `eqsend:${interaction.user.id}:${targetChannel.id}`;
+      const cancelId = `eqcancel:${interaction.user.id}`;
+
+      const row = new ActionRowBuilder().addComponents(
+        new ButtonBuilder()
+          .setCustomId(sendId)
+          .setLabel("Send")
+          .setStyle(ButtonStyle.Secondary),
+        new ButtonBuilder()
+          .setCustomId(cancelId)
+          .setLabel("Cancel")
+          .setStyle(ButtonStyle.Secondary)
+      );
+
       return interaction.reply({
+        content: content || undefined,
         embeds: [embed],
-        allowedMentions,
+        components: [row],
         ephemeral: EPHEMERAL,
+        // Allow only the mentions the user selected (safe + clean)
+        allowedMentions: {
+          users: mentionsArr.filter((m) => m?.user).map((m) => m.id),
+          roles: mentionsArr.filter((m) => m?.name && !m.user).map((m) => m.id),
+        },
       });
     }
 
-    // Permission check to avoid silent failures
+    // Non-preview: send immediately
     const me = interaction.guild?.members?.me;
     const perms = me ? targetChannel.permissionsFor(me) : null;
 
@@ -203,10 +243,17 @@ module.exports = {
       });
     }
 
-    await targetChannel.send({ embeds: [embed], allowedMentions });
+    await targetChannel.send({
+      content: content || undefined,
+      embeds: [embed],
+      allowedMentions: {
+        users: mentionsArr.filter((m) => m?.user).map((m) => m.id),
+        roles: mentionsArr.filter((m) => m?.name && !m.user).map((m) => m.id),
+      },
+    });
 
     return interaction.reply({
-      content: `Embed sent in ${targetChannel}.`,
+      content: `Sent.`,
       ephemeral: EPHEMERAL,
       allowedMentions: { parse: [] },
     });

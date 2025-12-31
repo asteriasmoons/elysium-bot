@@ -476,6 +476,93 @@ module.exports = {
         }
         return; // prevent fallthrough
       }
+
+      // --- EMBEDQUICK PREVIEW BUTTONS ---
+      if (interaction.isButton()) {
+        const { customId } = interaction;
+
+        // eqsend:<userId>:<channelId>
+        if (customId.startsWith("eqsend:")) {
+          const [, ownerId, channelId] = customId.split(":");
+
+          if (interaction.user.id !== ownerId) {
+            return interaction.reply({
+              content: "This preview isn't yours.",
+              ephemeral: true,
+            });
+          }
+
+          const channel = await interaction.guild.channels
+            .fetch(channelId)
+            .catch(() => null);
+          if (!channel) {
+            return interaction.update({
+              content: "I couldn't find that channel anymore.",
+              components: [],
+            });
+          }
+
+          const me = interaction.guild?.members?.me;
+          const perms = me ? channel.permissionsFor(me) : null;
+
+          if (!perms?.has("SendMessages") || !perms?.has("EmbedLinks")) {
+            return interaction.update({
+              content:
+                "I don't have permission to send embeds in that channel.",
+              components: [],
+            });
+          }
+
+          const apiEmbed = interaction.message.embeds?.[0];
+          if (!apiEmbed) {
+            return interaction.update({
+              content: "No embed found to send.",
+              components: [],
+            });
+          }
+
+          // Recreate the embed from the preview message
+          const embed = EmbedBuilder.from(apiEmbed);
+
+          // Preserve the preview message content (your mentions)
+          const content = interaction.message.content?.length
+            ? interaction.message.content
+            : undefined;
+
+          await channel.send({
+            content,
+            embeds: [embed],
+            // Allow only mentions actually present in the content
+            allowedMentions: {
+              parse: ["users", "roles"],
+            },
+          });
+
+          // Remove buttons after sending
+          return interaction.update({
+            content: "Sent.",
+            components: [],
+          });
+        }
+
+        // eqcancel:<userId>
+        if (customId.startsWith("eqcancel:")) {
+          const [, ownerId] = customId.split(":");
+
+          if (interaction.user.id !== ownerId) {
+            return interaction.reply({
+              content: "This preview isn't yours.",
+              ephemeral: true,
+            });
+          }
+
+          return interaction.update({
+            content: "Canceled.",
+            components: [],
+          });
+        }
+      }
+
       // --- End Button Handlers ---
     }
 
