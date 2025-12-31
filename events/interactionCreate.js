@@ -643,7 +643,6 @@ module.exports = {
         });
       }
     }
-
     // --- SLASH COMMAND HANDLER ---
     if (interaction.isChatInputCommand()) {
       const command = interaction.client.commands.get(interaction.commandName);
@@ -657,10 +656,12 @@ module.exports = {
           if (interaction.deferred || interaction.replied) {
             await interaction.editReply({
               content: "There was an error executing this command!",
+              ephemeral: true,
             });
           } else {
             await interaction.reply({
               content: "There was an error executing this command!",
+              ephemeral: true,
             });
           }
         } catch (err) {
