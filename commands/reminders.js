@@ -99,15 +99,57 @@ function scheduleReminder(client, reminder) {
 
   try {
     const now = DateTime.now().setZone(reminder.zone || "America/Chicago");
-    let next = now.set({
+    let next;
+
+    const base = now.set({
       hour: reminder.hour,
       minute: reminder.minute,
       second: 0,
       millisecond: 0,
     });
 
-    if (next <= now) {
-      next = next.plus({ days: 1 });
+    if (reminder.frequency === "weekly" && reminder.dayOfWeek !== null) {
+      // Convert 0-6 (Sun-Sat) → Luxon 1-7 (Mon-Sun, Sunday = 7)
+      const targetWeekday = reminder.dayOfWeek === 0 ? 7 : reminder.dayOfWeek;
+
+      next = base;
+
+      while (next.weekday !== targetWeekday || next <= now) {
+        next = next.plus({ days: 1 });
+      }
+
+    } else if (reminder.frequency === "monthly" && reminder.dayOfMonth !== null) {
+      next = base.set({ day: reminder.dayOfMonth });
+
+      // Handle invalid dates (e.g., Feb 30 → clamp to end of month)
+      if (next.day !== reminder.dayOfMonth) {
+        next = next.endOf("month").set({
+          hour: reminder.hour,
+          minute: reminder.minute,
+          second: 0,
+          millisecond: 0,
+        });
+      }
+
+      if (next <= now) {
+        next = next.plus({ months: 1 }).set({ day: reminder.dayOfMonth });
+
+        if (next.day !== reminder.dayOfMonth) {
+          next = next.endOf("month").set({
+            hour: reminder.hour,
+            minute: reminder.minute,
+            second: 0,
+            millisecond: 0,
+          });
+        }
+      }
+
+    } else {
+      // Default: daily
+      next = base;
+      if (next <= now) {
+        next = next.plus({ days: 1 });
+      }
     }
 
     const msUntil = next.diff(now).as("milliseconds");
@@ -232,6 +274,29 @@ module.exports = {
         )
         .addStringOption((option) =>
           option
+            .setName("frequency")
+            .setDescription("Recurrence frequency")
+            .addChoices(
+              { name: "Daily", value: "daily" },
+              { name: "Weekly", value: "weekly" },
+              { name: "Monthly", value: "monthly" }
+            )
+            .setRequired(false)
+        )
+        .addIntegerOption((option) =>
+          option
+            .setName("dayofweek")
+            .setDescription("Day of week (0 = Sunday, 6 = Saturday, for weekly)")
+            .setRequired(false)
+        )
+        .addIntegerOption((option) =>
+          option
+            .setName("dayofmonth")
+            .setDescription("Day of month (1-31, for monthly)")
+            .setRequired(false)
+        )
+        .addStringOption((option) =>
+          option
             .setName("text")
             .setDescription("Reminder message (optional)")
             .setRequired(false)
@@ -317,6 +382,29 @@ module.exports = {
             .setName("minute")
             .setDescription("New minute (0-59)")
             .setRequired(true)
+        )
+        .addStringOption((option) =>
+          option
+            .setName("frequency")
+            .setDescription("Recurrence frequency")
+            .addChoices(
+              { name: "Daily", value: "daily" },
+              { name: "Weekly", value: "weekly" },
+              { name: "Monthly", value: "monthly" }
+            )
+            .setRequired(false)
+        )
+        .addIntegerOption((option) =>
+          option
+            .setName("dayofweek")
+            .setDescription("Day of week (0 = Sunday, 6 = Saturday, for weekly)")
+            .setRequired(false)
+        )
+        .addIntegerOption((option) =>
+          option
+            .setName("dayofmonth")
+            .setDescription("Day of month (1-31, for monthly)")
+            .setRequired(false)
         )
     )
     // --- CHANNEL ---
@@ -414,6 +502,23 @@ module.exports = {
       const minute = interaction.options.getInteger("minute");
       const text =
         interaction.options.getString("text") || "This is your reminder!";
+      const frequency = interaction.options.getString("frequency") || "daily";
+      const dayOfWeek = interaction.options.getInteger("dayofweek");
+      const dayOfMonth = interaction.options.getInteger("dayofmonth");
+
+      if (frequency === "weekly" && (dayOfWeek === null || dayOfWeek < 0 || dayOfWeek > 6)) {
+        return interaction.reply({
+          content: "For weekly reminders, you must provide a valid dayofweek (0 = Sunday, 6 = Saturday).",
+          ephemeral: false,
+        });
+      }
+
+      if (frequency === "monthly" && (dayOfMonth === null || dayOfMonth < 1 || dayOfMonth > 31)) {
+        return interaction.reply({
+          content: "For monthly reminders, you must provide a valid dayofmonth (1-31).",
+          ephemeral: false,
+        });
+      }
 
       let zone = "America/Chicago"; // Default zone
       // Attempt to get user's zone from an existing reminder in the current context (guild or DM)
@@ -442,8 +547,13 @@ module.exports = {
         minute,
         text,
         zone,
+        frequency,
+        dayOfWeek: frequency === "weekly" ? dayOfWeek : null,
+        dayOfMonth: frequency === "monthly" ? dayOfMonth : null,
       });
       scheduleReminder(client, newReminder);
+
+      const weekdayNames = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
 
       const embed = new EmbedBuilder()
         .setColor(0x993377)
@@ -453,12 +563,17 @@ module.exports = {
             .toString()
             .padStart(2, "0")}:${minute
             .toString()
-            .padStart(
-              2,
-              "0"
-            )}** (Timezone: ${zone}).\nMessage: "${text}"\nContext: ${
-            guildId ? "This Server" : "DMs"
-          }`
+            .padStart(2, "0")}** (Timezone: ${zone})\n` +
+            `Frequency: **${frequency}**` +
+            (frequency === "weekly" && dayOfWeek !== null
+              ? ` (${weekdayNames[dayOfWeek]})`
+              : "") +
+            (frequency === "monthly" && dayOfMonth !== null
+              ? ` (Day ${dayOfMonth})`
+              : "") +
+            `\nMessage: "${text}"\nContext: ${
+              guildId ? "This Server" : "DMs"
+            }`
         );
       await interaction.reply({ embeds: [embed], ephemeral: false });
     } else if (sub === "list") {
@@ -476,12 +591,20 @@ module.exports = {
         return;
       }
 
+      const weekdayNames = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
       const embed = new EmbedBuilder().setColor(0x993377).setTitle(title);
       userReminders.forEach((r, i) => {
         embed.addFields({
           name: `#${i + 1}: ${r.hour.toString().padStart(2, "0")}:${r.minute
             .toString()
-            .padStart(2, "0")} (Zone: ${r.zone || "Not Set"})`,
+            .padStart(2, "0")} (${r.frequency || "daily"}` +
+            (r.frequency === "weekly" && r.dayOfWeek !== null
+              ? ` - ${weekdayNames[r.dayOfWeek]}`
+              : "") +
+            (r.frequency === "monthly" && r.dayOfMonth !== null
+              ? ` - Day ${r.dayOfMonth}`
+              : "") +
+            `, Zone: ${r.zone || "Not Set"})`,
           value:
             r.text.substring(0, 1020) + (r.text.length > 1020 ? "..." : ""), // Ensure value is not too long
         });
@@ -527,14 +650,77 @@ module.exports = {
       } else if (sub === "reschedule") {
         const newHour = interaction.options.getInteger("hour");
         const newMinute = interaction.options.getInteger("minute");
+        const newFrequency =
+          interaction.options.getString("frequency") ||
+          reminderToModify.frequency ||
+          "daily";
+        const newDayOfWeek = interaction.options.getInteger("dayofweek");
+        const newDayOfMonth = interaction.options.getInteger("dayofmonth");
+
+        if (
+          newFrequency === "weekly" &&
+          ((newDayOfWeek === null && reminderToModify.dayOfWeek === null) ||
+            (newDayOfWeek !== null && (newDayOfWeek < 0 || newDayOfWeek > 6)))
+        ) {
+          return interaction.reply({
+            content:
+              "For weekly reminders, you must provide a valid dayofweek (0 = Sunday, 6 = Saturday).",
+            ephemeral: false,
+          });
+        }
+
+        if (
+          newFrequency === "monthly" &&
+          ((newDayOfMonth === null && reminderToModify.dayOfMonth === null) ||
+            (newDayOfMonth !== null && (newDayOfMonth < 1 || newDayOfMonth > 31)))
+        ) {
+          return interaction.reply({
+            content:
+              "For monthly reminders, you must provide a valid dayofmonth (1-31).",
+            ephemeral: false,
+          });
+        }
+
         reminderToModify.hour = newHour;
         reminderToModify.minute = newMinute;
+        reminderToModify.frequency = newFrequency;
+        reminderToModify.dayOfWeek =
+          newFrequency === "weekly"
+            ? (newDayOfWeek !== null ? newDayOfWeek : reminderToModify.dayOfWeek)
+            : null;
+        reminderToModify.dayOfMonth =
+          newFrequency === "monthly"
+            ? (newDayOfMonth !== null
+                ? newDayOfMonth
+                : reminderToModify.dayOfMonth)
+            : null;
+
         await reminderToModify.save();
         scheduleReminder(client, reminderToModify);
+
+        const weekdayNames = [
+          "Sunday",
+          "Monday",
+          "Tuesday",
+          "Wednesday",
+          "Thursday",
+          "Friday",
+          "Saturday",
+        ];
+
         await interaction.reply({
-          content: `Reminder #${index + 1} rescheduled to ${String(
-            newHour
-          ).padStart(2, "0")}:${String(newMinute).padStart(2, "0")}.`,
+          content:
+            `Reminder #${index + 1} rescheduled to ${String(newHour).padStart(
+              2,
+              "0"
+            )}:${String(newMinute).padStart(2, "0")} (${newFrequency}` +
+            (newFrequency === "weekly" && reminderToModify.dayOfWeek !== null
+              ? ` - ${weekdayNames[reminderToModify.dayOfWeek]}`
+              : "") +
+            (newFrequency === "monthly" && reminderToModify.dayOfMonth !== null
+              ? ` - Day ${reminderToModify.dayOfMonth}`
+              : "") +
+            `).`,
           ephemeral: false,
         });
       }
