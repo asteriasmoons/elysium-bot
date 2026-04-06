@@ -681,26 +681,39 @@ module.exports = {
           })
         );
 
-      session.status = "finished";
-      session.endedAt = new Date();
-      await session.save();
-      const buddy = session.participants.find((p) => p.userId !== userId);
-      if (buddy) {
-        try {
-          const buddyUser = await interaction.client.users.fetch(buddy.userId);
-          await buddyUser.send(
-            `<a:noyes1:1339800615622152237> Your BuddyRead session for **${session.book}** has been marked as **finished** by your buddy (${interaction.user.tag}).`
-          );
-        } catch (e) {}
-      }
-      await interaction.reply(
-        buildEmbed({
-          title: "<:lbolt2:1307190732863311902> Session Finished!",
-          description: `Marked your BuddyRead session for **${session.book}** as finished!`,
-          footer: "Congratulations on finishing your book!",
-        })
-      );
-      return;
+              session.status = "finished";
+              session.endedAt = new Date();
+              await session.save();
+
+              const buddy = session.participants.find(
+                (p) => p.userId !== userId,
+              );
+              if (buddy) {
+                try {
+                  const buddyUser = await interaction.client.users.fetch(
+                    buddy.userId,
+                  );
+                  await buddyUser.send({
+                    embeds: [
+                      buildEmbed({
+                        title:
+                          "<:zxblt:1370269490885034095> BuddyRead Finished",
+                        description: `Your BuddyRead session for **${session.book}** has been marked as **finished** by your buddy **${interaction.user.tag}**.`,
+                        footer: "Hope you enjoyed reading together!",
+                      }),
+                    ],
+                  });
+                } catch (e) {}
+              }
+
+              await interaction.reply(
+                buildEmbed({
+                  title: "<:zxblt:1370269490885034095> Session Finished!",
+                  description: `Marked your BuddyRead session for **${session.book}** as finished!`,
+                  footer: "Congratulations on finishing your book!",
+                }),
+              );
+              return;
     }
 
     // ========== LEAVE ==========
