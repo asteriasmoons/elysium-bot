@@ -684,7 +684,6 @@ module.exports = {
               session.status = "finished";
               session.endedAt = new Date();
               await session.save();
-
               const buddy = session.participants.find(
                 (p) => p.userId !== userId,
               );
@@ -693,19 +692,20 @@ module.exports = {
                   const buddyUser = await interaction.client.users.fetch(
                     buddy.userId,
                   );
-                  await buddyUser.send({
-                    embeds: [
-                      buildEmbed({
-                        title:
-                          "<:zxblt:1370269490885034095> BuddyRead Finished",
-                        description: `Your BuddyRead session for **${session.book}** has been marked as **finished** by your buddy **${interaction.user.tag}**.`,
-                        footer: "Hope you enjoyed reading together!",
-                      }),
-                    ],
-                  });
-                } catch (e) {}
+                  await buddyUser.send(
+                    buildEmbed({
+                      title: "<:zxblt:1370269490885034095> BuddyRead Finished",
+                      description: `Your BuddyRead session for **${session.book}** has been marked as **finished** by your buddy **${interaction.user.tag}**.`,
+                      footer: "Hope you enjoyed reading together!",
+                    }),
+                  );
+                } catch (e) {
+                  console.error(
+                    "Failed to DM buddy about finished session:",
+                    e,
+                  );
+                }
               }
-
               await interaction.reply(
                 buildEmbed({
                   title: "<:zxblt:1370269490885034095> Session Finished!",
