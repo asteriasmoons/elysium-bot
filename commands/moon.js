@@ -69,7 +69,7 @@ module.exports = {
 
       apiPhase = data.moon_phase || "Unknown Phase";
       phase = formatPhaseName(apiPhase); // Fix phase name
-      illumination = data.moon_illumination || null;
+      illumination = data.moon_illumination ?? null;
       sign = data.moon_zodiac_sign || null;
     } catch (err) {
       console.error(err);
@@ -78,14 +78,18 @@ module.exports = {
 
     const corr = moonCorrespondences[phase] || { keywords: "N/A", deity: "N/A", description: "No info available yet." };
     const fields = [
-      { name: "Keywords", value: corr.keywords, inline: true },
-      { name: "Deity", value: corr.deity, inline: true }
+      { name: "Keywords", value: corr.keywords, inline: false },
+      { name: "Deity", value: corr.deity, inline: false }
     ];
-    if (illumination) {
-      fields.push({ name: "Illumination", value: `${illumination}%`, inline: true });
+    if (illumination !== null && illumination !== undefined && illumination !== "") {
+      const illuminationValue = String(illumination).includes('%')
+        ? String(illumination)
+        : `${illumination}%`;
+
+      fields.push({ name: "Illumination", value: illuminationValue, inline: false });
     }
     if (sign) {
-      fields.push({ name: "Zodiac Sign", value: sign, inline: true });
+      fields.push({ name: "Zodiac Sign", value: sign, inline: false });
     }
 
     const embed = new EmbedBuilder()

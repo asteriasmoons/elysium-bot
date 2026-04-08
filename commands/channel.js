@@ -92,8 +92,10 @@ module.exports = {
       return;
     }
 
+    await interaction.deferReply();
+
     const guildId = interaction.guild.id;
-    const subcommandGroup = interaction.options.getSubcommandGroup(); // Get the subcommand group (e.g., 'set')
+    const subcommandGroup = interaction.options.getSubcommandGroup(false); // Get the subcommand group (e.g., 'set')
     const subcommand = interaction.options.getSubcommand(); // Get the subcommand (e.g., 'sprints', 'gifts', 'view', 'reset')
 
     // --- Handle 'set' subcommand group ---
@@ -104,14 +106,13 @@ module.exports = {
           PermissionsBitField.Flags.Administrator
         )
       ) {
-        return interaction.reply({
+        return interaction.editReply({
           embeds: [
             new EmbedBuilder()
               .setTitle("No Permission")
               .setDescription("Only admins can set designated channels.")
               .setColor("#4ac4d7"),
           ],
-          ephemeral: false,
         });
       }
 
@@ -141,23 +142,21 @@ module.exports = {
           }
         );
 
-        await interaction.reply({
+        await interaction.editReply({
           embeds: [
             new EmbedBuilder()
               .setTitle("Channel Set")
               .setDescription(successMessage)
               .setColor("#4ac4d7"),
           ],
-          ephemeral: false,
         });
       } catch (error) {
         console.error(
           `Error setting ${subcommand} channel for guild ${guildId}:`,
           error
         );
-        await interaction.reply({
+        await interaction.editReply({
           content: `There was an error setting the ${subcommand} channel.`,
-          ephemeral: false,
         });
       }
     }
@@ -195,12 +194,11 @@ module.exports = {
           );
         }
 
-        await interaction.reply({ embeds: [embed] });
+        await interaction.editReply({ embeds: [embed] });
       } catch (error) {
         console.error(`Error viewing channels for guild ${guildId}:`, error);
-        await interaction.reply({
+        await interaction.editReply({
           content: "There was an error fetching channel settings.",
-          ephemeral: false,
         });
       }
     }
@@ -212,14 +210,13 @@ module.exports = {
           PermissionsBitField.Flags.Administrator
         )
       ) {
-        return interaction.reply({
+        return interaction.editReply({
           embeds: [
             new EmbedBuilder()
               .setTitle("No Permission")
               .setDescription("Only admins can reset designated channels.")
               .setColor("#4ac4d7"),
           ],
-          ephemeral: false,
         });
       }
 
@@ -254,14 +251,13 @@ module.exports = {
           }
         );
 
-        await interaction.reply({
+        await interaction.editReply({
           embeds: [
             new EmbedBuilder()
               .setTitle("Channel Reset")
               .setDescription(successMessage)
               .setColor("#4ac4d7"),
           ],
-          ephemeral: false,
         });
       } catch (error) {
         console.error(
@@ -270,9 +266,8 @@ module.exports = {
           } channels for guild ${guildId}:`,
           error
         );
-        await interaction.reply({
+        await interaction.editReply({
           content: `There was an error resetting channel settings.`,
-          ephemeral: false,
         });
       }
     }
