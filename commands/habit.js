@@ -14,6 +14,18 @@ const {
 } = require("../habitScheduler");
 const User = require("../models/User");
 
+const TEAL = "#4ac4d7";
+
+function createEmbed(title, description, footer = null) {
+  const embed = new EmbedBuilder()
+    .setTitle(title)
+    .setDescription(description)
+    .setColor(TEAL);
+
+  if (footer) embed.setFooter({ text: footer });
+  return embed;
+}
+
 // Helper: converts Luxon's weekday (1=Monday...7=Sunday) to weekday string
 const daysOfWeek = [
   "Sunday",
@@ -157,14 +169,10 @@ module.exports = {
 
     // === /habit add ===
     if (subcommand === "add") {
-      const embed = new EmbedBuilder()
-        .setTitle(
-          "<:pcht2:1391606107885277275> Add a Habit Reminder <:pcht2:1391606107885277275>"
-        )
-        .setDescription(
-          `Hey ${interaction.user.toString()} habits are great ways to build consistency in your life. I'm super proud of you for wanting to build some routine in your life. Choose your habit frequency to get started:`
-        )
-        .setColor(0x663399);
+      const embed = createEmbed(
+        "<:pcht1:1391606087245103225> Add a Habit Reminder <:pcht1:1391606087245103225>",
+        `Hey ${interaction.user.toString()} habits are great ways to build consistency in your life. I'm super proud of you for wanting to build some routine in your life. Choose your habit frequency to get started:`,
+      );
 
       const row = new ActionRowBuilder().addComponents(
         new ButtonBuilder()
@@ -189,28 +197,25 @@ module.exports = {
       const habits = await Habit.find({ userId: interaction.user.id });
       if (!habits.length) {
         return interaction.reply({
-          content: "You have no scheduled habits.",
-          ephemeral: false,
+          embeds: [createEmbed("No Habits", "You have no scheduled habits.")],
         });
       }
 
-      const embed = new EmbedBuilder()
-        .setTitle("<:pcht2:1391606107885277275> Scheduled Habits")
-        .setColor(0x663399)
-        .setDescription(
-          habits
-            .map(
-              (h) =>
-                `**${h.name}**\n${
-                  h.description || "_No description_"
-                }\n**Frequency:** ${h.frequency}` +
-                (h.frequency === "weekly" && h.dayOfWeek
-                  ? ` on ${h.dayOfWeek}`
-                  : "") +
-                ` at ${h.hour}:${h.minute.toString().padStart(2, "0")}`
-            )
-            .join("\n\n")
-        );
+      const embed = createEmbed(
+        "<:pcht1:1391606087245103225> Scheduled Habits",
+        habits
+          .map(
+            (h) =>
+              `**${h.name}**\n${
+                h.description || "_No description_"
+              }\n**Frequency:** ${h.frequency}` +
+              (h.frequency === "weekly" && h.dayOfWeek
+                ? ` on ${h.dayOfWeek}`
+                : "") +
+              ` at ${h.hour}:${h.minute.toString().padStart(2, "0")}`,
+          )
+          .join("\n\n"),
+      );
 
       return interaction.reply({
         embeds: [embed],
@@ -230,8 +235,7 @@ module.exports = {
 
       if (!habit) {
         return interaction.reply({
-          content: `No habit found called "${name}".`,
-          ephemeral: false,
+          embeds: [createEmbed("Habit Not Found", `No habit found called "${name}".`)],
         });
       }
 
@@ -239,8 +243,7 @@ module.exports = {
       cancelHabitReminder(habit._id.toString());
 
       return interaction.reply({
-        content: `Habit "${habit.name}" has been removed and its reminder canceled.`,
-        ephemeral: false,
+        embeds: [createEmbed("Habit Removed", `Habit "${habit.name}" has been removed and its reminder canceled.`)],
       });
     }
 
@@ -254,8 +257,7 @@ module.exports = {
 
       if (!habit) {
         return interaction.reply({
-          content: `No habit found called "${name}".`,
-          ephemeral: false,
+          embeds: [createEmbed("Habit Not Found", `No habit found called "${name}".`)],
         });
       }
 
@@ -274,7 +276,7 @@ module.exports = {
       // Format and send the embed
       const embed = new EmbedBuilder()
         .setTitle(`Habit Statistics ${habit.name}`)
-        .setColor(0x663399)
+        .setColor(TEAL)
         .setDescription(
           `**Description:** ${habit.description || "_No description_"}\n` +
             `**Frequency:** \`${habit.frequency}\`` +
@@ -303,11 +305,11 @@ module.exports = {
       let xp = 0;
       if (user && user.xp) xp = user.xp;
 
-      const embed = new EmbedBuilder()
-        .setTitle("Your Habit XP")
-        .setDescription(`You have **${xp} XP** from completing habits!`)
-        .setColor(0x663399)
-        .setFooter({ text: "Keep up the good work!" });
+      const embed = createEmbed(
+        "Your Habit XP",
+        `You have **${xp} XP** from completing habits!`,
+        "Keep up the good work!"
+      );
 
       return interaction.reply({ embeds: [embed], ephemeral: false });
     }
@@ -328,8 +330,7 @@ module.exports = {
 
       if (!habit) {
         return interaction.reply({
-          content: `No habit found called "${name}".`,
-          ephemeral: false,
+          embeds: [createEmbed("Habit Not Found", `No habit found called "${name}".`)],
         });
       }
 
@@ -343,12 +344,14 @@ module.exports = {
       scheduleHabitReminder(interaction.client, habit);
 
       return interaction.reply({
-        content: `Habit "${habit.name}" rescheduled to ${String(
-          newHour
-        ).padStart(2, "0")}:${String(newMinute).padStart(2, "0")}${
-          newFrequency ? ` (${newFrequency})` : ""
-        }${newDayOfWeek ? ` on ${newDayOfWeek}` : ""}.`,
-        ephemeral: false,
+        embeds: [
+          createEmbed(
+            "Habit Rescheduled",
+            `Habit "${habit.name}" rescheduled to ${String(newHour).padStart(2, "0")}:${String(newMinute).padStart(2, "0")}${
+              newFrequency ? ` (${newFrequency})` : ""
+            }${newDayOfWeek ? ` on ${newDayOfWeek}` : ""}.`
+          ),
+        ],
       });
     }
   },
