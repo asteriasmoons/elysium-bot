@@ -1,4 +1,6 @@
+
 require("dotenv").config();
+const express = require("express");
 
 const mongoose = require("mongoose");
 const fs = require("node:fs");
@@ -39,6 +41,7 @@ const sprintState = {
 };
 
 const reminders = require("./commands/reminders.js");
+const sendEmbedRoute = require("./routes/api/sendEmbed");
 
 const client = new Client({
   intents: [
@@ -49,6 +52,17 @@ const client = new Client({
     GatewayIntentBits.GuildMessageTyping,
     GatewayIntentBits.GuildMembers,
   ],
+});
+
+const app = express();
+const PORT = Number(process.env.PORT || 3000);
+
+app.use(express.json());
+app.set("discordClient", client);
+app.use("/", sendEmbedRoute);
+
+app.get("/", (_req, res) => {
+  res.status(200).json({ ok: true, service: "elysium-bot" });
 });
 client.sprintTimeouts = new Map();
 client.sprintState = sprintState;
@@ -99,6 +113,11 @@ client.once("ready", async () => {
   require("./agendaJobs")(agenda, client);
   await agenda.start();
   await agenda.purge();
+});
+
+
+app.listen(PORT, () => {
+  console.log(`API server listening on port ${PORT}`);
 });
 
 client.login(process.env.BOT_TOKEN);
