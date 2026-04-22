@@ -1,4 +1,5 @@
 const express = require("express");
+const { ChannelType } = require("discord.js");
 
 const router = express.Router();
 
@@ -11,7 +12,7 @@ router.post("/send-embed", async (req, res) => {
       return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const { guildId, channelId, embed } = req.body ?? {};
+    const { guildId, channelId, embed, content } = req.body ?? {};
 
     if (!guildId || !channelId || !embed) {
       return res.status(400).json({
@@ -43,17 +44,35 @@ router.post("/send-embed", async (req, res) => {
       });
     }
 
-    if (!channel.isTextBased || !channel.isTextBased()) {
-      return res.status(400).json({
-        error: "Channel is not text-based",
+    // --- NORMAL TEXT CHANNEL ---
+    if (channel.isTextBased && channel.isTextBased() && channel.type !== ChannelType.GuildForum) {
+      await channel.send({
+        content: content || undefined,
+        embeds: [embed],
+      });
+
+      return res.json({ success: true });
+    }
+
+    // --- FORUM CHANNEL ---
+    if (channel.type === ChannelType.GuildForum) {
+      const thread = await channel.threads.create({
+        name: embed.title || "New Post",
+        message: {
+          content: content || undefined,
+          embeds: [embed],
+        },
+      });
+
+      return res.json({
+        success: true,
+        threadId: thread.id,
       });
     }
 
-    await channel.send({
-      embeds: [embed],
+    return res.status(400).json({
+      error: "Unsupported channel type",
     });
-
-    return res.json({ success: true });
   } catch (error) {
     console.error("send-embed route error:", error);
 
