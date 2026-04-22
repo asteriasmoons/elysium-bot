@@ -1,4 +1,5 @@
 const express = require("express");
+const { ChannelType } = require("discord.js");
 
 const router = express.Router();
 
@@ -34,12 +35,12 @@ router.get("/guilds/:guildId/channels", async (req, res) => {
     const textChannels = Array.from(channels.values())
       .filter((channel) => {
         if (!channel) return false;
-        if (typeof channel.isTextBased !== "function") return false;
-        if (!channel.isTextBased()) return false;
-        if ("isDMBased" in channel && typeof channel.isDMBased === "function") {
-          if (channel.isDMBased()) return false;
-        }
-        return true;
+
+        return [
+          ChannelType.GuildText,
+          ChannelType.GuildAnnouncement,
+          ChannelType.GuildForum,
+        ].includes(channel.type);
       })
       .map((channel) => ({
         id: channel.id,
