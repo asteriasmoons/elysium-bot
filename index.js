@@ -42,6 +42,7 @@ const sprintState = {
 
 const reminders = require("./commands/reminders.js");
 const sendEmbedRoute = require("./routes/api/sendEmbed");
+const guildChannelsRoute = require("./routes/api/guildChannels");
 
 const client = new Client({
   intents: [
@@ -60,6 +61,7 @@ const PORT = Number(process.env.PORT || 3000);
 app.use(express.json());
 app.set("discordClient", client);
 app.use("/", sendEmbedRoute);
+app.use("/", guildChannelsRoute);
 
 app.get("/", (_req, res) => {
   res.status(200).json({ ok: true, service: "elysium-bot" });
