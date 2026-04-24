@@ -7,6 +7,9 @@ const handleEmbedEditorButtons = require("../handlers/embedEditorButtonHandler")
 const handleEmbedEditorModal = require("../handlers/embedEditorModalHandler");
 const handleHabitCreateModal = require("../handlers/habitCreateModalHandler");
 const handleEmbedQuickPreview = require("../handlers/embedQuickPreviewHandler");
+const handleTicketPanelButtons = require("../handlers/ticketPanelButtonHandler");
+const handleTicketOpen = require("../handlers/ticketOpenHandler");
+const handleTicketControls = require("../handlers/ticketControlHandler");
 const { agenda } = require("../index");
 
 module.exports = {
@@ -67,6 +70,46 @@ module.exports = {
       interaction.customId?.startsWith("eqcancel:")
     ) {
       return handleEmbedQuickPreview(interaction);
+    }
+
+    // --- TICKET PANEL BUTTON ROUTER ---
+    if (
+      interaction.customId?.startsWith("ticketpanel_toggle_transcript:") ||
+      interaction.customId?.startsWith("ticketpanel_publish_preview:") ||
+      interaction.customId?.startsWith("ticketpanel_edit_greeting_embed:") ||
+      interaction.customId?.startsWith("greeting_edit_embed_basic:") ||
+      interaction.customId?.startsWith("greeting_edit_embed_author:") ||
+      interaction.customId?.startsWith("greeting_edit_embed_footer:") ||
+      interaction.customId?.startsWith("greeting_edit_embed_images:") ||
+      interaction.customId?.startsWith("ticketpanel_edit_embed_basic:") ||
+      interaction.customId?.startsWith("ticketpanel_edit_embed_author:") ||
+      interaction.customId?.startsWith("ticketpanel_edit_embed_footer:") ||
+      interaction.customId?.startsWith("ticketpanel_edit_embed_images:") ||
+      interaction.customId?.startsWith("ticketpanel_set_emoji:")
+    ) {
+      return handleTicketPanelButtons(interaction);
+    }
+
+    // --- TICKET OPEN ROUTER ---
+    if (
+      interaction.customId?.startsWith("open_ticket_modal:") ||
+      interaction.customId?.startsWith("ticket_modal_submit:")
+    ) {
+      return handleTicketOpen(interaction);
+    }
+
+    // --- TICKET CONTROL ROUTER ---
+    if (
+      interaction.customId === "ticket_claim" ||
+      interaction.customId === "ticket_close" ||
+      interaction.customId === "ticket_close_cancel" ||
+      interaction.customId === "ticket_close_confirm" ||
+      interaction.customId === "ticket_delete" ||
+      interaction.customId === "ticket_delete_confirm" ||
+      interaction.customId === "ticket_delete_cancel" ||
+      interaction.customId === "ticket_close_reason_modal"
+    ) {
+      return handleTicketControls(interaction);
     }
 
     // --- SLASH COMMAND HANDLER ---
