@@ -24,7 +24,7 @@ router.post("/send", async (req, res) => {
       });
     }
 
-    const client = req.app.get("client"); // your discord client
+    const client = req.app.get("discordClient");
 
     if (!client) {
       return res.status(500).json({
