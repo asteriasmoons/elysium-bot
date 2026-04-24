@@ -8,10 +8,7 @@ const {
 const BuddyReadAnnouncement = require("../models/BuddyReadAnnouncement");
 const BuddyReadSession = require("../models/BuddyReadSession");
 const BuddyReadMessage = require("../models/BuddyReadMessage");
-
-function normalizeBookTitle(book) {
-  return book.trim().toLowerCase();
-}
+const { normalizeBookTitle } = require("../utils/bookUtils");
 
 module.exports = {
   data: new SlashCommandBuilder()
