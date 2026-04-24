@@ -23,27 +23,38 @@ async function sendTicketPanel({ panel, channel }) {
   const row = new ActionRowBuilder().addComponents(button);
 
   // --- Embed ---
-  const embed = new EmbedBuilder({
-    title: panel.embed?.title || "Need Help?",
-    description:
+  const embed = new EmbedBuilder()
+    .setTitle(panel.embed?.title || "Need Help?")
+    .setDescription(
       panel.embed?.description || "Click the button below to open a ticket.",
-    color: panel.embed?.color || "#5103aa",
-    author: panel.embed?.author?.name
-      ? {
-          name: panel.embed.author.name,
-          icon_url: panel.embed.author.icon_url || undefined,
-        }
-      : undefined,
-    footer: panel.embed?.footer?.text
-      ? {
-          text: panel.embed.footer.text,
-          icon_url: panel.embed.footer.icon_url || undefined,
-        }
-      : undefined,
-    thumbnail: panel.embed?.thumbnail || undefined,
-    image: panel.embed?.image || undefined,
-    timestamp: panel.embed?.footer?.timestamp ? new Date() : undefined,
-  });
+    )
+    .setColor(panel.embed?.color || "#5103aa");
+
+  if (panel.embed?.author?.name) {
+    embed.setAuthor({
+      name: panel.embed.author.name,
+      iconURL: panel.embed.author.icon_url || undefined,
+    });
+  }
+
+  if (panel.embed?.footer?.text) {
+    embed.setFooter({
+      text: panel.embed.footer.text,
+      iconURL: panel.embed.footer.icon_url || undefined,
+    });
+  }
+
+  if (panel.embed?.thumbnail) {
+    embed.setThumbnail(panel.embed.thumbnail);
+  }
+
+  if (panel.embed?.image) {
+    embed.setImage(panel.embed.image);
+  }
+
+  if (panel.embed?.footer?.timestamp) {
+    embed.setTimestamp(new Date());
+  }
 
   // --- Send ---
   return channel.send({
