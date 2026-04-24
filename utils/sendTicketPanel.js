@@ -6,11 +6,14 @@ const {
 } = require("discord.js");
 
 function cleanString(value) {
-  const trimmed = String(value ?? "")
-    .replace(/[\u200B-\u200D\uFEFF]/g, "")
+  const cleaned = String(value ?? "")
+    .replace(/\r\n/g, "\n")
+    .replace(/\r/g, "\n")
+    .replace(/[\u200B\u200C\u200D\uFEFF]/g, "")
+    .replace(/\n{3,}/g, "\n\n")
     .trim();
 
-  return trimmed || null;
+  return cleaned || null;
 }
 
 function cleanUrl(value) {
