@@ -44,6 +44,7 @@ const reminders = require("./commands/reminders.js");
 const sendEmbedRoute = require("./routes/api/sendEmbed");
 const guildChannelsRoute = require("./routes/api/guildChannels");
 const ticketPanelRoute = require("./routes/ticketpanel/send");
+const guildRolesRoute = require("./routes/api/guildRoles");
 
 const client = new Client({
   intents: [
@@ -63,6 +64,7 @@ app.use(express.json());
 app.set("discordClient", client);
 app.use("/", sendEmbedRoute);
 app.use("/", guildChannelsRoute);
+app.use("/", guildRolesRoute);
 app.use("/api/ticketpanel", ticketPanelRoute);
 
 app.get("/", (_req, res) => {

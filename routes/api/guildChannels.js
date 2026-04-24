@@ -32,7 +32,7 @@ router.get("/guilds/:guildId/channels", async (req, res) => {
 
     const channels = await guild.channels.fetch();
 
-    const textChannels = Array.from(channels.values())
+    const guildChannels = Array.from(channels.values())
       .filter((channel) => {
         if (!channel) return false;
 
@@ -40,6 +40,7 @@ router.get("/guilds/:guildId/channels", async (req, res) => {
           ChannelType.GuildText,
           ChannelType.GuildAnnouncement,
           ChannelType.GuildForum,
+          ChannelType.GuildCategory,
         ].includes(channel.type);
       })
       .map((channel) => ({
@@ -47,9 +48,12 @@ router.get("/guilds/:guildId/channels", async (req, res) => {
         name: channel.name ?? "unknown-channel",
         type: channel.type,
       }))
-      .sort((a, b) => a.name.localeCompare(b.name));
+      .sort((a, b) => {
+        if (a.type !== b.type) return a.type - b.type;
+        return a.name.localeCompare(b.name);
+      });
 
-    return res.json({ channels: textChannels });
+    return res.json({ channels: guildChannels });
   } catch (error) {
     console.error("guild channels route error:", error);
 
