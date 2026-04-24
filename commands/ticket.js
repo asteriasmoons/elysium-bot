@@ -1,13 +1,11 @@
 const {
   SlashCommandBuilder,
   PermissionFlagsBits,
-  ButtonBuilder,
-  ButtonStyle,
-  ActionRowBuilder,
   EmbedBuilder,
 } = require("discord.js");
 const TicketPanel = require("../models/TicketPanel");
 const { sendTicketPanelEditor } = require("../events/ticketPanelUi");
+const { sendTicketPanel } = require("../utils/sendTicketPanel");
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -237,40 +235,7 @@ module.exports = {
         });
       }
 
-      const button = new ButtonBuilder()
-        .setCustomId(`open_ticket_modal:${panel.panelName}`)
-        .setLabel(panel.buttonLabel || "Open Ticket")
-        .setStyle(ButtonStyle.Secondary);
-
-      if (panel.emoji) button.setEmoji(panel.emoji);
-
-      const row = new ActionRowBuilder().addComponents(button);
-
-      // --- Build Embed using all custom fields (direct from schema) ---
-      const embed = new EmbedBuilder({
-        title: panel.embed?.title || "Need Help?",
-        description:
-          panel.embed?.description ||
-          "Click the button below to open a ticket.",
-        color: panel.embed?.color || "#5103aa",
-        author: panel.embed?.author?.name
-          ? {
-              name: panel.embed.author.name,
-              icon_url: panel.embed.author.icon_url || undefined,
-            }
-          : undefined,
-        footer: panel.embed?.footer?.text
-          ? {
-              text: panel.embed.footer.text,
-              icon_url: panel.embed.footer.icon_url || undefined,
-            }
-          : undefined,
-        thumbnail: panel.embed?.thumbnail || undefined,
-        image: panel.embed?.image || undefined,
-        timestamp: panel.embed?.footer?.timestamp ? new Date() : undefined,
-      });
-
-      await channel.send({ embeds: [embed], components: [row] });
+      await sendTicketPanel({ panel, channel });
 
       return interaction.reply({
         content: `Ticket panel \`${name}\` has been posted to <#${channel.id}>.`,
