@@ -6,7 +6,10 @@ const {
 } = require("discord.js");
 
 function cleanString(value) {
-  const trimmed = String(value ?? "").trim();
+  const trimmed = String(value ?? "")
+    .replace(/[\u200B-\u200D\uFEFF]/g, "")
+    .trim();
+
   return trimmed || null;
 }
 
