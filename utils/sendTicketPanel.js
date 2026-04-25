@@ -7,6 +7,8 @@ const {
 
 function cleanString(value) {
   const cleaned = String(value ?? "")
+    .replace(/\\r\\n/g, "\n")
+    .replace(/\\n/g, "\n")
     .replace(/\r\n/g, "\n")
     .replace(/\r/g, "\n")
     .replace(/[\u200B\u200C\u200D\uFEFF]/g, "")
