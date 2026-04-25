@@ -4,12 +4,6 @@ const router = express.Router();
 
 router.get("/guilds/:guildId/roles", async (req, res) => {
   try {
-    const authHeader = req.headers.authorization || "";
-    const expected = `Bearer ${process.env.BOT_API_KEY}`;
-
-    if (authHeader !== expected) {
-      return res.status(401).json({ error: "Unauthorized" });
-    }
 
     const guildId = String(req.params.guildId || "").trim();
 
