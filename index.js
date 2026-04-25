@@ -45,7 +45,7 @@ const sendEmbedRoute = require("./routes/api/sendEmbed");
 const guildChannelsRoute = require("./routes/api/guildChannels");
 const ticketPanelRoute = require("./routes/ticketpanel/send");
 const guildRolesRoute = require("./routes/api/guildRoles");
-const rolePanelSendRoute = require("./routes/rolepanel/send");
+const rolePanelSendRoute = require("./routes/role-panel/send");
 
 const client = new Client({
   intents: [
