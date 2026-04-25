@@ -24,13 +24,13 @@ router.get("/guilds/:guildId/channels", async (req, res) => {
       return res.status(500).json({ error: "Discord client not available" });
     }
 
-    const guild = await client.guilds.fetch({ guild: guildId, force: true }).catch(() => null);
+    const guild = await client.guilds.fetch(guildId).catch(() => null);
 
     if (!guild) {
       return res.status(404).json({ error: "Guild not found" });
     }
 
-    const channels = await guild.channels.fetch({ force: true });
+    const channels = await guild.channels.fetch();
 
     const guildChannels = Array.from(channels.values())
       .filter((channel) => {

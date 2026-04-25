@@ -23,13 +23,13 @@ router.get("/guilds/:guildId/roles", async (req, res) => {
       return res.status(500).json({ error: "Discord client not available" });
     }
 
-    const guild = await client.guilds.fetch({ guild: guildId, force: true }).catch(() => null);
+    const guild = await client.guilds.fetch(guildId).catch(() => null);
 
     if (!guild) {
       return res.status(404).json({ error: "Guild not found" });
     }
 
-    const roles = await guild.roles.fetch({ force: true });
+    const roles = await guild.roles.fetch();
 
     const guildRoles = Array.from(roles.values())
       .filter((role) => {
