@@ -3,6 +3,8 @@ const { EmbedBuilder } = require("discord.js");
 const BuddyReadSession = require("../models/BuddyReadSession");
 const BuddyReadMessage = require("../models/BuddyReadMessage");
 const ThreadEmbed = require("../models/ThreadEmbed");
+const AfkStatus = require("../models/AfkStatus");
+const AfkConfig = require("../models/AfkConfig");
 
 // List of allowed channel IDs (edit these!)
 const ALLOWED_CHANNELS = [
@@ -31,6 +33,84 @@ module.exports = {
   async execute(message) {
     // Ignore bot messages
     if (message.author.bot) return;
+
+    // --- AFK LOGIC ---
+    if (message.guildId) {
+      const afkConfig = await AfkConfig.findOne({ guildId: message.guildId });
+      const noMessageReset = afkConfig?.noMessageReset || false;
+
+      const afkStatus = await AfkStatus.findOne({
+        userId: message.author.id,
+        guildId: message.guildId,
+      });
+
+      if (afkStatus && !noMessageReset) {
+        await AfkStatus.deleteOne({
+          userId: message.author.id,
+          guildId: message.guildId,
+        });
+
+        const clearedEmbed = new EmbedBuilder()
+          .setDescription("Your AFK status has been removed.")
+          .setColor("#58b2f2");
+
+        try {
+          await message.reply({ embeds: [clearedEmbed] });
+        } catch (e) {}
+      }
+    }
+
+    if (message.guildId) {
+      const afkUserIds = new Set();
+
+      if (message.mentions.users.size > 0) {
+        message.mentions.users.forEach((user) => afkUserIds.add(user.id));
+      }
+
+      if (message.reference && message.reference.messageId) {
+        try {
+          const repliedMsg = await message.channel.messages.fetch(
+            message.reference.messageId
+          );
+
+          if (
+            repliedMsg &&
+            repliedMsg.author &&
+            !afkUserIds.has(repliedMsg.author.id)
+          ) {
+            afkUserIds.add(repliedMsg.author.id);
+          }
+        } catch (e) {}
+      }
+
+      for (const userId of afkUserIds) {
+        const afkStatus = await AfkStatus.findOne({
+          userId,
+          guildId: message.guildId,
+        });
+
+        if (afkStatus) {
+          const member = await message.guild.members
+            .fetch(userId)
+            .catch(() => null);
+
+          const afkEmbed = new EmbedBuilder()
+            .setTitle("AFK Notice")
+            .setDescription(
+              `${member ? `<@${userId}>` : "This user"} is currently AFK.\n\n` +
+                `**Message:**\n${afkStatus.message}\n` +
+                `**Since:** <t:${Math.floor(
+                  new Date(afkStatus.since).getTime() / 1000
+                )}:R>`
+            )
+            .setColor("#58b2f2");
+
+          try {
+            await message.reply({ embeds: [afkEmbed] });
+          } catch (e) {}
+        }
+      }
+    }
 
     // --- DM RELAY LOGIC FOR BUDDYREADS ---
     if (!message.guild) {
