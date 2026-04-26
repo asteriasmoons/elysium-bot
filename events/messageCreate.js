@@ -4,6 +4,7 @@ const BuddyReadSession = require("../models/BuddyReadSession");
 const BuddyReadMessage = require("../models/BuddyReadMessage");
 const ThreadEmbed = require("../models/ThreadEmbed");
 const AfkStatus = require("../models/AfkStatus");
+const AfkConfig = require("../models/AfkConfig");
 
 // List of allowed channel IDs (edit these!)
 const ALLOWED_CHANNELS = [
@@ -34,54 +35,64 @@ module.exports = {
     if (message.author.bot) return;
 
 
+    // --- AFK LOGIC ---
     if (message.guildId) {
-      const afkUserIds = new Set();
+      const afkConfig = await AfkConfig.findOne({ guildId: message.guildId });
 
-      if (message.mentions.users.size > 0) {
-        message.mentions.users.forEach((user) => afkUserIds.add(user.id));
-      }
+      if (afkConfig?.enabled !== false) {
+        const afkUserIds = new Set();
 
-      if (message.reference && message.reference.messageId) {
-        try {
-          const repliedMsg = await message.channel.messages.fetch(
-            message.reference.messageId
-          );
+        if (message.mentions.users.size > 0) {
+          message.mentions.users.forEach((user) => afkUserIds.add(user.id));
+        }
 
-          if (
-            repliedMsg &&
-            repliedMsg.author &&
-            !afkUserIds.has(repliedMsg.author.id)
-          ) {
-            afkUserIds.add(repliedMsg.author.id);
-          }
-        } catch (e) {}
-      }
-
-      for (const userId of afkUserIds) {
-        const afkStatus = await AfkStatus.findOne({
-          userId,
-          guildId: message.guildId,
-        });
-
-        if (afkStatus) {
-          const member = await message.guild.members
-            .fetch(userId)
-            .catch(() => null);
-
-          const afkEmbed = new EmbedBuilder()
-            .setTitle("AFK Notice")
-            .setDescription(
-              `${member ? `<@${userId}>` : "This user"} is currently AFK.\n\n` +
-                `**Message:**\n${afkStatus.message}\n` +
-                `**Since:** <t:${Math.floor(
-                  new Date(afkStatus.since).getTime() / 1000
-                )}:R>`
-            )
-            .setColor("#58b2f2");
-
+        if (message.reference && message.reference.messageId) {
           try {
-            await message.reply({ embeds: [afkEmbed] });
+            const repliedMsg = await message.channel.messages.fetch(
+              message.reference.messageId
+            );
+
+            if (
+              repliedMsg &&
+              repliedMsg.author &&
+              !afkUserIds.has(repliedMsg.author.id)
+            ) {
+              afkUserIds.add(repliedMsg.author.id);
+            }
           } catch (e) {}
+        }
+
+        for (const userId of afkUserIds) {
+          const afkStatus = await AfkStatus.findOne({
+            userId,
+            guildId: message.guildId,
+          });
+
+          if (afkStatus) {
+            const member = await message.guild.members
+              .fetch(userId)
+              .catch(() => null);
+
+            const noticeTitle = afkConfig?.noticeTitle || "AFK Notice";
+            const noticeColor = afkConfig?.noticeColor || "#58b2f2";
+            const afkMessage =
+              afkConfig?.defaultMessage || afkStatus.message || "This user is currently AFK.";
+
+            const afkEmbed = new EmbedBuilder()
+              .setTitle(noticeTitle)
+              .setDescription(
+                `${member ? `<@${userId}>` : "This user"} is currently AFK.\n\n` +
+                  `**Message:**\n${afkMessage}\n` +
+                  `**Since:** <t:${Math.floor(
+                    new Date(afkStatus.since).getTime() / 1000
+                  )}:R>`
+              )
+              .setColor(noticeColor);
+
+            try {
+              await message.reply({ embeds: [afkEmbed] });
+            } catch (e) {}
+          }
         }
       }
     }
