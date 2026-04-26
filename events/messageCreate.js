@@ -4,7 +4,6 @@ const BuddyReadSession = require("../models/BuddyReadSession");
 const BuddyReadMessage = require("../models/BuddyReadMessage");
 const ThreadEmbed = require("../models/ThreadEmbed");
 const AfkStatus = require("../models/AfkStatus");
-const AfkConfig = require("../models/AfkConfig");
 
 // List of allowed channel IDs (edit these!)
 const ALLOWED_CHANNELS = [
@@ -34,31 +33,6 @@ module.exports = {
     // Ignore bot messages
     if (message.author.bot) return;
 
-    // --- AFK LOGIC ---
-    if (message.guildId) {
-      const afkConfig = await AfkConfig.findOne({ guildId: message.guildId });
-      const noMessageReset = afkConfig?.noMessageReset || false;
-
-      const afkStatus = await AfkStatus.findOne({
-        userId: message.author.id,
-        guildId: message.guildId,
-      });
-
-      if (afkStatus && !noMessageReset) {
-        await AfkStatus.deleteOne({
-          userId: message.author.id,
-          guildId: message.guildId,
-        });
-
-        const clearedEmbed = new EmbedBuilder()
-          .setDescription("Your AFK status has been removed.")
-          .setColor("#58b2f2");
-
-        try {
-          await message.reply({ embeds: [clearedEmbed] });
-        } catch (e) {}
-      }
-    }
 
     if (message.guildId) {
       const afkUserIds = new Set();
