@@ -1,6 +1,7 @@
 
 require("dotenv").config();
 const express = require("express");
+require("./server");
 
 const mongoose = require("mongoose");
 const fs = require("node:fs");
@@ -71,6 +72,12 @@ app.use("/api/rolepanel", rolePanelSendRoute);
 
 app.get("/", (_req, res) => {
   res.status(200).json({ ok: true, service: "elysium-bot" });
+});
+
+app.get("/invite", (_req, res) => {
+  res.redirect(
+    "https://discord.com/oauth2/authorize?client_id=1366843799451467797&scope=bot%20applications.commands&permissions=8"
+  );
 });
 client.sprintTimeouts = new Map();
 client.sprintState = sprintState;
