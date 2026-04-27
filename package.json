@@ -12,6 +12,7 @@
   "dependencies": {
     "agenda": "^5.0.0",
     "axios": "^1.9.0",
+    "chrono-node": "^2.9.0",
     "discord.js": "^14.19.2",
     "dotenv": "^16.5.0",
     "express": "^5.2.1",
