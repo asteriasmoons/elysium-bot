@@ -79,6 +79,7 @@ module.exports = function startReminderScheduler(client) {
       }
 
       // 8. Send if due
+      console.log(`[Reminders] Evaluating "${reminder.name}" | now=${nowUTC.toISO()} | nextFire=${nextTimeUtc.toISO()} | due=${nowUTC >= nextTimeUtc} | type=${reminder.type}`);
       if (nowUTC >= nextTimeUtc) {
         const embed = new EmbedBuilder()
           .setTitle(reminder.embedTitle || "Reminder!")
