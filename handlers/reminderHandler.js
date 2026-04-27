@@ -305,13 +305,20 @@ async function handleComponent(interaction, client) {
           ? { type: "dm", userId: setupObj.userId, name: setupObj.name }
           : { type: "guild", guildId: setupObj.guildId, name: setupObj.name };
 
-        await Reminder.findOneAndUpdate(
-          upsertQuery,
-          { $set: setupObj },
-          { upsert: true, new: true, runValidators: true }
-        );
+        const existing = await Reminder.findOne(upsertQuery);
+        if (existing) {
+          await Reminder.findOneAndUpdate(
+            upsertQuery,
+            { $set: setupObj },
+            { new: true, runValidators: true }
+          );
+        } else {
+          const doc = new Reminder(setupObj);
+          await doc.save();
+        }
         setupCache.delete(setupKey);
         console.log(`[Reminders] Saved reminder "${setupObj.name}" type=${setupObj.type} userId=${setupObj.userId ?? "n/a"}`);
+        await interaction.message.edit({ components: [] }).catch(() => {});
         return interaction.reply({
           content: `✅ Reminder **${setupObj.name}** saved!`,
           ephemeral: true,
