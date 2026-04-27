@@ -256,7 +256,11 @@ async function handleComponent(interaction, client) {
 
         setupCache.set(setupKey, setupObj);
         if (!isDM) await m.delete().catch(() => {});
-        await interaction.followUp(getSetupUI(setupObj));
+        if (isDM) {
+          await dmChannel.send(getSetupUI(setupObj));
+        } else {
+          await interaction.followUp(getSetupUI(setupObj));
+        }
       });
 
       collector.on("end", (collected, reason) => {
@@ -303,10 +307,11 @@ async function handleComponent(interaction, client) {
 
         await Reminder.findOneAndUpdate(
           upsertQuery,
-          setupObj,
-          { upsert: true, new: true }
+          { $set: setupObj },
+          { upsert: true, new: true, runValidators: true }
         );
         setupCache.delete(setupKey);
+        console.log(`[Reminders] Saved reminder "${setupObj.name}" type=${setupObj.type} userId=${setupObj.userId ?? "n/a"}`);
         return interaction.reply({
           content: `✅ Reminder **${setupObj.name}** saved!`,
           ephemeral: true,
