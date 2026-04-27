@@ -5,6 +5,7 @@ const BuddyReadMessage = require("../models/BuddyReadMessage");
 const ThreadEmbed = require("../models/ThreadEmbed");
 const AfkStatus = require("../models/AfkStatus");
 const AfkConfig = require("../models/AfkConfig");
+const StickyEmbed = require("../models/StickyEmbed");
 
 // List of allowed channel IDs (edit these!)
 const ALLOWED_CHANNELS = [
@@ -142,6 +143,41 @@ module.exports = {
       } else {
         // Only in one session, relay directly
         return relayMessage(sessions[0], message, message.content);
+      }
+    }
+
+    // --- STICKY EMBED LOGIC ---
+    if (message.guildId) {
+      const stickies = await StickyEmbed.find({
+        guildId: message.guildId,
+        "stickies.channelId": message.channel.id,
+      });
+
+      for (const sticky of stickies) {
+        const stickyInfo = sticky.stickies.find(
+          (s) => s.channelId === message.channel.id
+        );
+        if (stickyInfo && stickyInfo.messageId) {
+          try {
+            const oldMsg = await message.channel.messages.fetch(
+              stickyInfo.messageId
+            );
+            if (oldMsg) await oldMsg.delete();
+          } catch (e) {}
+        }
+
+        const embed = new EmbedBuilder()
+          .setTitle(sticky.embed.title)
+          .setDescription(sticky.embed.description)
+          .setColor(sticky.embed.color || "#5865F2");
+        const sentMsg = await message.channel.send({ embeds: [embed] });
+
+        sticky.stickies = sticky.stickies.map((s) =>
+          s.channelId === message.channel.id
+            ? { channelId: s.channelId, messageId: sentMsg.id }
+            : s
+        );
+        await sticky.save();
       }
     }
 
