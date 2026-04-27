@@ -33,12 +33,6 @@ module.exports = function startReminderScheduler(client) {
     }
 
     for (const reminder of reminders) {
-      // 1. Validate guild and channel still exist
-      const guild = client.guilds.cache.get(reminder.guildId);
-      if (!guild) continue;
-      const channel = guild.channels.cache.get(reminder.channelId);
-      if (!channel || !channel.isTextBased()) continue;
-
       // 2. Parse timezone (default to America/Chicago)
       const tz = reminder.timezone || "America/Chicago";
 
@@ -92,13 +86,63 @@ module.exports = function startReminderScheduler(client) {
           .setColor(reminder.embedColor || "#8757f2");
 
         try {
-          await channel.send({
-            content: reminder.ping || "",
-            embeds: [embed],
-          });
-          console.log(
-            `[Reminders] Sent reminder "${reminder.name}" in #${channel.name} (TZ: ${tz})`
-          );
+          if (reminder.type === "dm") {
+            if (!reminder.userId) {
+              console.warn(
+                `[Reminders] Skipping DM reminder "${reminder.name}" because userId is missing.`
+              );
+              continue;
+            }
+
+            const user = await client.users.fetch(reminder.userId).catch(() => null);
+
+            if (!user) {
+              console.warn(
+                `[Reminders] Skipping DM reminder "${reminder.name}" because user could not be fetched.`
+              );
+              continue;
+            }
+
+            await user.send({ embeds: [embed] });
+
+            console.log(
+              `[Reminders] Sent DM reminder "${reminder.name}" to user ${reminder.userId} (TZ: ${tz})`
+            );
+          } else {
+            if (!reminder.guildId || !reminder.channelId) {
+              console.warn(
+                `[Reminders] Skipping guild reminder "${reminder.name}" because guildId or channelId is missing.`
+              );
+              continue;
+            }
+
+            const guild = client.guilds.cache.get(reminder.guildId);
+
+            if (!guild) {
+              console.warn(
+                `[Reminders] Skipping guild reminder "${reminder.name}" because guild ${reminder.guildId} was not found.`
+              );
+              continue;
+            }
+
+            const channel = guild.channels.cache.get(reminder.channelId);
+
+            if (!channel || !channel.isTextBased()) {
+              console.warn(
+                `[Reminders] Skipping guild reminder "${reminder.name}" because channel ${reminder.channelId} was not found or is not text-based.`
+              );
+              continue;
+            }
+
+            await channel.send({
+              content: reminder.ping || "",
+              embeds: [embed],
+            });
+
+            console.log(
+              `[Reminders] Sent guild reminder "${reminder.name}" in #${channel.name} (TZ: ${tz})`
+            );
+          }
         } catch (sendErr) {
           console.error(
             `[Reminders] Could not send reminder "${reminder.name}":`,

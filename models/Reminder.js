@@ -3,28 +3,76 @@ const mongoose = require("mongoose");
 
 const ReminderSchema = new mongoose.Schema(
   {
-    guildId: { type: String, required: true },
+    type: {
+      type: String,
+      enum: ["guild", "dm"],
+      required: true,
+      default: "guild",
+    },
+
+    guildId: { type: String, default: null },
+    channelId: { type: String, default: null },
+    userId: { type: String, default: null },
+
     name: { type: String, required: true },
     creatorId: { type: String, required: true },
-    interval: { type: String, required: true }, // e.g., '1h', '12h', '1d'
-    startDate: { type: Date, required: true }, // When does the first reminder start?
-    ping: { type: String, default: "" }, // Role or user mention, or plain text
-    channelId: { type: String, required: true },
-    dayOfWeek: { type: String, default: null }, // e.g., 'Monday' (optional)
+    interval: { type: String, required: true },
+    startDate: { type: Date, required: true },
+    ping: { type: String, default: "" },
+    dayOfWeek: { type: String, default: null },
 
-    // Embed customization
     embedTitle: { type: String, default: "Reminder!" },
     embedDescription: { type: String, default: "" },
     embedColor: { type: String, default: "#8757f2" },
 
-    timezone: { type: String, default: "America/Chicago" }, // <--- NEW FIELD!
-
-    // For scheduling
+    timezone: { type: String, default: "America/Chicago" },
     lastSent: { type: Date, default: null },
   },
   { timestamps: true }
 );
 
-ReminderSchema.index({ guildId: 1, name: 1 }, { unique: true }); // Ensure names are unique per guild
+ReminderSchema.pre("validate", function (next) {
+  if (this.type === "guild") {
+    if (!this.guildId) {
+      return next(new Error("Guild reminders require guildId."));
+    }
+
+    if (!this.channelId) {
+      return next(new Error("Guild reminders require channelId."));
+    }
+
+    this.userId = null;
+    return next();
+  }
+
+  if (this.type === "dm") {
+    if (!this.userId) {
+      return next(new Error("DM reminders require userId."));
+    }
+
+    this.guildId = null;
+    this.channelId = null;
+    this.ping = "";
+    return next();
+  }
+
+  return next(new Error("Reminder type must be guild or dm."));
+});
+
+ReminderSchema.index(
+  { guildId: 1, name: 1 },
+  {
+    unique: true,
+    partialFilterExpression: { type: "guild", guildId: { $type: "string" } },
+  }
+);
+
+ReminderSchema.index(
+  { userId: 1, name: 1 },
+  {
+    unique: true,
+    partialFilterExpression: { type: "dm", userId: { $type: "string" } },
+  }
+);
 
 module.exports = mongoose.model("Reminder", ReminderSchema);

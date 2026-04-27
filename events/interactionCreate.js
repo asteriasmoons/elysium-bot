@@ -10,6 +10,7 @@ const handleEmbedQuickPreview = require("../handlers/embedQuickPreviewHandler");
 const handleTicketPanelButtons = require("../handlers/ticketPanelButtonHandler");
 const handleTicketOpen = require("../handlers/ticketOpenHandler");
 const handleTicketControls = require("../handlers/ticketControlHandler");
+const { handleComponent: handleReminderComponent } = require("../handlers/reminderHandler");
 const { agenda } = require("../index");
 
 module.exports = {
@@ -110,6 +111,14 @@ module.exports = {
       interaction.customId === "ticket_close_reason_modal"
     ) {
       return handleTicketControls(interaction);
+    }
+
+    // --- REMINDER COMPONENT ROUTER ---
+    if (
+      (interaction.isStringSelectMenu() || interaction.isButton()) &&
+      interaction.customId?.startsWith("reminder-")
+    ) {
+      return handleReminderComponent(interaction, client);
     }
 
     // --- SLASH COMMAND HANDLER ---
