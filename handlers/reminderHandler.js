@@ -186,10 +186,13 @@ async function handleComponent(interaction, client) {
             "What color should the embed be? (hex code, e.g. `#ffcc00`)";
       }
 
-      await interaction.reply({ content: prompt, ephemeral: true });
+      await interaction.reply({ content: prompt, ephemeral: !isDM });
 
-      const channel = await interaction.channel.fetch();
-      const collector = channel.createMessageCollector({
+      const dmChannel = isDM
+        ? await client.users.fetch(userId).then((u) => u.createDM())
+        : null;
+      const collectorChannel = dmChannel ?? interaction.channel;
+      const collector = collectorChannel.createMessageCollector({
         filter: (m) => m.author.id === interaction.user.id,
         max: 1,
         time: 60000,
@@ -252,7 +255,7 @@ async function handleComponent(interaction, client) {
         }
 
         setupCache.set(setupKey, setupObj);
-        await m.delete().catch(() => {});
+        if (!isDM) await m.delete().catch(() => {});
         await interaction.followUp(getSetupUI(setupObj));
       });
 
