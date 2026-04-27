@@ -10,6 +10,7 @@ const {
   Collection,
   GatewayIntentBits,
   ActivityType,
+  Partials,
 } = require("discord.js");
 const Agenda = require("agenda");
 const { scheduleAllHabits } = require("./habitScheduler");
@@ -55,7 +56,9 @@ const client = new Client({
     GatewayIntentBits.GuildMessageReactions,
     GatewayIntentBits.GuildMessageTyping,
     GatewayIntentBits.GuildMembers,
+    GatewayIntentBits.DirectMessages,
   ],
+  partials: [Partials.Channel, Partials.Message],
 });
 
 const app = express();
