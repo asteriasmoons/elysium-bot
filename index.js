@@ -41,7 +41,6 @@ const sprintState = {
   timeout: null,
 };
 
-const reminders = require("./commands/reminders.js");
 const sendEmbedRoute = require("./routes/api/sendEmbed");
 const guildChannelsRoute = require("./routes/api/guildChannels");
 const ticketPanelRoute = require("./routes/ticketpanel/send");
@@ -123,7 +122,6 @@ client.once("ready", async () => {
   console.log(`Bot ${client.user.tag} is now ready!`);
 
   client.agenda = agenda;
-  reminders.init(client);
   scheduleAllHabits(client);
   startReminderScheduler(client);
   require("./agendaJobs")(agenda, client);
