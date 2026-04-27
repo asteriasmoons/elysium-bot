@@ -14,6 +14,7 @@ const {
 } = require("discord.js");
 const Agenda = require("agenda");
 const { scheduleAllHabits } = require("./habitScheduler");
+const startReminderScheduler = require("./utils/reminderScheduler");
 
 mongoose
   .connect(process.env.MONGO_URI)
@@ -125,6 +126,7 @@ client.once("ready", async () => {
   client.agenda = agenda;
   reminders.init(client);
   scheduleAllHabits(client);
+  startReminderScheduler(client);
   require("./agendaJobs")(agenda, client);
   await agenda.start();
   await agenda.purge();
