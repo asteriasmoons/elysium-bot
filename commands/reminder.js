@@ -79,14 +79,20 @@ module.exports = {
   async execute(interaction, client) {
     try {
       const sub = interaction.options.getSubcommand();
-      const guildId = interaction.guild.id;
+      const isDM = !interaction.guild;
       const userId = interaction.user.id;
-      const setupKey = `${guildId}_${userId}`;
+      const guildId = isDM ? null : interaction.guild.id;
+      const setupKey = isDM ? `dm_${userId}` : `${guildId}_${userId}`;
 
-      // TIMEZONE
+      // TIMEZONE — guild only
       if (sub === "timezone") {
+        if (isDM) {
+          return interaction.reply({
+            content: "❌ Timezone configuration is only available in servers.",
+            ephemeral: true,
+          });
+        }
         const tz = interaction.options.getString("timezone");
-        // Validate using luxon:
         if (!DateTime.local().setZone(tz).isValid) {
           return interaction.reply({
             content: `❌ Invalid timezone "${tz}". Try one of: ${tzExamples.join(
@@ -95,7 +101,6 @@ module.exports = {
             ephemeral: true,
           });
         }
-        // Update all reminders in this guild to use this timezone (or you can do per-reminder)
         const result = await Reminder.updateMany({ guildId }, { timezone: tz });
         return interaction.reply({
           content: `✅ Default timezone for **${
@@ -111,9 +116,15 @@ module.exports = {
       if (sub === "create") {
         const name = interaction.options.getString("name").trim();
         console.log(
-          `[Reminders] /reminder create invoked for ${name} by ${userId} in ${guildId}`
+          `[Reminders] /reminder create invoked for ${name} by ${userId} ${
+            isDM ? "in DM" : `in ${guildId}`
+          }`
         );
-        const exists = await Reminder.findOne({ guildId, name });
+
+        const query = isDM
+          ? { type: "dm", userId, name }
+          : { type: "guild", guildId, name };
+        const exists = await Reminder.findOne(query);
         if (exists) {
           return interaction.reply({
             content: `❌ A reminder named **${name}** already exists.`,
@@ -121,34 +132,57 @@ module.exports = {
           });
         }
 
-        // Default to Chicago time unless user sets otherwise
-        const existing = await Reminder.findOne({ guildId });
-        const defaultTimezone = existing?.timezone || "America/Chicago";
+        const existingForTz = isDM
+          ? await Reminder.findOne({ type: "dm", userId })
+          : await Reminder.findOne({ type: "guild", guildId });
+        const defaultTimezone = existingForTz?.timezone || "America/Chicago";
 
-        const setupObj = {
-          guildId,
-          creatorId: userId,
-          name,
-          interval: null,
-          startDate: null,
-          ping: "",
-          channelId: null,
-          dayOfWeek: null,
-          embedTitle: "Reminder!",
-          embedDescription: "",
-          embedColor: "#8757f2",
-          timezone: defaultTimezone,
-        };
+        const setupObj = isDM
+          ? {
+              type: "dm",
+              userId,
+              guildId: null,
+              creatorId: userId,
+              name,
+              interval: null,
+              startDate: null,
+              dayOfWeek: null,
+              embedTitle: "Reminder!",
+              embedDescription: "",
+              embedColor: "#8757f2",
+              timezone: defaultTimezone,
+            }
+          : {
+              type: "guild",
+              guildId,
+              creatorId: userId,
+              name,
+              interval: null,
+              startDate: null,
+              ping: "",
+              channelId: null,
+              dayOfWeek: null,
+              embedTitle: "Reminder!",
+              embedDescription: "",
+              embedColor: "#8757f2",
+              timezone: defaultTimezone,
+            };
+
         setupCache.set(setupKey, setupObj);
         return interaction.reply(getSetupUI(setupObj));
       }
 
       // LIST
       if (sub === "list") {
-        const reminders = await Reminder.find({ guildId });
+        const query = isDM
+          ? { type: "dm", userId }
+          : { type: "guild", guildId };
+        const reminders = await Reminder.find(query);
         if (!reminders.length)
           return interaction.reply({
-            content: "No reminders set in this server.",
+            content: isDM
+              ? "You have no DM reminders set."
+              : "No reminders set in this server.",
             ephemeral: true,
           });
         const embed = new EmbedBuilder()
@@ -156,9 +190,10 @@ module.exports = {
           .setColor(0x8757f2)
           .setDescription(
             reminders
-              .map(
-                (r) =>
-                  `**${r.name}** — Every \`${r.interval}\` in <#${r.channelId}> ${r.embedTitle} | TZ: \`${r.timezone}\``
+              .map((r) =>
+                isDM
+                  ? `**${r.name}** — Every \`${r.interval}\` | TZ: \`${r.timezone}\``
+                  : `**${r.name}** — Every \`${r.interval}\` in <#${r.channelId}> ${r.embedTitle} | TZ: \`${r.timezone}\``
               )
               .join("\n")
           );
@@ -168,7 +203,10 @@ module.exports = {
       // EDIT
       if (sub === "edit") {
         const name = interaction.options.getString("name").trim();
-        const reminder = await Reminder.findOne({ guildId, name });
+        const query = isDM
+          ? { type: "dm", userId, name }
+          : { type: "guild", guildId, name };
+        const reminder = await Reminder.findOne(query);
         if (!reminder)
           return interaction.reply({
             content: `No reminder named **${name}** was found.`,
@@ -183,7 +221,10 @@ module.exports = {
       // DELETE
       if (sub === "delete") {
         const name = interaction.options.getString("name").trim();
-        const reminder = await Reminder.findOne({ guildId, name });
+        const query = isDM
+          ? { type: "dm", userId, name }
+          : { type: "guild", guildId, name };
+        const reminder = await Reminder.findOne(query);
         if (!reminder)
           return interaction.reply({
             content: `❌ No reminder named **${name}** was found.`,

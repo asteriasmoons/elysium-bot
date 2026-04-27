@@ -137,9 +137,10 @@ function getSetupUI(data) {
 
 async function handleComponent(interaction, client) {
   try {
-    const guildId = interaction.guildId || interaction.guild?.id;
+    const isDM = !interaction.guild && !interaction.guildId;
+    const guildId = interaction.guildId || interaction.guild?.id || null;
     const userId = interaction.user.id;
-    const setupKey = `${guildId}_${userId}`;
+    const setupKey = isDM ? `dm_${userId}` : `${guildId}_${userId}`;
     const setupObj = setupCache.get(setupKey);
 
     if (!setupObj) {
@@ -281,18 +282,24 @@ async function handleComponent(interaction, client) {
       }
 
       if (interaction.customId === "reminder-save") {
-        if (!setupObj.interval || !setupObj.startDate || !setupObj.channelId) {
+        const needsChannel = setupObj.type !== "dm";
+        if (!setupObj.interval || !setupObj.startDate || (needsChannel && !setupObj.channelId)) {
           return interaction.reply({
-            content:
-              "Please set the interval, start date, and channel before saving!",
+            content: needsChannel
+              ? "Please set the interval, start date, and channel before saving!"
+              : "Please set the interval and start date before saving!",
             ephemeral: true,
           });
         }
         if (typeof setupObj.startDate === "string")
           setupObj.startDate = new Date(setupObj.startDate);
 
+        const upsertQuery = setupObj.type === "dm"
+          ? { type: "dm", userId: setupObj.userId, name: setupObj.name }
+          : { type: "guild", guildId: setupObj.guildId, name: setupObj.name };
+
         await Reminder.findOneAndUpdate(
-          { guildId: setupObj.guildId, name: setupObj.name },
+          upsertQuery,
           setupObj,
           { upsert: true, new: true }
         );
