@@ -1,7 +1,6 @@
 
 require("dotenv").config();
 const express = require("express");
-require("./server");
 
 const mongoose = require("mongoose");
 const fs = require("node:fs");
