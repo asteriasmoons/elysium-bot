@@ -65,6 +65,7 @@ const app = express();
 const PORT = Number(process.env.PORT || 3000);
 
 app.use(express.json());
+app.use(express.static(path.join(__dirname, "public")));
 app.set("discordClient", client);
 app.use("/", sendEmbedRoute);
 app.use("/", guildChannelsRoute);
