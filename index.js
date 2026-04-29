@@ -77,9 +77,36 @@ app.get("/", (_req, res) => {
 });
 
 app.get("/invite", (_req, res) => {
-  res.redirect(
-    "https://discord.com/oauth2/authorize?client_id=1366843799451467797&scope=bot%20applications.commands&permissions=8"
-  );
+  res.send(`
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+
+  <title>Invite Elysium</title>
+  <meta name="description" content="Add Elysium to your Discord server." />
+
+  <meta property="og:title" content="Invite Elysium" />
+  <meta property="og:description" content="Add Elysium to your Discord server." />
+  <meta property="og:image" content="https://bot.lystaria.im/elysium-invite-banner.png" />
+  <meta property="og:url" content="https://bot.lystaria.im/invite" />
+  <meta property="og:type" content="website" />
+
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Invite Elysium" />
+  <meta name="twitter:description" content="Add Elysium to your Discord server." />
+  <meta name="twitter:image" content="https://bot.lystaria.im/elysium-invite-banner.png" />
+
+  <meta http-equiv="refresh" content="1;url=https://discord.com/oauth2/authorize?client_id=1366843799451467797&scope=bot%20applications.commands&permissions=8" />
+</head>
+<body>
+  <p>Redirecting to Elysium invite...</p>
+  <a href="https://discord.com/oauth2/authorize?client_id=1366843799451467797&scope=bot%20applications.commands&permissions=8">
+    Click here if you are not redirected.
+  </a>
+</body>
+</html>
+  `);
 });
 client.sprintTimeouts = new Map();
 client.sprintState = sprintState;
