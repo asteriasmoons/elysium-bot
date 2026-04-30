@@ -3,6 +3,7 @@
 const RolePanel = require("../models/RolePanel");
 
 module.exports = async function handleRolePanelInteraction(interaction) {
+  console.log(`[RolePanelHandler] customId: ${interaction.customId}`, interaction.isStringSelectMenu() ? `values: ${interaction.values}` : '');
   const member = interaction.member;
 
   // ===== BUTTON HANDLER =====
