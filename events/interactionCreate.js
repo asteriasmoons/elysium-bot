@@ -21,6 +21,7 @@ module.exports = {
       interaction.customId?.startsWith("rolepanel_button_") ||
       interaction.customId?.startsWith("rolepanel_select_")
     ) {
+      console.log(`[interactionCreate] Routing to rolePanelHandler, customId: ${interaction.customId}`);
       return handleRolePanelInteraction(interaction);
     }
 
