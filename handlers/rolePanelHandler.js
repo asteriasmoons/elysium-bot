@@ -54,6 +54,7 @@ module.exports = async function handleRolePanelInteraction(interaction) {
   ) {
     // customId format: rolepanel_select_<panelId>
     const [, , panelId] = interaction.customId.split("_");
+    console.log(`[RolePanelHandler] panelId extracted: "${panelId}" from customId: "${interaction.customId}"`);
 
     await interaction.deferUpdate();
 
