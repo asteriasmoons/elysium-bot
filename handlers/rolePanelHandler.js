@@ -76,12 +76,13 @@ module.exports = async function handleRolePanelInteraction(interaction) {
       (roleId) => !member.roles.cache.has(roleId),
     );
 
+    await interaction.deferReply({ ephemeral: true });
+
     await member.roles.remove(toRemove);
     await member.roles.add(toAdd);
 
-    return interaction.reply({
+    return interaction.editReply({
       content: `Your roles have been updated.`,
-      ephemeral: true,
     });
   }
 };
