@@ -65,21 +65,26 @@ module.exports = async function handleRolePanelInteraction(interaction) {
     const validRoleIds = panel.roles.map((r) => r.roleId);
     const selectedRoleIds = interaction.values;
 
-    // Remove roles that are part of panel but not selected
-    const toRemove = member.roles.cache.filter(
-      (role) =>
-        validRoleIds.includes(role.id) && !selectedRoleIds.includes(role.id),
-    );
+    const toRemove = member.roles.cache
+      .filter(
+        (role) =>
+          validRoleIds.includes(role.id) && !selectedRoleIds.includes(role.id),
+      )
+      .map((r) => r.id);
 
-    // Add newly selected roles
     const toAdd = selectedRoleIds.filter(
       (roleId) => !member.roles.cache.has(roleId),
     );
 
     await interaction.deferUpdate();
 
-    await member.roles.remove(toRemove);
-    await member.roles.add(toAdd);
+    if (toRemove.length) {
+      await member.roles.remove(toRemove);
+    }
+
+    if (toAdd.length) {
+      await member.roles.add(toAdd);
+    }
 
     return interaction.followUp({
       content: `Your roles have been updated.`,
