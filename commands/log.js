@@ -5,7 +5,27 @@ const {
   EmbedBuilder,
   PermissionFlagsBits,
 } = require("discord.js");
-const LogConfig = require("../models/LogConfig"); // adjust path if needed
+const LogConfig = require("../models/LogConfig");
+
+const LOG_EVENT_OPTIONS = [
+  { label: "Member Join", value: "memberJoin" },
+  { label: "Member Leave", value: "memberLeave" },
+  { label: "Message Deleted", value: "messageDelete" },
+  { label: "Message Edited", value: "messageEdit" },
+  { label: "Bulk Delete", value: "bulkDelete" },
+  { label: "Nickname Changed", value: "nicknameChange" },
+  { label: "Avatar Changed", value: "avatarChange" },
+  { label: "Channel Created", value: "channelCreate" },
+  { label: "Channel Updated", value: "channelUpdate" },
+  { label: "Channel Deleted", value: "channelDelete" },
+  { label: "Role Create", value: "roleCreate" },
+  { label: "Role Updated", value: "roleUpdate" },
+  { label: "Role Delete", value: "roleDelete" },
+  { label: "Warn", value: "warn" },
+  { label: "Timeout", value: "timeout" },
+  { label: "Ban", value: "ban" },
+  { label: "Kick", value: "kick" },
+];
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -22,7 +42,7 @@ module.exports = {
     .addSubcommand((sub) =>
       sub
         .setName("disable")
-        .setDescription("Disable ALL logging (removes all log channels).")
+        .setDescription("Disable logging for one or more events.")
     )
     .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild),
 
@@ -33,32 +53,17 @@ module.exports = {
     if (sub === "config") {
       const eventSelect = new StringSelectMenuBuilder()
         .setCustomId("selectLogEvent")
-        .setPlaceholder("Select an event to configure")
-        .addOptions([
-          { label: "Member Join", value: "memberJoin" },
-          { label: "Member Leave", value: "memberLeave" },
-          { label: "Message Deleted", value: "messageDelete" },
-          { label: "Message Edited", value: "messageEdit" },
-          { label: "Bulk Delete", value: "bulkDelete" },
-          { label: "Nickname Changed", value: "nicknameChange" },
-          { label: "Avatar Changed", value: "avatarChange" },
-          { label: "Channel Created", value: "channelCreate" },
-          { label: "Channel Updated", value: "channelUpdate" },
-          { label: "Channel Deleted", value: "channelDelete" },
-          { label: "Role Create", value: "roleCreate" },
-          { label: "Role Updated", value: "roleUpdate" },
-          { label: "Role Delete", value: "roleDelete" },
-          { label: "Warn", value: "warn" },
-          { label: "Timeout", value: "timeout" },
-          { label: "Ban", value: "ban" },
-          { label: "Kick", value: "kick" },
-        ]);
+        .setPlaceholder("Select one or more events to configure")
+        .setMinValues(1)
+        .setMaxValues(LOG_EVENT_OPTIONS.length)
+        .addOptions(LOG_EVENT_OPTIONS);
+
       const row = new ActionRowBuilder().addComponents(eventSelect);
 
       const selectEmbed = new EmbedBuilder()
         .setTitle("Logging Configuration")
         .setDescription(
-          "Select an event you want to assign a log channel for below."
+          "Select one or more events below, then choose a channel to log them all to."
         )
         .setColor(0x5865f2)
         .setFooter({ text: interaction.guild.name })
@@ -88,8 +93,8 @@ module.exports = {
         const formatted = Object.entries(config.logs).map(
           ([key, channelId]) => {
             const label = key
-              .replace(/([a-z])([A-Z])/g, "$1 $2") // camelCase → spaced
-              .replace(/\b\w/g, (l) => l.toUpperCase()); // capitalize words
+              .replace(/([a-z])([A-Z])/g, "$1 $2")
+              .replace(/\b\w/g, (l) => l.toUpperCase());
             return `• **${label}** → <#${channelId}>`;
           }
         );
@@ -101,38 +106,21 @@ module.exports = {
 
     // === /log disable ===
     if (sub === "disable") {
-      // Show select menu to choose which log event to disable
       const disableSelect = new StringSelectMenuBuilder()
         .setCustomId("disableLogEvent")
-        .setPlaceholder("Select an event to disable logging for")
-        .addOptions([
-          { label: "Member Join", value: "memberJoin" },
-          { label: "Member Leave", value: "memberLeave" },
-          { label: "Message Deleted", value: "messageDelete" },
-          { label: "Message Edited", value: "messageEdit" },
-          { label: "Bulk Delete", value: "bulkDelete" },
-          { label: "Nickname Changed", value: "nicknameChange" },
-          { label: "Avatar Changed", value: "avatarChange" },
-          { label: "Channel Created", value: "channelCreate" },
-          { label: "Channel Updated", value: "channelUpdate" },
-          { label: "Channel Deleted", value: "channelDelete" },
-          { label: "Role Create", value: "roleCreate" },
-          { label: "Role Updated", value: "roleUpdate" },
-          { label: "Role Delete", value: "roleDelete" },
-          { label: "Warn", value: "warn" },
-          { label: "Timeout", value: "timeout" },
-          { label: "Ban", value: "ban" },
-          { label: "Kick", value: "kick" },
-        ]);
+        .setPlaceholder("Select one or more events to disable")
+        .setMinValues(1)
+        .setMaxValues(LOG_EVENT_OPTIONS.length)
+        .addOptions(LOG_EVENT_OPTIONS);
 
       const row = new ActionRowBuilder().addComponents(disableSelect);
 
       await interaction.reply({
         embeds: [
           new EmbedBuilder()
-            .setTitle("Disable Logging Event")
+            .setTitle("Disable Logging Events")
             .setDescription(
-              "Select a log event below to disable its logging.\n\nYou can always re-enable it later using `/log config`."
+              "Select one or more events to disable logging for.\n\nYou can re-enable them at any time using `/log config`."
             )
             .setColor(0xed4245),
         ],

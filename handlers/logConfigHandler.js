@@ -9,18 +9,26 @@ const LogConfig = require("../models/LogConfig");
 async function handleEventSelect(interaction) {
   await interaction.deferUpdate();
 
-  const selectedEvent = interaction.values[0];
+  const selectedEvents = interaction.values;
+
+  // Encode selected events into the customId so we have them when the channel is picked
+  const encoded = selectedEvents.join(",");
+
   const channelSelect = new ChannelSelectMenuBuilder()
-    .setCustomId(`selectLogChannel_${selectedEvent}`)
-    .setPlaceholder("Select a channel")
+    .setCustomId(`selectLogChannel_${encoded}`)
+    .setPlaceholder("Select a channel for all selected events")
     .setMinValues(1)
     .setMaxValues(1)
     .addChannelTypes(ChannelType.GuildText);
 
   const row = new ActionRowBuilder().addComponents(channelSelect);
 
+  const eventList = selectedEvents
+    .map((e) => `\`${e}\``)
+    .join(", ");
+
   await interaction.editReply({
-    content: `Now choose the channel to log **${selectedEvent}** events:`,
+    content: `Now choose the channel to log ${eventList} events:`,
     components: [row],
   });
 }
@@ -28,27 +36,27 @@ async function handleEventSelect(interaction) {
 async function handleChannelSelect(interaction) {
   await interaction.deferUpdate();
 
-  const eventType = interaction.customId.replace("selectLogChannel_", "");
+  const encoded = interaction.customId.replace("selectLogChannel_", "");
+  const eventTypes = encoded.split(",");
   const channelId = interaction.values[0];
 
-  const config = await LogConfig.findOne({ guildId: interaction.guild.id });
-  const currentChannelId = config?.logs?.[eventType];
-
-  if (currentChannelId === channelId) {
-    return interaction.editReply({
-      content: `⚠️ Logging for **${eventType}** is already set to <#${channelId}>.`,
-      components: [],
-    });
+  const setFields = {};
+  for (const eventType of eventTypes) {
+    setFields[`logs.${eventType}`] = channelId;
   }
 
   await LogConfig.findOneAndUpdate(
     { guildId: interaction.guild.id },
-    { $set: { [`logs.${eventType}`]: channelId } },
+    { $set: setFields },
     { upsert: true },
   );
 
+  const eventList = eventTypes
+    .map((e) => `\`${e}\``)
+    .join(", ");
+
   await interaction.editReply({
-    content: `✅ Logging for **${eventType}** set to <#${channelId}>.`,
+    content: `✅ Logging for ${eventList} set to <#${channelId}>.`,
     components: [],
   });
 }
@@ -56,26 +64,31 @@ async function handleChannelSelect(interaction) {
 async function handleDisableSelect(interaction) {
   await interaction.deferUpdate();
 
-  const eventType = interaction.values[0];
+  const eventTypes = interaction.values;
+
+  const unsetFields = {};
+  for (const eventType of eventTypes) {
+    unsetFields[`logs.${eventType}`] = "";
+  }
 
   await LogConfig.findOneAndUpdate(
     { guildId: interaction.guild.id },
-    { $unset: { [`logs.${eventType}`]: "" } },
+    { $unset: unsetFields },
   );
+
+  const eventList = eventTypes
+    .map((e) => `\`${e}\``)
+    .join(", ");
 
   await interaction.editReply({
     embeds: [
       new EmbedBuilder()
         .setColor(0xed4245)
         .setTitle("Logging Disabled")
-        .setDescription(`Logging for **${eventType}** has been **disabled**.`),
+        .setDescription(`Logging for ${eventList} has been **disabled**.`),
     ],
     components: [],
   });
 }
 
-module.exports = {
-  handleEventSelect,
-  handleChannelSelect,
-  handleDisableSelect,
-};
+module.exports = { handleEventSelect, handleChannelSelect, handleDisableSelect };
