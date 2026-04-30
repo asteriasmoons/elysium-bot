@@ -16,10 +16,6 @@ const LogConfigSchema = new mongoose.Schema({
     channelCreate: { type: String, default: null },
     channelUpdate: { type: String, default: null },
     channelDelete: { type: String, default: null },
-    warn: { type: String, default: null },
-    timeout: { type: String, default: null },
-    ban: { type: String, default: null },
-    kick: { type: String, default: null },
   },
 });
 

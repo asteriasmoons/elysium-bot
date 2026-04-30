@@ -21,10 +21,6 @@ const LOG_EVENT_OPTIONS = [
   { label: "Role Create", value: "roleCreate" },
   { label: "Role Updated", value: "roleUpdate" },
   { label: "Role Delete", value: "roleDelete" },
-  { label: "Warn", value: "warn" },
-  { label: "Timeout", value: "timeout" },
-  { label: "Ban", value: "ban" },
-  { label: "Kick", value: "kick" },
 ];
 
 module.exports = {
