@@ -179,6 +179,7 @@ require("./events/messageEvent.js")(client);
 require("./events/memberEvents.js")(client);
 require("./events/channelEvents.js")(client);
 require("./events/bumpReminder.js")(client);
+require("./events/roleEvents.js")(client);
 
 client.once("ready", async () => {
   client.user.setPresence({
