@@ -23,7 +23,7 @@ function cleanString(value) {
 }
 
 function buildSelectMenu(panel) {
-  const customId = `role_select:${panel.panelName}`;
+  const customId = `rolepanel_select_${panel._id}`;
 
   const options = (panel.roles ?? []).map((role) => {
     const option = {
@@ -70,7 +70,7 @@ function buildButtons(panel) {
     }
 
     const button = new ButtonBuilder()
-      .setCustomId(`role_button:${panel.panelName}:${role.roleId}`)
+      .setCustomId(`rolepanel_button_${panel._id}_${role.roleId}`)
       .setLabel(cleanString(role.label) || "Role")
       .setStyle(ButtonStyle.Secondary);
 
