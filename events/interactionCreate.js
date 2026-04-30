@@ -10,7 +10,9 @@ const handleEmbedQuickPreview = require("../handlers/embedQuickPreviewHandler");
 const handleTicketPanelButtons = require("../handlers/ticketPanelButtonHandler");
 const handleTicketOpen = require("../handlers/ticketOpenHandler");
 const handleTicketControls = require("../handlers/ticketControlHandler");
-const { handleComponent: handleReminderComponent } = require("../handlers/reminderHandler");
+const {
+  handleComponent: handleReminderComponent,
+} = require("../handlers/reminderHandler");
 const { agenda } = require("../index");
 
 module.exports = {
@@ -21,7 +23,9 @@ module.exports = {
       interaction.customId?.startsWith("rolepanel_button_") ||
       interaction.customId?.startsWith("rolepanel_select_")
     ) {
-      console.log(`[interactionCreate] Routing to rolePanelHandler, customId: ${interaction.customId}`);
+      console.log(
+        `[interactionCreate] Routing to rolePanelHandler, customId: ${interaction.customId}`,
+      );
       return handleRolePanelInteraction(interaction);
     }
 
@@ -32,7 +36,7 @@ module.exports = {
     ) {
       return handleTbrPagination(interaction);
     }
-    
+
     // --- JOURNAL PAGINATION ROUTER ---
     if (interaction.customId?.startsWith("journal_")) {
       return handleJournalPagination(interaction);
@@ -120,6 +124,36 @@ module.exports = {
       interaction.customId?.startsWith("reminder-")
     ) {
       return handleReminderComponent(interaction, client);
+    }
+
+    // --- LOG CONFIG: event type select ---
+    if (
+      interaction.isStringSelectMenu() &&
+      interaction.customId === "selectLogEvent"
+    ) {
+      return require("../handlers/logConfigHandler").handleEventSelect(
+        interaction,
+      );
+    }
+
+    // --- LOG CONFIG: channel select ---
+    if (
+      interaction.isChannelSelectMenu() &&
+      interaction.customId?.startsWith("selectLogChannel_")
+    ) {
+      return require("../handlers/logConfigHandler").handleChannelSelect(
+        interaction,
+      );
+    }
+
+    // --- LOG CONFIG: disable event select ---
+    if (
+      interaction.isStringSelectMenu() &&
+      interaction.customId === "disableLogEvent"
+    ) {
+      return require("../handlers/logConfigHandler").handleDisableSelect(
+        interaction,
+      );
     }
 
     // --- SLASH COMMAND HANDLER ---

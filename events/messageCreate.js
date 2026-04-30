@@ -6,6 +6,8 @@ const ThreadEmbed = require("../models/ThreadEmbed");
 const AfkStatus = require("../models/AfkStatus");
 const AfkConfig = require("../models/AfkConfig");
 const StickyEmbed = require("../models/StickyEmbed");
+const BumpReminder = require("../models/BumpReminder");
+const DISBOARD_ID = "302050872383242240";
 
 // List of allowed channel IDs (edit these!)
 const ALLOWED_CHANNELS = [
@@ -32,9 +34,38 @@ const DEFAULT_EMBEDS = {
 module.exports = {
   name: "messageCreate",
   async execute(message) {
-    // Ignore bot messages
-    if (message.author.bot) return;
+    // --- BUMP REMINDER DETECTION (must run before bot guard) ---
+    if (message.author.bot) {
+      if (message.author.id === DISBOARD_ID && message.guild) {
+        const guildId = message.guild.id;
+        const bumpConfig = await BumpReminder.findOne({ guildId });
+        if (
+          bumpConfig &&
+          !bumpConfig.reminderDisabled &&
+          bumpConfig.channelId === message.channel.id &&
+          message.embeds.length &&
+          message.embeds[0].description?.includes("Bump done")
+        ) {
+          await BumpReminder.findOneAndUpdate(
+            { guildId },
+            { lastBump: new Date(), reminderSent: false },
+          );
 
+          const confirmationEmbed = new EmbedBuilder()
+            .setTitle("Bump Tracked!")
+            .setDescription(
+              "I've tracked this bump and will remind you in 2 hours.",
+            )
+            .setColor(0x72bdda)
+            .setTimestamp();
+
+          await message.channel
+            .send({ embeds: [confirmationEmbed] })
+            .catch(() => {});
+        }
+      }
+      return;
+    }
 
     // --- AFK LOGIC ---
     if (message.guildId) {
@@ -50,7 +81,7 @@ module.exports = {
         if (message.reference && message.reference.messageId) {
           try {
             const repliedMsg = await message.channel.messages.fetch(
-              message.reference.messageId
+              message.reference.messageId,
             );
 
             if (
@@ -77,7 +108,9 @@ module.exports = {
             const noticeTitle = afkConfig?.noticeTitle || "AFK Notice";
             const noticeColor = afkConfig?.noticeColor || "#58b2f2";
             const afkMessage =
-              afkConfig?.defaultMessage || afkStatus.message || "This user is currently AFK.";
+              afkConfig?.defaultMessage ||
+              afkStatus.message ||
+              "This user is currently AFK.";
 
             const afkEmbed = new EmbedBuilder()
               .setTitle(noticeTitle)
@@ -85,8 +118,8 @@ module.exports = {
                 `${member ? `<@${userId}>` : "This user"} is currently AFK.\n\n` +
                   `**Message:**\n${afkMessage}\n` +
                   `**Since:** <t:${Math.floor(
-                    new Date(afkStatus.since).getTime() / 1000
-                  )}:R>`
+                    new Date(afkStatus.since).getTime() / 1000,
+                  )}:R>`,
               )
               .setColor(noticeColor);
 
@@ -128,11 +161,11 @@ module.exports = {
           });
           const response = collected.first().content.trim();
           const session = sessions.find(
-            (s) => s.book.toLowerCase() === response.toLowerCase()
+            (s) => s.book.toLowerCase() === response.toLowerCase(),
           );
           if (!session) {
             return message.author.send(
-              "No session found with that book title. Please try again."
+              "No session found with that book title. Please try again.",
             );
           }
           // Relay the original message (not the book title reply)
@@ -155,12 +188,12 @@ module.exports = {
 
       for (const sticky of stickies) {
         const stickyInfo = sticky.stickies.find(
-          (s) => s.channelId === message.channel.id
+          (s) => s.channelId === message.channel.id,
         );
         if (stickyInfo && stickyInfo.messageId) {
           try {
             const oldMsg = await message.channel.messages.fetch(
-              stickyInfo.messageId
+              stickyInfo.messageId,
             );
             if (oldMsg) await oldMsg.delete();
           } catch (e) {}
@@ -175,7 +208,7 @@ module.exports = {
         sticky.stickies = sticky.stickies.map((s) =>
           s.channelId === message.channel.id
             ? { channelId: s.channelId, messageId: sentMsg.id }
-            : s
+            : s,
         );
         await sticky.save();
       }
@@ -234,7 +267,7 @@ async function relayMessage(session, message, originalMessage) {
   const senderId = message.author.id;
   const sender = message.author;
   const otherParticipant = session.participants.find(
-    (p) => p.userId !== senderId
+    (p) => p.userId !== senderId,
   );
 
   // Save the message to the database (for /buddyread messages)
@@ -254,12 +287,12 @@ async function relayMessage(session, message, originalMessage) {
   try {
     const user = await message.client.users.fetch(otherParticipant.userId);
     await user.send(
-      `<:pcbuk:1368854535220494367> **BuddyRead Message** (${session.book})\n**From ${sender.tag}:**\n${originalMessage}`
+      `<:pcbuk:1368854535220494367> **BuddyRead Message** (${session.book})\n**From ${sender.tag}:**\n${originalMessage}`,
     );
     await sender.send("Your message has been sent to your buddyread partner!");
   } catch (e) {
     await sender.send(
-      "Sorry, I could not deliver your message (maybe their DMs are closed)."
+      "Sorry, I could not deliver your message (maybe their DMs are closed).",
     );
   }
 }
