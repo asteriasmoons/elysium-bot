@@ -54,9 +54,11 @@ module.exports = async function handleRolePanelInteraction(interaction) {
     // customId format: rolepanel_select_<panelId>
     const [, , panelId] = interaction.customId.split("_");
 
+    await interaction.deferUpdate();
+
     const panel = await RolePanel.findById(panelId);
     if (!panel) {
-      return interaction.reply({
+      return interaction.followUp({
         content: "Role panel not found.",
         ephemeral: true,
       });
@@ -75,8 +77,6 @@ module.exports = async function handleRolePanelInteraction(interaction) {
     const toAdd = selectedRoleIds.filter(
       (roleId) => !member.roles.cache.has(roleId),
     );
-
-    await interaction.deferUpdate();
 
     if (toRemove.length) {
       await member.roles.remove(toRemove);
