@@ -8,6 +8,7 @@ const AfkConfig = require("../models/AfkConfig");
 const StickyEmbed = require("../models/StickyEmbed");
 const BumpReminder = require("../models/BumpReminder");
 const DISBOARD_ID = "302050872383242240";
+const AutoReact = require("../models/AutoReact");
 
 // List of allowed channel IDs (edit these!)
 const ALLOWED_CHANNELS = [
@@ -127,6 +128,22 @@ module.exports = {
               await message.reply({ embeds: [afkEmbed] });
             } catch (e) {}
           }
+        }
+      }
+    }
+
+    // --- AUTO-REACT LOGIC ---
+    if (message.guild) {
+      const config = await AutoReact.findOne({
+        guildId: message.guild.id,
+        channelId: message.channel.id,
+      });
+
+      if (config) {
+        for (const emoji of config.emojis) {
+          try {
+            await message.react(emoji);
+          } catch (e) {}
         }
       }
     }
