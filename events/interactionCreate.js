@@ -139,7 +139,7 @@ module.exports = {
     // --- LOG CONFIG: channel select ---
     if (
       interaction.isChannelSelectMenu() &&
-      interaction.customId?.startsWith("selectLogChannel_")
+      interaction.customId === "selectLogChannel"
     ) {
       return require("../handlers/logConfigHandler").handleChannelSelect(
         interaction,
