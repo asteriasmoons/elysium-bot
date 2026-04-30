@@ -6,8 +6,8 @@ const RolePanelSchema = new Schema({
   panelName: { type: String, required: true }, // unique per guild
   channelId: { type: String }, // where it was/will be published
   messageId: { type: String }, // Discord message ID of published panel
-  type: { type: String, enum: ["button", "select"], required: true },
-  selectMode: { type: String, enum: ["single", "multi"], default: "multi" }, // only for select
+  type: { type: String, enum: ["button", "select", "buttons"], required: true },
+  selectMode: { type: String, enum: ["single", "multi", "multiple"], default: "multi" },
   roles: [
     {
       roleId: { type: String, required: true },

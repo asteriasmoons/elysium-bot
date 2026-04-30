@@ -45,7 +45,7 @@ function buildSelectMenu(panel) {
     .setPlaceholder("Select a role")
     .addOptions(options);
 
-  if (panel.selectMode === "multiple") {
+  if (panel.selectMode === "multiple" || panel.selectMode === "multi") {
     menu.setMinValues(0);
     menu.setMaxValues(options.length);
   } else {
@@ -105,7 +105,7 @@ async function sendRolePanel({ panel, channel }) {
 
   let components = [];
 
-  if (panel.type === "buttons") {
+  if (panel.type === "buttons" || panel.type === "button") {
     components = buildButtons(panel);
   } else {
     components = [buildSelectMenu(panel)];
