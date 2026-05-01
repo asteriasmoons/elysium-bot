@@ -102,7 +102,10 @@ module.exports = async function handleTicketOpen(interaction) {
       };
 
       if (panel.ticketCategoryId) {
-        channelOptions.parent = panel.ticketCategoryId;
+        const category = interaction.guild.channels.cache.get(panel.ticketCategoryId);
+        if (category) {
+          channelOptions.parent = panel.ticketCategoryId;
+        }
       }
 
       const ticketChannel =

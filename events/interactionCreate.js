@@ -18,7 +18,6 @@ const { agenda } = require("../index");
 module.exports = {
   name: "interactionCreate",
   async execute(interaction, client) {
-    console.log("[interactionCreate] customId:", interaction.customId, "type:", interaction.type);
     // --- ROLE PANEL ROUTER ---
     if (
       interaction.customId?.startsWith("rolepanel_button_") ||
@@ -176,7 +175,6 @@ module.exports = {
       interaction.customId?.startsWith("open_ticket_modal:") ||
       interaction.customId?.startsWith("ticket_modal_submit:")
     ) {
-      console.log("[ticket] routing to handleTicketOpen, customId:", interaction.customId);
       return handleTicketOpen(interaction);
     }
 
