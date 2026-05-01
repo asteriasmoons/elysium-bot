@@ -121,7 +121,15 @@ module.exports = async function handleTicketOpen(interaction) {
 
       let greetingEmbed;
 
-      if (panel.greetingEmbed && typeof panel.greetingEmbed === "object") {
+      const hasGreetingEmbed =
+        panel.greetingEmbed &&
+        typeof panel.greetingEmbed === "object" &&
+        (panel.greetingEmbed.title ||
+          panel.greetingEmbed.description ||
+          panel.greetingEmbed.thumbnail ||
+          panel.greetingEmbed.image);
+
+      if (hasGreetingEmbed) {
         greetingEmbed = new EmbedBuilder();
 
         if (panel.greetingEmbed.title) {
@@ -133,7 +141,7 @@ module.exports = async function handleTicketOpen(interaction) {
         }
 
         if (panel.greetingEmbed.color) {
-          greetingEmbed.setColor(panel.greetingEmbed.color);
+          greetingEmbed.setColor(panel.greetingEmbed.color.replace("#", "") || "5103aa");
         }
 
         if (
