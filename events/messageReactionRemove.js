@@ -1,31 +1,33 @@
-const { shouldStarboard } = require("../utils/starboard");
 const StarboardEntry = require("../models/StarboardEntry");
+const StarboardConfig = require("../models/StarboardConfig");
 
 module.exports = (client) => {
   client.on("messageReactionRemove", async (reaction, user) => {
     try {
       if (user.bot) return;
+      if (!reaction.message.guild) return;
 
       if (reaction.partial) await reaction.fetch();
       if (reaction.message.partial) await reaction.message.fetch();
 
-      const { shouldStar, config } = await shouldStarboard(
-        reaction.message,
-        reaction,
-      );
+      const guildId = reaction.message.guild.id;
 
-      // shouldStar will be false if count drops below threshold — that's fine,
-      // we still want to check if an entry exists and delete it
-      if (!config) return;
+      const config = await StarboardConfig.findOne({ guildId });
+      if (!config || !config.enabled) return;
+
+      // Check the emoji matches
+      const emojiStr = reaction.emoji.id
+        ? `<:${reaction.emoji.name}:${reaction.emoji.id}>`
+        : reaction.emoji.name;
+      if (emojiStr !== config.emoji) return;
 
       const entry = await StarboardEntry.findOne({
-        guildId: reaction.message.guild.id,
+        guildId,
         originalMessageId: reaction.message.id,
       });
-
       if (!entry) return;
 
-      // If reaction count drops below threshold, delete the starboard post
+      // Delete the starboard post if count drops below threshold
       if (reaction.count < config.threshold) {
         const starChannel = reaction.message.guild.channels.cache.get(
           config.channelId,
