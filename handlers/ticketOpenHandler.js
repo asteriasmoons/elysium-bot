@@ -35,16 +35,28 @@ module.exports = async function handleTicketOpen(interaction) {
       return true;
     }
 
+    const fields =
+      panel.modalFields && panel.modalFields.length > 0
+        ? panel.modalFields.slice(0, 5)
+        : [{ label: "Describe your issue", placeholder: "", style: "paragraph", required: true }];
+
     const modal = new ModalBuilder()
       .setCustomId(`ticket_modal_submit:${panelName}`)
       .setTitle("Open a Ticket")
       .addComponents(
-        new ActionRowBuilder().addComponents(
-          new TextInputBuilder()
-            .setCustomId("issue")
-            .setLabel("Describe your issue")
-            .setStyle(TextInputStyle.Paragraph)
-            .setRequired(true),
+        ...fields.map((field) =>
+          new ActionRowBuilder().addComponents(
+            new TextInputBuilder()
+              .setCustomId(field.label.toLowerCase().replace(/\s+/g, "_").slice(0, 100))
+              .setLabel(field.label.slice(0, 45))
+              .setStyle(
+                field.style === "short"
+                  ? TextInputStyle.Short
+                  : TextInputStyle.Paragraph,
+              )
+              .setPlaceholder((field.placeholder || "").slice(0, 100))
+              .setRequired(field.required !== false),
+          ),
         ),
       );
 
@@ -75,7 +87,26 @@ module.exports = async function handleTicketOpen(interaction) {
         return true;
       }
 
-      const issue = interaction.fields.getTextInputValue("issue");
+      const fields =
+        panel.modalFields && panel.modalFields.length > 0
+          ? panel.modalFields.slice(0, 5)
+          : [{ label: "Describe your issue", placeholder: "", style: "paragraph", required: true }];
+
+      // Collect all field values keyed by their customId (derived from label)
+      const collectedFields = {};
+      for (const field of fields) {
+        const customId = field.label.toLowerCase().replace(/\s+/g, "_").slice(0, 100);
+        try {
+          collectedFields[field.label] = interaction.fields.getTextInputValue(customId);
+        } catch (_) {
+          collectedFields[field.label] = "";
+        }
+      }
+
+      // Build the issue summary for the embed
+      const issueLines = Object.entries(collectedFields)
+        .map(([label, value]) => `**${label}**\n${value || "No answer provided"}`)
+        .join("\n\n");
 
       const latestTicket = await TicketInstance.findOne({ guildId })
         .sort({ ticketNumber: -1 })
@@ -119,7 +150,7 @@ module.exports = async function handleTicketOpen(interaction) {
         panelName,
         channelId: ticketChannel.id,
         status: "open",
-        content: { issue },
+        content: collectedFields,
       });
 
       let greetingEmbed;
@@ -192,7 +223,8 @@ module.exports = async function handleTicketOpen(interaction) {
       greetingEmbed.addFields(
         { name: "Ticket Number", value: `#${ticketNumber}`, inline: true },
         { name: "Ticket Author", value: `<@${userId}>`, inline: true },
-        { name: "Issue", value: issue || "No description provided" },
+        { name: "\u200b", value: "\u200b", inline: false },
+        { name: "Details", value: issueLines.slice(0, 1024) || "No details provided" },
       );
 
       const claimBtn = new ButtonBuilder()

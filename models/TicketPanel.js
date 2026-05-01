@@ -55,6 +55,16 @@ const TicketPanelSchema = new mongoose.Schema(
       thumbnail: { type: String, default: "" },
       image: { type: String, default: "" },
     },
+
+    // Modal fields — up to 5 customizable inputs shown to the user when opening a ticket
+    modalFields: [
+      {
+        label: { type: String, required: true },
+        placeholder: { type: String, default: "" },
+        style: { type: String, default: "paragraph" }, // "short" | "paragraph"
+        required: { type: Boolean, default: true },
+      },
+    ],
   },
   { timestamps: true }
 );
