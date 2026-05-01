@@ -174,6 +174,16 @@ module.exports = {
       );
     }
 
+    // --- AUTO THREAD LOGIC ---
+    if (
+      interaction.isChannelSelectMenu() &&
+      interaction.customId === "autothread_channel_select"
+    ) {
+      return require("../handlers/autoThreadHandler").handleChannelSelect(
+        interaction,
+      );
+    }
+
     // --- SLASH COMMAND HANDLER ---
     if (interaction.isChatInputCommand()) {
       const command = interaction.client.commands.get(interaction.commandName);

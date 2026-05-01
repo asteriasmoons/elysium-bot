@@ -10,6 +10,7 @@ const BumpReminder = require("../models/BumpReminder");
 const DISBOARD_ID = "302050872383242240";
 const AutoReact = require("../models/AutoReact");
 const AutoDeleteChannel = require("../models/AutoDeleteChannel");
+const AutoThreadConfig = require("../models/AutoThreadConfig");
 
 // List of allowed channel IDs (edit these!)
 const ALLOWED_CHANNELS = [
@@ -162,6 +163,39 @@ module.exports = {
           try {
             await message.react(emoji);
           } catch (e) {}
+        }
+      }
+    }
+
+    // --- AUTO-THREAD LOGIC ---
+    if (message.guild && !message.system) {
+      const AutoThreadConfig = require("../models/AutoThreadConfig");
+      const threadConfig = await AutoThreadConfig.findOne({ guildId: message.guild.id });
+      if (threadConfig) {
+        const chanConfig = threadConfig.channels.find(c => c.channelId === message.channel.id);
+        if (chanConfig) {
+          if (message.channel.permissionsFor(message.guild.members.me)?.has("CreatePublicThreads")) {
+            const snippet = message.content ? message.content.slice(0, 60) : "";
+            let threadName = (chanConfig.threadNameTemplate || "Thread for {user}")
+              .replace("{user}", message.member?.displayName || message.author.username)
+              .replace("{message}", snippet);
+            try {
+              const thread = await message.startThread({
+                name: threadName,
+                autoArchiveDuration: 1440,
+              });
+              const embedData = chanConfig.embed || {};
+              if (embedData.title || embedData.description) {
+                const embed = new EmbedBuilder()
+                  .setTitle(embedData.title || "\u200b")
+                  .setDescription(embedData.description || "\u200b")
+                  .setColor(embedData.color || "#5865F2");
+                await thread.send({ embeds: [embed] });
+              }
+            } catch (err) {
+              console.error("[autothread] Failed to create thread:", err);
+            }
+          }
         }
       }
     }
