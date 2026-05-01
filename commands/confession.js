@@ -44,6 +44,18 @@ module.exports = {
             .addChannelTypes(ChannelType.GuildText)
             .setRequired(true)
         )
+    )
+    .addSubcommand((sub) =>
+      sub
+        .setName("set-report-channel")
+        .setDescription("Set the channel where confession reports are sent")
+        .addChannelOption((opt) =>
+          opt
+            .setName("channel")
+            .setDescription("Channel to receive reports")
+            .addChannelTypes(ChannelType.GuildText)
+            .setRequired(true)
+        )
     ),
 
   async execute(interaction) {
@@ -115,6 +127,27 @@ module.exports = {
         .setColor(0x9e3cff);
 
       return interaction.reply({ embeds: [confirmEmbed], ephemeral: true });
+    }
+
+    // /confessions set-report-channel
+    if (sub === "set-report-channel") {
+      const channel = interaction.options.getChannel("channel");
+
+      await ConfessionConfig.findOneAndUpdate(
+        { guildId: interaction.guild.id },
+        { reportChannelId: channel.id },
+        { upsert: true }
+      );
+
+      return interaction.reply({
+        embeds: [
+          new EmbedBuilder()
+            .setTitle("Report Channel Set")
+            .setDescription(`Confession reports will now be sent to <#${channel.id}>.`)
+            .setColor(0x9e3cff),
+        ],
+        ephemeral: true,
+      });
     }
   },
 };

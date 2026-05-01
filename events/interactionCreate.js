@@ -45,6 +45,22 @@ module.exports = {
       return require("../handlers/confessionHandler").handleButton(interaction);
     }
 
+    // --- CONFESSION REPLY BUTTON ---
+    if (
+      interaction.isButton() &&
+      interaction.customId?.startsWith("confession_reply:")
+    ) {
+      return require("../handlers/confessionHandler").handleReplyButton(interaction);
+    }
+
+    // --- CONFESSION REPORT BUTTON ---
+    if (
+      interaction.isButton() &&
+      interaction.customId?.startsWith("confession_report:")
+    ) {
+      return require("../handlers/confessionHandler").handleReportButton(interaction);
+    }
+
     // --- TBR PAGINATION ROUTER ---
     if (
       interaction.customId?.startsWith("tbr_prev_") ||
@@ -94,6 +110,22 @@ module.exports = {
       return require("../handlers/confessionHandler").handleModalSubmit(
         interaction,
       );
+    }
+
+    // --- CONFESSION REPLY MODAL ROUTER ---
+    if (
+      interaction.isModalSubmit() &&
+      interaction.customId?.startsWith("confession_reply_submit:")
+    ) {
+      return require("../handlers/confessionHandler").handleReplySubmit(interaction);
+    }
+
+    // --- CONFESSION REPORT MODAL ROUTER ---
+    if (
+      interaction.isModalSubmit() &&
+      interaction.customId?.startsWith("confession_report_submit:")
+    ) {
+      return require("../handlers/confessionHandler").handleReportSubmit(interaction);
     }
 
     // --- EMBEDQUICK PREVIEW ROUTER ---
