@@ -19,9 +19,6 @@ async function shouldStarboard(message, reaction) {
 
   if (emojiStr !== config.emoji) return { shouldStar: false };
 
-  // Don't star bot messages (optional)
-  if (message.author.bot) return { shouldStar: false };
-
   // Threshold check
   if (reaction.count < config.threshold) return { shouldStar: false };
 

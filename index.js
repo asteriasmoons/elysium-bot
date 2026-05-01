@@ -181,6 +181,7 @@ require("./events/bumpReminder.js")(client);
 require("./events/roleEvents.js")(client);
 require("./events/guildMemberAdd.js")(client);
 require("./events/messageReactionAdd.js")(client);
+require("./events/messageReactionRemove.js")(client);
 
 client.once("ready", async () => {
   client.user.setPresence({
