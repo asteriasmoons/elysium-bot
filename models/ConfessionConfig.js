@@ -5,6 +5,8 @@ const ConfessionConfigSchema = new mongoose.Schema({
   confessionChannelId: { type: String, required: true },
   embedTitle: { type: String, default: "Confession #{id}" },
   reportChannelId: { type: String, default: null },
+  approveFirst: { type: Boolean, default: false },
+  approverUserId: { type: String, default: null },
 });
 
 module.exports = mongoose.model("ConfessionConfig", ConfessionConfigSchema);

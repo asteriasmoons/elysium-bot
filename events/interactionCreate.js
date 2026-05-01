@@ -61,6 +61,22 @@ module.exports = {
       return require("../handlers/confessionHandler").handleReportButton(interaction);
     }
 
+    // --- CONFESSION APPROVE BUTTON (DM) ---
+    if (
+      interaction.isButton() &&
+      interaction.customId?.startsWith("confession_approve:")
+    ) {
+      return require("../handlers/confessionHandler").handleApproveButton(interaction);
+    }
+
+    // --- CONFESSION DECLINE BUTTON (DM) ---
+    if (
+      interaction.isButton() &&
+      interaction.customId?.startsWith("confession_decline:")
+    ) {
+      return require("../handlers/confessionHandler").handleDeclineButton(interaction);
+    }
+
     // --- TBR PAGINATION ROUTER ---
     if (
       interaction.customId?.startsWith("tbr_prev_") ||

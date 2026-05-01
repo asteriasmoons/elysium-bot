@@ -56,6 +56,21 @@ module.exports = {
             .addChannelTypes(ChannelType.GuildText)
             .setRequired(true)
         )
+    )
+    .addSubcommand((sub) =>
+      sub
+        .setName("approve-first")
+        .setDescription("Enable or disable approval before confessions are posted")
+        .addStringOption((opt) =>
+          opt
+            .setName("setting")
+            .setDescription("Enable or disable approve-first mode")
+            .setRequired(true)
+            .addChoices(
+              { name: "Enable", value: "enable" },
+              { name: "Disable", value: "disable" },
+            )
+        )
     ),
 
   async execute(interaction) {
@@ -145,6 +160,35 @@ module.exports = {
             .setTitle("Report Channel Set")
             .setDescription(`Confession reports will now be sent to <#${channel.id}>.`)
             .setColor(0x9e3cff),
+        ],
+        ephemeral: true,
+      });
+    }
+
+    // /confessions approve-first
+    if (sub === "approve-first") {
+      const setting = interaction.options.getString("setting");
+      const enable = setting === "enable";
+
+      await ConfessionConfig.findOneAndUpdate(
+        { guildId: interaction.guild.id },
+        {
+          approveFirst: enable,
+          ...(enable ? { approverUserId: interaction.user.id } : {}),
+        },
+        { upsert: true }
+      );
+
+      return interaction.reply({
+        embeds: [
+          new EmbedBuilder()
+            .setTitle(`Approve-First ${enable ? "Enabled" : "Disabled"}`)
+            .setDescription(
+              enable
+                ? `Confessions will now be sent to your DMs for approval before being posted.\n\n⚠️ Make sure your DMs are open from server members, otherwise confessions will not reach you.`
+                : "Confessions will now be posted immediately without approval."
+            )
+            .setColor(enable ? 0x57f287 : 0xed4245),
         ],
         ephemeral: true,
       });

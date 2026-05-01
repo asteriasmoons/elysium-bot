@@ -65,6 +65,52 @@ async function handleModalSubmit(interaction) {
   const last = await Confession.findOne({ guildId }).sort({ confessionId: -1 });
   const newId = last ? last.confessionId + 1 : 1;
 
+  // ── Approve-first mode ──
+  if (config.approveFirst && config.approverUserId) {
+    await Confession.create({
+      guildId,
+      confessionId: newId,
+      content: confessionText,
+      status: "pending",
+    });
+
+    try {
+      const approver = await interaction.client.users.fetch(config.approverUserId);
+      const previewEmbed = new EmbedBuilder()
+        .setColor(0x9e3cff)
+        .setTitle(`Pending Confession #${newId}`)
+        .setDescription(confessionText)
+        .setFooter({ text: `Guild: ${interaction.guild.name}` })
+        .setTimestamp();
+
+      const row = new ActionRowBuilder().addComponents(
+        new ButtonBuilder()
+          .setCustomId(`confession_approve:${guildId}:${newId}`)
+          .setLabel("Approve")
+          .setStyle(ButtonStyle.Success),
+        new ButtonBuilder()
+          .setCustomId(`confession_decline:${guildId}:${newId}`)
+          .setLabel("Decline")
+          .setStyle(ButtonStyle.Danger),
+      );
+
+      await approver.send({ embeds: [previewEmbed], components: [row] });
+    } catch (err) {
+      console.error("[confessions] Failed to DM approver:", err);
+    }
+
+    return interaction.reply({
+      embeds: [
+        new EmbedBuilder()
+          .setColor(0x9e3cff)
+          .setTitle("Confession Submitted")
+          .setDescription("Your confession is pending approval and will be posted once reviewed."),
+      ],
+      ephemeral: true,
+    });
+  }
+
+  // ── Normal (no approval required) ──
   await Confession.create({ guildId, confessionId: newId, content: confessionText });
 
   const embedTitle = config.embedTitle.replace("{id}", newId);
@@ -100,7 +146,6 @@ async function handleModalSubmit(interaction) {
       autoArchiveDuration: 1440,
     });
 
-    // Send the reply/report buttons as the first message in the thread
     await thread.send({
       content: "Use the buttons below to reply anonymously or report this confession.",
       components: [buildThreadButtons(message.id)],
@@ -117,6 +162,103 @@ async function handleModalSubmit(interaction) {
         .setDescription("Your anonymous confession has been submitted successfully."),
     ],
     ephemeral: true,
+  });
+}
+
+// ─── Approve button ────────────────────────────────────────────────────────────
+
+async function handleApproveButton(interaction) {
+  const [, guildId, idStr] = interaction.customId.split(":");
+  const confessionId = parseInt(idStr);
+
+  const confession = await Confession.findOne({ guildId, confessionId });
+  if (!confession || confession.status !== "pending") {
+    return interaction.update({
+      content: "This confession has already been processed.",
+      components: [],
+    });
+  }
+
+  confession.status = "approved";
+  await confession.save();
+
+  const config = await ConfessionConfig.findOne({ guildId });
+  if (!config) {
+    return interaction.update({
+      content: "Confession config not found for this guild.",
+      components: [],
+    });
+  }
+
+  const targetChannel = await interaction.client.channels
+    .fetch(config.confessionChannelId)
+    .catch(() => null);
+
+  if (!targetChannel) {
+    return interaction.update({
+      content: "Could not find the confession channel — please check the server config.",
+      components: [],
+    });
+  }
+
+  const embedTitle = config.embedTitle.replace("{id}", confessionId);
+  const embed = new EmbedBuilder()
+    .setTitle(embedTitle)
+    .setDescription(confession.content)
+    .setColor(0x9e3cff)
+    .setTimestamp();
+
+  const message = await targetChannel.send({ embeds: [embed] });
+
+  try {
+    const thread = await message.startThread({
+      name: `Confession #${confessionId}`,
+      autoArchiveDuration: 1440,
+    });
+    await thread.send({
+      content: "Use the buttons below to reply anonymously or report this confession.",
+      components: [buildThreadButtons(message.id)],
+    });
+  } catch (err) {
+    console.error("[confessions] Failed to create thread on approve:", err);
+  }
+
+  return interaction.update({
+    embeds: [
+      new EmbedBuilder()
+        .setColor(0x57f287)
+        .setTitle(`✅ Confession #${confessionId} Approved`)
+        .setDescription(confession.content),
+    ],
+    components: [],
+  });
+}
+
+// ─── Decline button ────────────────────────────────────────────────────────────
+
+async function handleDeclineButton(interaction) {
+  const [, guildId, idStr] = interaction.customId.split(":");
+  const confessionId = parseInt(idStr);
+
+  const confession = await Confession.findOne({ guildId, confessionId });
+  if (!confession || confession.status !== "pending") {
+    return interaction.update({
+      content: "This confession has already been processed.",
+      components: [],
+    });
+  }
+
+  confession.status = "declined";
+  await confession.save();
+
+  return interaction.update({
+    embeds: [
+      new EmbedBuilder()
+        .setColor(0xed4245)
+        .setTitle(`❌ Confession #${confessionId} Declined`)
+        .setDescription(confession.content),
+    ],
+    components: [],
   });
 }
 
@@ -251,6 +393,8 @@ async function handleReportSubmit(interaction) {
 module.exports = {
   handleButton,
   handleModalSubmit,
+  handleApproveButton,
+  handleDeclineButton,
   handleReplyButton,
   handleReplySubmit,
   handleReportButton,
