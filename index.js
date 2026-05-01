@@ -1,4 +1,3 @@
-
 require("dotenv").config();
 const express = require("express");
 
@@ -59,7 +58,7 @@ const client = new Client({
     GatewayIntentBits.GuildMembers,
     GatewayIntentBits.DirectMessages,
   ],
-  partials: [Partials.Channel, Partials.Message],
+  partials: [Partials.Channel, Partials.Message, Partials.Reaction],
 });
 
 const app = express();
@@ -180,6 +179,8 @@ require("./events/memberEvents.js")(client);
 require("./events/channelEvents.js")(client);
 require("./events/bumpReminder.js")(client);
 require("./events/roleEvents.js")(client);
+require("./events/guildMemberAdd.js")(client);
+require("./events/messageReactionAdd.js")(client);
 
 client.once("ready", async () => {
   client.user.setPresence({
@@ -195,7 +196,6 @@ client.once("ready", async () => {
   await agenda.purge();
   setInterval(() => checkGitHubFeeds(client), 1000 * 30);
 });
-
 
 app.listen(PORT, () => {
   console.log(`API server listening on port ${PORT}`);

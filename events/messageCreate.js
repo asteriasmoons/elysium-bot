@@ -9,6 +9,7 @@ const StickyEmbed = require("../models/StickyEmbed");
 const BumpReminder = require("../models/BumpReminder");
 const DISBOARD_ID = "302050872383242240";
 const AutoReact = require("../models/AutoReact");
+const AutoDeleteChannel = require("../models/AutoDeleteChannel");
 
 // List of allowed channel IDs (edit these!)
 const ALLOWED_CHANNELS = [
@@ -129,6 +130,23 @@ module.exports = {
             } catch (e) {}
           }
         }
+      }
+    }
+
+    // --- AUTODELETE LOGIC ---
+    if (message.guild) {
+      const autodeleteConfig = await AutoDeleteChannel.findOne({
+        guildId: message.guild.id,
+        channelId: message.channel.id,
+      });
+
+      if (autodeleteConfig) {
+        setTimeout(
+          async () => {
+            await message.delete().catch(() => {});
+          },
+          (autodeleteConfig.delaySeconds ?? 10) * 1000,
+        );
       }
     }
 
