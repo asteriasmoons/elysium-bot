@@ -34,35 +34,39 @@ module.exports = (client) => {
       const hasAttachment = msg.attachments.size > 0;
       const hasEmbeds = msg.embeds.length > 0;
 
-      const wrapperEmbed = new EmbedBuilder()
-        .setAuthor(
-          msg.author
-            ? {
-                name: msg.author.tag,
-                iconURL: msg.author.displayAvatarURL(),
-              }
-            : { name: "Unknown" }
-        )
-        .setFooter({ text: `${reaction.count} | ${msg.id}` })
-        .setTimestamp(msg.createdAt)
-        .setColor(0x663399)
-        .setURL(msg.url);
-
-      if (hasText) wrapperEmbed.setDescription(msg.content);
-
-      if (hasAttachment) {
-        const image = msg.attachments.find((a) =>
-          a.contentType?.startsWith("image/")
-        );
-        if (image) wrapperEmbed.setImage(image.url);
-      }
-
-      const toSend = [wrapperEmbed];
+      const toSend = [];
 
       if (hasEmbeds) {
-        for (const srcEmbed of msg.embeds.slice(0, 9)) {
+        // Original message has embeds — skip the wrapper, just forward them
+        for (const srcEmbed of msg.embeds.slice(0, 10)) {
           toSend.push(srcEmbed.toJSON());
         }
+      } else {
+        // No embeds — build a wrapper to display the text/image content
+        const wrapperEmbed = new EmbedBuilder()
+          .setAuthor(
+            msg.author
+              ? {
+                  name: msg.author.tag,
+                  iconURL: msg.author.displayAvatarURL(),
+                }
+              : { name: "Unknown" }
+          )
+          .setFooter({ text: `${reaction.count} | ${msg.id}` })
+          .setTimestamp(msg.createdAt)
+          .setColor(0x663399)
+          .setURL(msg.url);
+
+        if (hasText) wrapperEmbed.setDescription(msg.content);
+
+        if (hasAttachment) {
+          const image = msg.attachments.find((a) =>
+            a.contentType?.startsWith("image/")
+          );
+          if (image) wrapperEmbed.setImage(image.url);
+        }
+
+        toSend.push(wrapperEmbed);
       }
 
       const posted = await starChannel.send({
