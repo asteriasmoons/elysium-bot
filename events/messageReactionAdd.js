@@ -60,8 +60,8 @@ module.exports = (client) => {
       const toSend = [wrapperEmbed];
 
       if (hasEmbeds) {
-        for (const srcEmbed of msg.embeds.slice(0, 10)) {
-          toSend.push(EmbedBuilder.from(srcEmbed));
+        for (const srcEmbed of msg.embeds.slice(0, 9)) {
+          toSend.push(srcEmbed.toJSON());
         }
       }
 
