@@ -35,10 +35,14 @@ module.exports = (client) => {
       const hasEmbeds = msg.embeds.length > 0;
 
       const wrapperEmbed = new EmbedBuilder()
-        .setAuthor({
-          name: msg.author.tag,
-          iconURL: msg.author.displayAvatarURL(),
-        })
+        .setAuthor(
+          msg.author
+            ? {
+                name: msg.author.tag,
+                iconURL: msg.author.displayAvatarURL(),
+              }
+            : { name: "Unknown" }
+        )
         .setFooter({ text: `${reaction.count} | ${msg.id}` })
         .setTimestamp(msg.createdAt)
         .setColor(0x663399)
