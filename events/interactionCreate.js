@@ -29,6 +29,14 @@ module.exports = {
       return handleRolePanelInteraction(interaction);
     }
 
+    // --- CONFESSION BUTTON ---
+    if (
+      interaction.isButton() &&
+      interaction.customId === "confession_open_modal"
+    ) {
+      return require("../handlers/confessionHandler").handleButton(interaction);
+    }
+
     // --- TBR PAGINATION ROUTER ---
     if (
       interaction.customId?.startsWith("tbr_prev_") ||
@@ -68,6 +76,16 @@ module.exports = {
     // --- HABIT CREATE MODAL ROUTER ---
     if (interaction.customId?.startsWith("habit_modal_create_")) {
       return handleHabitCreateModal(interaction, client);
+    }
+
+    // --- CONFESSION MODAL ROUTER ---
+    if (
+      interaction.isModalSubmit() &&
+      interaction.customId === "confession_submit"
+    ) {
+      return require("../handlers/confessionHandler").handleModalSubmit(
+        interaction,
+      );
     }
 
     // --- EMBEDQUICK PREVIEW ROUTER ---
