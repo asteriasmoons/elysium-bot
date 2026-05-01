@@ -32,17 +32,25 @@ module.exports = (client) => {
       const msg = reaction.message;
       const hasText = msg.content && msg.content.length > 0;
       const hasAttachment = msg.attachments.size > 0;
-      const hasEmbeds = msg.embeds.length > 0;
+
+      // Filter out Discord auto-generated link preview embeds.
+      // Real embeds always have a title, description, or fields.
+      // Link previews have type 'link' or are empty shells with only a url.
+      const richEmbeds = msg.embeds.filter((e) => {
+        if (e.data?.type === "link" || e.type === "link") return false;
+        return e.title || e.description || (e.fields && e.fields.length > 0);
+      });
+      const hasEmbeds = richEmbeds.length > 0;
 
       const toSend = [];
 
       if (hasEmbeds) {
-        // Original message has embeds — skip the wrapper, just forward them
-        for (const srcEmbed of msg.embeds.slice(0, 10)) {
+        // Forward only the rich embeds, not link previews
+        for (const srcEmbed of richEmbeds.slice(0, 10)) {
           toSend.push(srcEmbed.toJSON());
         }
       } else {
-        // No embeds — build a wrapper to display the text/image content
+        // No rich embeds — build a wrapper to display text/image content
         const wrapperEmbed = new EmbedBuilder()
           .setAuthor(
             msg.author
