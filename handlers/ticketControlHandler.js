@@ -106,7 +106,10 @@ module.exports = async function handleTicketControls(interaction) {
   }
 
   // --- Close ---
-  if (interaction.isButton() && interaction.customId === "ticket_close") {
+  if (
+    interaction.isButton() &&
+    ["ticket_close", "close_ticket"].includes(interaction.customId)
+  ) {
     const ticket = await TicketInstance.findOne({
       channelId: interaction.channel.id,
     });
@@ -162,7 +165,10 @@ module.exports = async function handleTicketControls(interaction) {
     return true;
   }
 
-  if (interaction.isButton() && interaction.customId === "ticket_close_cancel") {
+  if (
+    interaction.isButton() &&
+    ["ticket_close_cancel", "cancel_close_ticket"].includes(interaction.customId)
+  ) {
     await interaction.update({
       embeds: [
         new EmbedBuilder()
@@ -177,7 +183,7 @@ module.exports = async function handleTicketControls(interaction) {
 
   if (
     interaction.isButton() &&
-    interaction.customId === "ticket_close_confirm"
+    ["ticket_close_confirm", "confirm_close_ticket"].includes(interaction.customId)
   ) {
     const modal = new ModalBuilder()
       .setCustomId("ticket_close_reason_modal")
@@ -192,6 +198,11 @@ module.exports = async function handleTicketControls(interaction) {
         )
       );
 
+    console.log("[Ticket Close] Showing close reason modal", {
+      customId: interaction.customId,
+      channelId: interaction.channel?.id,
+      userId: interaction.user?.id,
+    });
     await interaction.showModal(modal);
     return true;
   }
@@ -298,12 +309,14 @@ module.exports = async function handleTicketControls(interaction) {
     interaction.customId === "ticket_close_reason_modal"
   ) {
     const channel = interaction.channel;
+
+    await interaction.deferReply({ ephemeral: false });
+
     const ticket = await TicketInstance.findOne({ channelId: channel.id });
 
     if (!ticket) {
-      await interaction.reply({
+      await interaction.editReply({
         content: "Ticket not found in database.",
-        ephemeral: true,
       });
       return true;
     }
@@ -406,13 +419,12 @@ module.exports = async function handleTicketControls(interaction) {
       }
     }
 
-    await interaction.reply({
+    await interaction.editReply({
       embeds: [
         new EmbedBuilder()
           .setColor(0x9e10a0)
           .setDescription("This ticket will be closed in 5 seconds."),
       ],
-      ephemeral: false,
     });
 
     setTimeout(async () => {
