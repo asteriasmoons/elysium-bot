@@ -416,7 +416,14 @@ module.exports = async function handleTicketControls(interaction) {
     });
 
     setTimeout(async () => {
-      await channel.delete().catch(() => {});
+      try {
+        await channel.delete("Ticket closed");
+      } catch (err) {
+        console.error("[Ticket Close] Failed to delete channel", {
+          channelId: channel.id,
+          error: err?.message,
+        });
+      }
     }, 5000);
 
     return true;
