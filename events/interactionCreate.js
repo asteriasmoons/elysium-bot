@@ -29,6 +29,14 @@ module.exports = {
       return handleRolePanelInteraction(interaction);
     }
 
+    // --- VERIFY BUTTON LOGIC ---
+    if (
+      interaction.isButton() &&
+      interaction.customId === "verify_panel_button"
+    ) {
+      return require("../handlers/verifyHandler").handleButton(interaction);
+    }
+
     // --- CONFESSION BUTTON ---
     if (
       interaction.isButton() &&
