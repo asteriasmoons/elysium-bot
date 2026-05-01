@@ -231,7 +231,7 @@ module.exports = async function handleTicketOpen(interaction) {
 
       return true;
     } catch (err) {
-      console.error("Ticket Modal Submit Error:", err);
+      console.error("Ticket Modal Submit Error:", err.message, err.stack);
 
       if (!interaction.replied && !interaction.deferred) {
         await interaction.reply({
