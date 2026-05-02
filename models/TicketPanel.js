@@ -17,6 +17,7 @@ const TicketPanelSchema = new mongoose.Schema(
 
     postChannelId: { type: String, default: "" },
     ticketCategoryId: { type: String, default: "" },
+    ticketSlug: { type: String, default: "" },
 
     transcriptsEnabled: { type: Boolean, default: true },
     transcriptChannelId: { type: String, default: "" }, // <-- for log channel

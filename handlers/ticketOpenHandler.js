@@ -126,8 +126,12 @@ module.exports = async function handleTicketOpen(interaction) {
         },
       ];
 
+      const slug = panel.ticketSlug
+        ? `-${panel.ticketSlug.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "")}`
+        : "";
+
       const channelOptions = {
-        name: `${interaction.user.username.toLowerCase()}-${ticketNumber}`,
+        name: `${interaction.user.username.toLowerCase()}${slug}${ticketNumber}`,
         type: ChannelType.GuildText,
         permissionOverwrites: overwrites,
       };
