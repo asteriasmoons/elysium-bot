@@ -37,6 +37,15 @@ module.exports = {
       return require("../handlers/verifyHandler").handleButton(interaction);
     }
 
+    // --- APPEAL BUTTONS ---
+    if (
+      interaction.isButton() &&
+      (interaction.customId?.startsWith("appeal_approve:") ||
+        interaction.customId?.startsWith("appeal_deny:"))
+    ) {
+      return require("../handlers/appealHandler").handleAppealButton(interaction);
+    }
+
     // --- CONFESSION BUTTON ---
     if (
       interaction.isButton() &&
