@@ -60,8 +60,7 @@ async function checkGitHubFeeds(client) {
               .setFooter({ text: `${owner}/${repo} • Commit` });
 
             if (avatar) embed.setThumbnail(avatar);
-            await channel.send({ embeds: [embed] });
-            // URL intentionally not sent separately — it's in the embed's setURL
+            await channel.send({ content: commitData.html_url, embeds: [embed] });
           }
           // After all new commits, update to latest
           feed.lastCommitSha = commits[0].sha;
@@ -117,8 +116,7 @@ async function checkGitHubFeeds(client) {
             if (issue.user?.avatar_url)
               embed.setThumbnail(issue.user.avatar_url);
 
-            await channel.send({ embeds: [embed] });
-            // URL intentionally not sent separately — it's in the embed's setURL
+            await channel.send({ content: issue.html_url, embeds: [embed] });
 
             // update lastIssueId after posting
             if (!feed.lastIssueId || issue.id > feed.lastIssueId) {
@@ -166,8 +164,7 @@ async function checkGitHubFeeds(client) {
               .setTimestamp(new Date(release.published_at))
               .setFooter({ text: `${owner}/${repo} • Release` });
 
-            await channel.send({ embeds: [embed] });
-            // URL intentionally not sent separately — it's in the embed's setURL
+            await channel.send({ content: release.html_url, embeds: [embed] });
 
             if (!feed.lastReleaseId || release.id > feed.lastReleaseId) {
               feed.lastReleaseId = release.id;
