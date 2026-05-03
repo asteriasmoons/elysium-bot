@@ -183,11 +183,21 @@ require("./events/guildMemberAdd.js")(client);
 require("./events/messageReactionAdd.js")(client);
 require("./events/messageReactionRemove.js")(client);
 
+// Fetch members for any new guild the bot joins after startup
+client.on("guildCreate", async (guild) => {
+  await guild.members.fetch().catch(() => {});
+});
+
 client.once("ready", async () => {
   client.user.setPresence({
     activities: [{ name: "With magic 🔮", type: ActivityType.Streaming }],
   });
   console.log(`Bot ${client.user.tag} is now ready!`);
+
+  // Pre-fetch all members in every guild so user options work in private channels
+  for (const guild of client.guilds.cache.values()) {
+    await guild.members.fetch().catch(() => {});
+  }
 
   client.agenda = agenda;
   scheduleAllHabits(client);
