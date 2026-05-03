@@ -16,6 +16,23 @@ const TIMEOUT_DURATION_MAP = {
   "28d": 28 * 24 * 60 * 60 * 1000,
 };
 
+async function resolveUser(interaction, input) {
+  input = input.trim();
+  const mention = input.match(/^<@!?(\d{17,20})>$/);
+  if (mention) return interaction.client.users.fetch(mention[1]).catch(() => null);
+  if (/^\d{17,20}$/.test(input)) return interaction.client.users.fetch(input).catch(() => null);
+  await interaction.guild.members.fetch().catch(() => {});
+  const lower = input.toLowerCase();
+  const found = interaction.guild.members.cache.find(
+    (m) =>
+      m.user.username.toLowerCase() === lower ||
+      m.user.tag.toLowerCase() === lower ||
+      (m.nickname && m.nickname.toLowerCase() === lower) ||
+      m.displayName.toLowerCase() === lower
+  );
+  return found ? found.user : null;
+}
+
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("timeout")
@@ -24,8 +41,8 @@ module.exports = {
       sub
         .setName("add")
         .setDescription("Timeout a member")
-        .addUserOption((o) =>
-          o.setName("user").setDescription("The user to timeout").setRequired(true)
+        .addStringOption((o) =>
+          o.setName("user").setDescription("Username, display name, mention, or user ID").setRequired(true)
         )
         .addStringOption((o) =>
           o
@@ -55,8 +72,8 @@ module.exports = {
       sub
         .setName("remove")
         .setDescription("Remove a timeout from a member")
-        .addUserOption((o) =>
-          o.setName("user").setDescription("The user to untimeout").setRequired(true)
+        .addStringOption((o) =>
+          o.setName("user").setDescription("Username, display name, mention, or user ID").setRequired(true)
         )
         .addStringOption((o) =>
           o.setName("reason").setDescription("Reason").setRequired(false)
@@ -68,19 +85,23 @@ module.exports = {
     await interaction.deferReply({ ephemeral: true });
 
     const sub = interaction.options.getSubcommand();
+    const input = interaction.options.getString("user");
+    const reason = interaction.options.getString("reason") || "No reason provided";
+
+    const target = await resolveUser(interaction, input);
+    if (!target)
+      return interaction.editReply({ content: `Could not find a user matching **${input}**.` });
+
+    const member = await interaction.guild.members.fetch(target.id).catch(() => null);
+    if (!member)
+      return interaction.editReply({ content: "That user is not in this server." });
 
     if (sub === "add") {
-      const target = interaction.options.getUser("user");
       const durationKey = interaction.options.getString("duration");
-      const reason = interaction.options.getString("reason") || "No reason provided";
       const duration = TIMEOUT_DURATION_MAP[durationKey];
 
       if (target.id === interaction.user.id)
         return interaction.editReply({ content: "You cannot timeout yourself." });
-
-      const member = await interaction.guild.members.fetch(target.id).catch(() => null);
-      if (!member)
-        return interaction.editReply({ content: "That user is not in this server." });
       if (!member.moderatable)
         return interaction.editReply({ content: "I don't have permission to timeout that user." });
 
@@ -115,12 +136,6 @@ module.exports = {
     }
 
     if (sub === "remove") {
-      const target = interaction.options.getUser("user");
-      const reason = interaction.options.getString("reason") || "No reason provided";
-
-      const member = await interaction.guild.members.fetch(target.id).catch(() => null);
-      if (!member)
-        return interaction.editReply({ content: "That user is not in this server." });
       if (!member.isCommunicationDisabled())
         return interaction.editReply({ content: "That user is not currently timed out." });
 

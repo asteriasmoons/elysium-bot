@@ -13,6 +13,26 @@ const BAN_DURATION_MAP = {
   permanent: null,
 };
 
+async function resolveUser(interaction, input) {
+  input = input.trim();
+  // Mention
+  const mention = input.match(/^<@!?(\d{17,20})>$/);
+  if (mention) return interaction.client.users.fetch(mention[1]).catch(() => null);
+  // Raw ID
+  if (/^\d{17,20}$/.test(input)) return interaction.client.users.fetch(input).catch(() => null);
+  // Username/displayname search
+  await interaction.guild.members.fetch().catch(() => {});
+  const lower = input.toLowerCase();
+  const found = interaction.guild.members.cache.find(
+    (m) =>
+      m.user.username.toLowerCase() === lower ||
+      m.user.tag.toLowerCase() === lower ||
+      (m.nickname && m.nickname.toLowerCase() === lower) ||
+      m.displayName.toLowerCase() === lower
+  );
+  return found ? found.user : null;
+}
+
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("ban")
@@ -21,8 +41,8 @@ module.exports = {
       sub
         .setName("add")
         .setDescription("Ban a member from the server")
-        .addUserOption((o) =>
-          o.setName("user").setDescription("The user to ban").setRequired(true)
+        .addStringOption((o) =>
+          o.setName("user").setDescription("Username, display name, mention, or user ID").setRequired(true)
         )
         .addStringOption((o) =>
           o.setName("reason").setDescription("Reason for the ban").setRequired(false)
@@ -72,11 +92,15 @@ module.exports = {
     const sub = interaction.options.getSubcommand();
 
     if (sub === "add") {
-      const target = interaction.options.getUser("user");
+      const input = interaction.options.getString("user");
       const reason = interaction.options.getString("reason") || "No reason provided";
       const durationKey = interaction.options.getString("duration") || "permanent";
       const deleteDays = interaction.options.getInteger("delete_days") ?? 0;
       const duration = BAN_DURATION_MAP[durationKey];
+
+      const target = await resolveUser(interaction, input);
+      if (!target)
+        return interaction.editReply({ content: `Could not find a user matching **${input}**.` });
 
       if (target.id === interaction.user.id)
         return interaction.editReply({ content: "You cannot ban yourself." });
