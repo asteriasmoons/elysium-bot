@@ -28,18 +28,20 @@ module.exports = {
       targetTag: target.tag,
       moderatorTag: interaction.user.tag,
       guildName: interaction.guild.name,
-      dmUser: false, // Notes are internal — don't DM the user
+      dmUser: false,
     });
 
-    const embed = new EmbedBuilder()
-      .setColor(0x5865f2)
-      .setTitle(`📝 Note Added — Case #${caseDoc.caseId}`)
-      .addFields(
-        { name: "User", value: `${target.tag} (<@${target.id}>)`, inline: true },
-        { name: "Note", value: note },
-      )
-      .setTimestamp();
-
-    await interaction.editReply({ embeds: [embed] });
+    return interaction.editReply({
+      embeds: [
+        new EmbedBuilder()
+          .setColor(0x5865f2)
+          .setTitle(`Note Added — Case #${caseDoc.caseId}`)
+          .addFields(
+            { name: "User", value: `${target.tag} (<@${target.id}>)`, inline: true },
+            { name: "Note", value: note },
+          )
+          .setTimestamp(),
+      ],
+    });
   },
 };

@@ -69,7 +69,7 @@ module.exports = {
 
     const embed = new EmbedBuilder()
       .setColor(0x5865f2)
-      .setTitle(`📬 New Appeal — Case #${caseId}`)
+      .setTitle(`Appeal — Case #${caseId}`)
       .addFields(
         { name: "User", value: `${interaction.user.tag} (<@${interaction.user.id}>)`, inline: true },
         { name: "Case Type", value: TYPE_LABELS[caseDoc.type] || caseDoc.type, inline: true },

@@ -25,10 +25,12 @@ module.exports = {
 
     let targetTag = caseDoc.userId;
     let modTag = caseDoc.moderatorId;
+    let avatarURL = null;
 
     try {
       const targetUser = await interaction.client.users.fetch(caseDoc.userId);
       targetTag = targetUser.tag;
+      avatarURL = targetUser.displayAvatarURL();
     } catch (_) {}
 
     try {
@@ -46,12 +48,16 @@ module.exports = {
         { name: "Moderator", value: `${modTag} (<@${caseDoc.moderatorId}>)`, inline: true },
         { name: "Active", value: caseDoc.active ? "Yes" : "No", inline: true },
         ...(durationStr ? [{ name: "Duration", value: durationStr, inline: true }] : []),
-        ...(caseDoc.expiresAt ? [{ name: "Expires", value: `<t:${Math.floor(caseDoc.expiresAt.getTime() / 1000)}:R>`, inline: true }] : []),
+        ...(caseDoc.expiresAt
+          ? [{ name: "Expires", value: `<t:${Math.floor(caseDoc.expiresAt.getTime() / 1000)}:R>`, inline: true }]
+          : []),
         { name: "Reason", value: caseDoc.reason || "No reason provided" },
       )
-      .setFooter({ text: `Case ID: ${caseDoc.caseId} • User ID: ${caseDoc.userId}` })
+      .setFooter({ text: `Case #${caseDoc.caseId} • User ID: ${caseDoc.userId}` })
       .setTimestamp(caseDoc.createdAt);
 
-    await interaction.editReply({ embeds: [embed] });
+    if (avatarURL) embed.setThumbnail(avatarURL);
+
+    return interaction.editReply({ embeds: [embed] });
   },
 };

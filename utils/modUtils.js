@@ -2,8 +2,6 @@ const { EmbedBuilder } = require("discord.js");
 const ModerationCase = require("../models/ModerationCase");
 const ModerationConfig = require("../models/ModerationConfig");
 
-// ─── Color map ──────────────────────────────────────────────────────────────
-
 const TYPE_COLORS = {
   ban: 0xed4245,
   unban: 0x57f287,
@@ -15,16 +13,14 @@ const TYPE_COLORS = {
 };
 
 const TYPE_LABELS = {
-  ban: "🔨 Ban",
-  unban: "✅ Unban",
-  kick: "👢 Kick",
-  timeout: "⏱️ Timeout",
-  untimeout: "✅ Untimeout",
-  warn: "⚠️ Warn",
-  note: "📝 Note",
+  ban: "Ban",
+  unban: "Unban",
+  kick: "Kick",
+  timeout: "Timeout",
+  untimeout: "Untimeout",
+  warn: "Warn",
+  note: "Note",
 };
-
-// ─── Next case ID ────────────────────────────────────────────────────────────
 
 async function getNextCaseId(guildId) {
   const last = await ModerationCase.findOne({ guildId })
@@ -33,8 +29,6 @@ async function getNextCaseId(guildId) {
     .lean();
   return last ? last.caseId + 1 : 1;
 }
-
-// ─── Format duration ────────────────────────────────────────────────────────
 
 function formatDuration(ms) {
   if (!ms) return null;
@@ -48,13 +42,10 @@ function formatDuration(ms) {
   return `${d}d`;
 }
 
-// ─── DM the target ──────────────────────────────────────────────────────────
-
 async function dmTarget(client, userId, guildName, type, reason, caseId, duration) {
   try {
     const user = await client.users.fetch(userId);
     const durationStr = formatDuration(duration);
-
     const embed = new EmbedBuilder()
       .setColor(TYPE_COLORS[type] || 0x5865f2)
       .setTitle(`${TYPE_LABELS[type]} — ${guildName}`)
@@ -64,25 +55,17 @@ async function dmTarget(client, userId, guildName, type, reason, caseId, duratio
         { name: "Reason", value: reason || "No reason provided" },
       )
       .setTimestamp();
-
     await user.send({ embeds: [embed] });
-  } catch (_) {
-    // DMs closed — silently ignore
-  }
+  } catch (_) {}
 }
-
-// ─── Post mod log ────────────────────────────────────────────────────────────
 
 async function postModLog(client, guildId, caseDoc, targetTag, moderatorTag) {
   try {
     const config = await ModerationConfig.findOne({ guildId });
     if (!config?.modLogChannelId) return;
-
     const channel = await client.channels.fetch(config.modLogChannelId).catch(() => null);
     if (!channel) return;
-
     const durationStr = formatDuration(caseDoc.duration);
-
     const embed = new EmbedBuilder()
       .setColor(TYPE_COLORS[caseDoc.type] || 0x5865f2)
       .setTitle(`${TYPE_LABELS[caseDoc.type]} | Case #${caseDoc.caseId}`)
@@ -94,38 +77,20 @@ async function postModLog(client, guildId, caseDoc, targetTag, moderatorTag) {
       )
       .setFooter({ text: `User ID: ${caseDoc.userId}` })
       .setTimestamp(caseDoc.createdAt);
-
     await channel.send({ embeds: [embed] });
   } catch (_) {}
 }
 
-// ─── Create a case ───────────────────────────────────────────────────────────
-
 async function createCase(client, {
-  guildId,
-  userId,
-  moderatorId,
-  type,
-  reason,
-  duration = null,
-  targetTag,
-  moderatorTag,
-  guildName,
-  dmUser = true,
+  guildId, userId, moderatorId, type, reason,
+  duration = null, targetTag, moderatorTag, guildName, dmUser = true,
 }) {
   const caseId = await getNextCaseId(guildId);
   const expiresAt = duration ? new Date(Date.now() + duration) : null;
 
   const caseDoc = await ModerationCase.create({
-    guildId,
-    caseId,
-    userId,
-    moderatorId,
-    type,
-    reason,
-    duration,
-    expiresAt,
-    active: true,
+    guildId, caseId, userId, moderatorId, type,
+    reason, duration, expiresAt, active: true,
   });
 
   if (dmUser && type !== "note") {
@@ -133,21 +98,15 @@ async function createCase(client, {
   }
 
   await postModLog(client, guildId, caseDoc, targetTag, moderatorTag);
-
   return caseDoc;
 }
-
-// ─── Check warn escalation ───────────────────────────────────────────────────
 
 async function checkWarnEscalation(client, guild, userId, moderatorId, moderatorTag) {
   const config = await ModerationConfig.findOne({ guildId: guild.id });
   if (!config?.warnThresholds?.length) return;
 
   const activeWarns = await ModerationCase.countDocuments({
-    guildId: guild.id,
-    userId,
-    type: "warn",
-    active: true,
+    guildId: guild.id, userId, type: "warn", active: true,
   });
 
   const thresholds = [...config.warnThresholds].sort((a, b) => b.count - a.count);
@@ -164,36 +123,17 @@ async function checkWarnEscalation(client, guild, userId, moderatorId, moderator
     if (hit.action === "timeout" && hit.duration) {
       await member.timeout(hit.duration, reason);
       await createCase(client, {
-        guildId: guild.id,
-        userId,
-        moderatorId,
-        type: "timeout",
-        reason,
-        duration: hit.duration,
-        targetTag,
-        moderatorTag,
-        guildName: guild.name,
+        guildId: guild.id, userId, moderatorId, type: "timeout",
+        reason, duration: hit.duration, targetTag, moderatorTag, guildName: guild.name,
       });
     } else if (hit.action === "ban") {
       await guild.members.ban(userId, { reason });
       await createCase(client, {
-        guildId: guild.id,
-        userId,
-        moderatorId,
-        type: "ban",
-        reason,
-        targetTag,
-        moderatorTag,
-        guildName: guild.name,
+        guildId: guild.id, userId, moderatorId, type: "ban",
+        reason, targetTag, moderatorTag, guildName: guild.name,
       });
     }
   } catch (_) {}
 }
 
-module.exports = {
-  createCase,
-  checkWarnEscalation,
-  formatDuration,
-  TYPE_COLORS,
-  TYPE_LABELS,
-};
+module.exports = { createCase, checkWarnEscalation, formatDuration, TYPE_COLORS, TYPE_LABELS };

@@ -41,7 +41,7 @@ async function handleAppealButton(interaction) {
     const user = await interaction.client.users.fetch(appeal.userId);
     const dmEmbed = new EmbedBuilder()
       .setColor(approved ? 0x57f287 : 0xed4245)
-      .setTitle(`Appeal ${approved ? "Approved ✅" : "Denied ❌"} — Case #${appeal.caseId}`)
+      .setTitle(`Appeal ${approved ? "Approved" : "Denied"} — Case #${appeal.caseId}`)
       .setDescription(
         approved
           ? "Your appeal has been approved by the staff team. The case has been marked inactive."
@@ -55,10 +55,10 @@ async function handleAppealButton(interaction) {
   // Update the appeal embed
   const resultEmbed = new EmbedBuilder()
     .setColor(approved ? 0x57f287 : 0xed4245)
-    .setTitle(`Appeal ${approved ? "Approved" : "Denied"} — Case #${appeal.caseId}`)
+    .setTitle(`Appeal ${approved ? "Approved" : "Denied"} | Case #${appeal.caseId}`)
     .addFields(
       { name: "Reviewed By", value: `${interaction.user.tag}`, inline: true },
-      { name: "Decision", value: approved ? "✅ Approved" : "❌ Denied", inline: true },
+      { name: "Decision", value: approved ? "Approved" : "Denied", inline: true },
     )
     .setTimestamp();
 

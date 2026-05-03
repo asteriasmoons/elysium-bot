@@ -40,7 +40,6 @@ module.exports = {
       dmUser: true,
     });
 
-    // Check escalation after creating the warn
     await checkWarnEscalation(
       interaction.client,
       interaction.guild,
@@ -49,15 +48,17 @@ module.exports = {
       interaction.user.tag,
     );
 
-    const embed = new EmbedBuilder()
-      .setColor(0xffa500)
-      .setTitle(`⚠️ Warned — Case #${caseDoc.caseId}`)
-      .addFields(
-        { name: "User", value: `${target.tag} (<@${target.id}>)`, inline: true },
-        { name: "Reason", value: reason },
-      )
-      .setTimestamp();
-
-    await interaction.editReply({ embeds: [embed] });
+    return interaction.editReply({
+      embeds: [
+        new EmbedBuilder()
+          .setColor(0xffa500)
+          .setTitle(`Warned — Case #${caseDoc.caseId}`)
+          .addFields(
+            { name: "User", value: `${target.tag} (<@${target.id}>)`, inline: true },
+            { name: "Reason", value: reason },
+          )
+          .setTimestamp(),
+      ],
+    });
   },
 };

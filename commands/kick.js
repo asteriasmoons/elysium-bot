@@ -27,10 +27,7 @@ module.exports = {
       return interaction.editReply({ content: "That user is not in this server." });
     if (!member.kickable)
       return interaction.editReply({ content: "I don't have permission to kick that user." });
-    if (
-      member.roles.highest.position >=
-      interaction.guild.members.me.roles.highest.position
-    )
+    if (member.roles.highest.position >= interaction.guild.members.me.roles.highest.position)
       return interaction.editReply({ content: "That user's role is higher than or equal to mine." });
 
     const caseDoc = await createCase(interaction.client, {
@@ -47,15 +44,17 @@ module.exports = {
 
     await member.kick(reason);
 
-    const embed = new EmbedBuilder()
-      .setColor(0xfee75c)
-      .setTitle(`👢 Kicked — Case #${caseDoc.caseId}`)
-      .addFields(
-        { name: "User", value: `${target.tag} (<@${target.id}>)`, inline: true },
-        { name: "Reason", value: reason },
-      )
-      .setTimestamp();
-
-    await interaction.editReply({ embeds: [embed] });
+    return interaction.editReply({
+      embeds: [
+        new EmbedBuilder()
+          .setColor(0xfee75c)
+          .setTitle(`Kicked — Case #${caseDoc.caseId}`)
+          .addFields(
+            { name: "User", value: `${target.tag} (<@${target.id}>)`, inline: true },
+            { name: "Reason", value: reason },
+          )
+          .setTimestamp(),
+      ],
+    });
   },
 };

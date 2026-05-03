@@ -46,6 +46,16 @@ module.exports = {
       return require("../handlers/appealHandler").handleAppealButton(interaction);
     }
 
+    // --- HISTORY: view case button ---
+    if (interaction.isButton() && interaction.customId?.startsWith("history_view_case:")) {
+      return require("../handlers/historyHandler").handleViewCase(interaction);
+    }
+
+    // --- HISTORY: pagination ---
+    if (interaction.isButton() && interaction.customId?.startsWith("history_page:")) {
+      return require("../handlers/historyHandler").handleHistoryPage(interaction);
+    }
+
     // --- CONFESSION BUTTON ---
     if (
       interaction.isButton() &&
