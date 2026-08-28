@@ -219,6 +219,16 @@ module.exports = {
       return handleReminderComponent(interaction, client);
     }
 
+    // --- GITHUB FEED SELECT MENUS ---
+    if (
+      interaction.isStringSelectMenu() &&
+      interaction.customId?.startsWith("github_unwatch:")
+    ) {
+      return require("../handlers/githubFeedHandler").handleUnwatchSelect(
+        interaction,
+      );
+    }
+
     // --- LOG CONFIG: event type select ---
     if (
       interaction.isStringSelectMenu() &&
@@ -257,6 +267,19 @@ module.exports = {
       return require("../handlers/autoThreadHandler").handleChannelSelect(
         interaction,
       );
+    }
+
+    // --- AUTOCOMPLETE HANDLER ---
+    if (interaction.isAutocomplete()) {
+      const command = interaction.client.commands.get(interaction.commandName);
+      if (!command?.autocomplete) return;
+
+      try {
+        await command.autocomplete(interaction, agenda);
+      } catch (error) {
+        console.error(error);
+      }
+      return;
     }
 
     // --- SLASH COMMAND HANDLER ---

@@ -1,13 +1,22 @@
 const axios = require("axios");
 const { EmbedBuilder } = require("discord.js");
 const GitHubFeed = require("../models/GitHubFeed");
+const {
+  getFeedDisplayName,
+  getGitHubHeaders,
+  getRepoPartsFromFeed,
+} = require("./githubFeedUtils");
 
 async function checkGitHubFeeds(client) {
   const feeds = await GitHubFeed.find();
 
   for (const feed of feeds) {
     try {
-      const [owner, repo] = feed.repoUrl.split("/").slice(-2);
+      const parsedRepo = getRepoPartsFromFeed(feed);
+      if (!parsedRepo) continue;
+
+      const { owner, repo } = parsedRepo;
+      const displayName = getFeedDisplayName(feed);
       const channel = await client.channels.fetch(feed.channelId);
       if (!channel) continue;
 
@@ -15,10 +24,7 @@ async function checkGitHubFeeds(client) {
       const commitsRes = await axios.get(
         `https://api.github.com/repos/${owner}/${repo}/commits?sha=${feed.branch}`,
         {
-          headers: {
-            "User-Agent": "Pandoryx-Bot",
-            Authorization: `token ${process.env.GITHUB_TOKEN}`,
-          },
+          headers: getGitHubHeaders(),
         }
       );
       const commits = commitsRes.data;
@@ -52,12 +58,12 @@ async function checkGitHubFeeds(client) {
                 { name: "Branch", value: feed.branch, inline: true },
                 {
                   name: "Repo",
-                  value: `[${repo}](${feed.repoUrl})`,
+                  value: `[${displayName}](${feed.repoUrl})`,
                   inline: true,
                 }
               )
               .setTimestamp(new Date(commit.author.date))
-              .setFooter({ text: `${owner}/${repo} • Commit` });
+              .setFooter({ text: `${displayName} • Commit` });
 
             if (avatar) embed.setThumbnail(avatar);
             await channel.send({ embeds: [embed] });
@@ -73,10 +79,7 @@ async function checkGitHubFeeds(client) {
       const issuesRes = await axios.get(
         `https://api.github.com/repos/${owner}/${repo}/issues?state=open&sort=created&direction=desc`,
         {
-          headers: {
-            "User-Agent": "Pandoryx-Bot",
-            Authorization: `token ${process.env.GITHUB_TOKEN}`,
-          },
+          headers: getGitHubHeaders(),
         }
       );
       const issues = issuesRes.data;
@@ -107,12 +110,12 @@ async function checkGitHubFeeds(client) {
                 },
                 {
                   name: "Repo",
-                  value: `[${repo}](${feed.repoUrl})`,
+                  value: `[${displayName}](${feed.repoUrl})`,
                   inline: true,
                 }
               )
               .setTimestamp(new Date(issue.created_at))
-              .setFooter({ text: `${owner}/${repo} • Issue` });
+              .setFooter({ text: `${displayName} • Issue` });
 
             if (issue.user?.avatar_url)
               embed.setThumbnail(issue.user.avatar_url);
@@ -133,10 +136,7 @@ async function checkGitHubFeeds(client) {
       const releasesRes = await axios.get(
         `https://api.github.com/repos/${owner}/${repo}/releases`,
         {
-          headers: {
-            "User-Agent": "Pandoryx-Bot",
-            Authorization: `token ${process.env.GITHUB_TOKEN}`,
-          },
+          headers: getGitHubHeaders(),
         }
       );
       const releases = releasesRes.data;
@@ -158,13 +158,13 @@ async function checkGitHubFeeds(client) {
               .addFields(
                 {
                   name: "Repo",
-                  value: `[${repo}](${feed.repoUrl})`,
+                  value: `[${displayName}](${feed.repoUrl})`,
                   inline: true,
                 },
                 { name: "Tag", value: release.tag_name, inline: true }
               )
               .setTimestamp(new Date(release.published_at))
-              .setFooter({ text: `${owner}/${repo} • Release` });
+              .setFooter({ text: `${displayName} • Release` });
 
             await channel.send({ embeds: [embed] });
             await channel.send(release.html_url);
